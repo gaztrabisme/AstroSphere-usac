@@ -1,0 +1,32 @@
+{
+  "name": "mo-phong-thien-cau",
+  "version": "1.0.0",
+  "description": "Mô phỏng hệ tọa độ thiên cầu (tiếng Việt): thiên cầu và giản đồ chân trời đồng bộ.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "data": "node scripts/build-data.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/three": "^0.186.0",
+    "@types/topojson-client": "^3.1.5",
+    "astronomy-engine": "^2.1.19",
+    "d3-celestial": "^0.7.35",
+    "topojson-client": "^3.1.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3",
+    "world-atlas": "^2.0.2"
+  }
+}

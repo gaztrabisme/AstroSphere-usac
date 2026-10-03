@@ -1,0 +1,501 @@
+// Lớp "bầu trời": mọi đối tượng gắn với thiên cầu (xích đạo trời, vòng giờ, vùng, sao, Mặt Trời...).
+// Dùng chung cho cả hai khung nhìn; mỗi khung chỉ khác ma trận đặt nhóm (xem frames.ts).
+
+import * as THREE from 'three';
+import type { Line2 } from 'three/addons/lines/Line2.js';
+import { eclipticToEquatorial, galacticToEquatorial, zoneLimits } from '../astro';
+import { bvToRgb, catalogArrays, catalogIndexByHip, getCatalogStar } from '../data/catalog';
+import { ALL_FIGURES } from '../data/constellations';
+import { t } from '../i18n';
+import { sunEquatorial } from '../selection';
+import type { AppState, Selection, UserStar } from '../state';
+import { eqVec, equatorialMatrix, hourFrameMatrix, type ViewKind } from './frames';
+import {
+  COLORS,
+  decBandGeometry,
+  decCircle,
+  disposeObject,
+  fatLine,
+  greatArc,
+  polylineToSegments,
+  ringTexture,
+  thinSegments,
+  translucent,
+} from './geom';
+import { makeLabel } from './labels';
+import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
+
+export interface PickCandidate {
+  sel: NonNullable<Selection>;
+  local: THREE.Vector3;
+  tolerancePx: number;
+  priority: number;
+}
+
+type ZoneKey = 'circumpolar' | 'riseSet' | 'neverRise';
+
+export class SkyLayer {
+  /** Nhóm quay theo LST (hệ xích đạo gốc). */
+  readonly rot = new THREE.Group();
+  /** Nhóm cố định (hệ góc giờ) — chứa các đối tượng bất biến khi bầu trời quay. */
+  readonly fixed = new THREE.Group();
+
+  private equator = new THREE.Group();
+  private equatorPlane: THREE.Mesh;
+  private axis = new THREE.Group();
+  private hourCircle = new THREE.Group();
+  private zones: Record<ZoneKey, THREE.Mesh>;
+  private zoneKey = '';
+  private eqGrid = new THREE.Group();
+  private ecliptic = new THREE.Group();
+  private galactic = new THREE.Group();
+  private catalog: THREE.Points;
+  private catalogLabels = new THREE.Group();
+  private allLines: THREE.LineSegments;
+  private user = new THREE.Group();
+  private sun = new THREE.Group();
+  private sunPath: Line2 | null = null;
+  private sunKey = '';
+  private selRing: THREE.Sprite;
+  private starMaterial = createStarMaterial();
+  private lastStars: UserStar[] | null = null;
+  private lastFigures: AppState['figures'] | null = null;
+  private userVecs: { id: string; v: THREE.Vector3; mag: number }[] = [];
+  private catalogVecs: THREE.Vector3[] = [];
+  private catalogHidden = new Set<number>();
+  private sunVec = new THREE.Vector3();
+  private readonly view: ViewKind;
+  private readonly R: number;
+
+  constructor(view: ViewKind, R: number) {
+    this.view = view;
+    this.R = R;
+    this.rot.matrixAutoUpdate = false;
+    this.fixed.matrixAutoUpdate = false;
+
+    // --- Đối tượng cố định (bất biến khi quay quanh trục thiên cực) -------------
+    const eqLine = fatLine(decCircle(0, R), COLORS.equator, { width: 2.6 });
+    eqLine.userData.tip = 'equator';
+    this.equator.add(eqLine);
+    const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator });
+    // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
+    eqLabel.position.set(Math.cos(0.436) * R * 1.02, Math.sin(0.436) * R * 1.02, 0);
+    this.equator.add(eqLabel);
+    this.fixed.add(this.equator);
+
+    this.equatorPlane = new THREE.Mesh(new THREE.CircleGeometry(R, 96), translucent(COLORS.equator, 0.09));
+    this.equatorPlane.userData.tip = 'equatorPlane';
+    this.equatorPlane.renderOrder = -1;
+    this.fixed.add(this.equatorPlane);
+
+    const axisLen = R * 1.15;
+    const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 2.4 });
+    axisLine.userData.tip = 'axis';
+    this.axis.add(axisLine);
+    for (const sign of [1, -1]) {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(R * 0.022, 16, 12), new THREE.MeshBasicMaterial({ color: COLORS.axis }));
+      dot.position.set(0, 0, sign * R);
+      dot.userData.tip = sign > 0 ? 'ncp' : 'scp';
+      this.axis.add(dot);
+      const lbl = makeLabel(t(sign > 0 ? 'scene.ncp' : 'scene.scp'), 'poles', { color: '#93c5fd' });
+      lbl.position.set(0, 0, sign * axisLen * 1.04);
+      this.axis.add(lbl);
+    }
+    this.fixed.add(this.axis);
+
+    this.zones = {
+      circumpolar: new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.circumpolar, 0.2)),
+      riseSet: new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.riseSet, 0.14)),
+      neverRise: new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.neverRise, 0.2)),
+    };
+    for (const [k, m] of Object.entries(this.zones)) {
+      m.userData.tip = `zone_${k}`;
+      m.renderOrder = -2;
+      this.fixed.add(m);
+    }
+
+    // --- Đối tượng quay theo bầu trời ------------------------------------------
+    // Vòng giờ 0h: nửa vòng tròn lớn từ thiên cực Bắc qua điểm xuân phân tới thiên cực Nam.
+    const hc: THREE.Vector3[] = [];
+    for (let d = 90; d >= -90; d -= 2) hc.push(eqVec(0, d, R));
+    const hcLine = fatLine(hc, COLORS.hourCircle, { width: 2 });
+    hcLine.userData.tip = 'hourCircle';
+    this.hourCircle.add(hcLine);
+    const hcLabel = makeLabel(t('scene.hourCircle0'), 'circles', { color: '#d4d4d4' });
+    hcLabel.position.copy(eqVec(0, 38, R * 1.03));
+    this.hourCircle.add(hcLabel);
+    const gamma = new THREE.Mesh(new THREE.SphereGeometry(R * 0.018, 12, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+    gamma.position.copy(eqVec(0, 0, R));
+    gamma.userData.tip = 'vernal';
+    this.hourCircle.add(gamma);
+    const gLabel = makeLabel(t('scene.vernal'), 'circles', { color: '#ffffff' });
+    gLabel.position.copy(eqVec(0, -5, R * 1.04));
+    this.hourCircle.add(gLabel);
+    this.rot.add(this.hourCircle);
+
+    this.buildEqGrid();
+    this.buildEcliptic();
+    this.buildGalactic();
+
+    // Danh mục sao sáng
+    const cat = catalogArrays();
+    const n = cat.ra.length;
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const size = new Float32Array(n);
+    const alpha = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const v = eqVec(cat.ra[i], cat.dec[i], R);
+      this.catalogVecs.push(v);
+      pos.set([v.x, v.y, v.z], i * 3);
+      col.set(bvToRgb(cat.bv[i]), i * 3);
+      size[i] = sizeForMagnitude(cat.mag[i]);
+      alpha[i] = Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15));
+    }
+    this.catalog = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.starMaterial);
+    this.catalog.renderOrder = 1;
+    this.rot.add(this.catalog);
+    this.rot.add(this.catalogLabels);
+
+    // Đường nối 88 chòm sao
+    const seg: number[] = [];
+    for (const fig of Object.values(ALL_FIGURES)) {
+      for (const [a, b] of fig.segs) {
+        const sa = fig.stars[a];
+        const sb = fig.stars[b];
+        polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
+      }
+    }
+    this.allLines = thinSegments(seg, '#6b8cc7', 0.32);
+    this.allLines.userData.tip = 'constellationLines';
+    this.rot.add(this.allLines);
+
+    this.rot.add(this.user);
+
+    // Mặt Trời
+    const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(R * 0.045, 24, 16), new THREE.MeshBasicMaterial({ color: COLORS.sun }));
+    sunMesh.userData.tip = 'sun';
+    this.sun.add(sunMesh);
+    const glow = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: glowTexture(), color: '#ffdd66', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    );
+    glow.scale.setScalar(R * 0.3);
+    this.sun.add(glow);
+    const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5] });
+    this.sun.add(sunLabel);
+    this.rot.add(this.sun);
+
+    this.selRing = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture('#ffffff'), depthWrite: false, depthTest: false, sizeAttenuation: false }));
+    this.selRing.scale.setScalar(0.06);
+    this.selRing.renderOrder = 10;
+    this.rot.add(this.selRing);
+  }
+
+  private buildEqGrid(): void {
+    const R = this.R;
+    const seg: number[] = [];
+    for (const d of [-60, -30, 30, 60]) polylineToSegments(decCircle(d, R * 0.999, 120), seg);
+    for (let h = 0; h < 24; h += 2) {
+      const pts: THREE.Vector3[] = [];
+      for (let d = -90; d <= 90; d += 3) pts.push(eqVec(h * 15, d, R * 0.999));
+      polylineToSegments(pts, seg);
+      const lbl = makeLabel(`${h}h`, 'circles', { cls: 'lbl--small', color: '#cbd5e1' });
+      lbl.position.copy(eqVec(h * 15, 3, R * 1.02));
+      this.eqGrid.add(lbl);
+    }
+    const grid = thinSegments(seg, COLORS.grid, 0.45);
+    grid.userData.tip = 'eqGrid';
+    this.eqGrid.add(grid);
+    this.rot.add(this.eqGrid);
+  }
+
+  private buildEcliptic(): void {
+    const R = this.R;
+    const pts: THREE.Vector3[] = [];
+    for (let l = 0; l <= 360; l += 2) {
+      const e = eclipticToEquatorial(l, 0);
+      pts.push(eqVec(e.ra, e.dec, R));
+    }
+    const line = fatLine(pts, COLORS.ecliptic, { width: 2, dashed: true, dashSize: R * 0.05, gapSize: R * 0.03 });
+    line.userData.tip = 'ecliptic';
+    this.ecliptic.add(line);
+    const pos = eclipticToEquatorial(135, 0);
+    const lbl = makeLabel(t('scene.ecliptic'), 'circles', { color: COLORS.ecliptic });
+    lbl.position.copy(eqVec(pos.ra, pos.dec, R * 1.03));
+    this.ecliptic.add(lbl);
+    // Các điểm hạ chí, thu phân, đông chí
+    for (const [l, key] of [
+      [90, 'scene.summerSolstice'],
+      [180, 'scene.autumnEquinox'],
+      [270, 'scene.winterSolstice'],
+    ] as const) {
+      const e = eclipticToEquatorial(l, 0);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(R * 0.014, 10, 8), new THREE.MeshBasicMaterial({ color: COLORS.ecliptic }));
+      dot.position.copy(eqVec(e.ra, e.dec, R));
+      this.ecliptic.add(dot);
+      const l2 = makeLabel(t(key), 'circles', { cls: 'lbl--small', color: COLORS.ecliptic });
+      l2.position.copy(eqVec(e.ra, e.dec, R * 1.04));
+      this.ecliptic.add(l2);
+    }
+    this.rot.add(this.ecliptic);
+  }
+
+  private buildGalactic(): void {
+    const R = this.R;
+    const pts: THREE.Vector3[] = [];
+    for (let l = 0; l <= 360; l += 2) {
+      const e = galacticToEquatorial(l, 0);
+      pts.push(eqVec(e.ra, e.dec, R));
+    }
+    const line = fatLine(pts, COLORS.galactic, { width: 1.8, dashed: true, dashSize: R * 0.02, gapSize: R * 0.025 });
+    line.userData.tip = 'galactic';
+    this.galactic.add(line);
+    const c = galacticToEquatorial(0, 0);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(R * 0.016, 10, 8), new THREE.MeshBasicMaterial({ color: COLORS.galactic }));
+    dot.position.copy(eqVec(c.ra, c.dec, R));
+    dot.userData.tip = 'galacticCenter';
+    this.galactic.add(dot);
+    const lbl = makeLabel(t('scene.galacticCenter'), 'circles', { cls: 'lbl--small', color: COLORS.galactic });
+    lbl.position.copy(eqVec(c.ra, c.dec, R * 1.04));
+    this.galactic.add(lbl);
+    const p = galacticToEquatorial(70, 0);
+    const lbl2 = makeLabel(t('scene.galactic'), 'circles', { color: COLORS.galactic });
+    lbl2.position.copy(eqVec(p.ra, p.dec, R * 1.03));
+    this.galactic.add(lbl2);
+    this.rot.add(this.galactic);
+  }
+
+  private rebuildZones(lat: number): void {
+    const R = this.R * 0.997;
+    const lim = zoneLimits(lat);
+    const c = 90 - Math.abs(lat);
+    const bands: Record<ZoneKey, [number, number]> = {
+      circumpolar: lim.circumpolar,
+      neverRise: lim.neverRise,
+      riseSet: [-c, c],
+    };
+    for (const k of Object.keys(bands) as ZoneKey[]) {
+      const [a, b] = bands[k];
+      const mesh = this.zones[k];
+      mesh.geometry.dispose();
+      mesh.geometry = Math.abs(b - a) < 1e-6 ? new THREE.BufferGeometry() : decBandGeometry(a, b, R);
+      mesh.userData.empty = Math.abs(b - a) < 1e-6;
+    }
+  }
+
+  private rebuildUser(s: AppState): void {
+    for (const child of [...this.user.children]) {
+      this.user.remove(child);
+      if (!(child instanceof THREE.Points)) disposeObject(child);
+      else child.geometry.dispose();
+    }
+    const R = this.R;
+    const stars = s.stars;
+    this.userVecs = [];
+    this.catalogHidden.clear();
+    if (stars.length) {
+      const n = stars.length;
+      const pos = new Float32Array(n * 3);
+      const col = new Float32Array(n * 3);
+      const size = new Float32Array(n);
+      const alpha = new Float32Array(n);
+      const c = new THREE.Color();
+      stars.forEach((st, i) => {
+        const v = eqVec(st.ra, st.dec, R);
+        this.userVecs.push({ id: st.id, v, mag: st.mag });
+        pos.set([v.x, v.y, v.z], i * 3);
+        c.set(st.color);
+        col.set([c.r, c.g, c.b], i * 3);
+        size[i] = st.kind === 'constellation' ? Math.max(4.5, sizeForMagnitude(st.mag) + 2.5) : 9;
+        alpha[i] = 1;
+        const idx = st.hip ? catalogIndexByHip(st.hip) : undefined;
+        if (idx !== undefined) this.catalogHidden.add(idx);
+        if (st.labelled) {
+          const lbl = makeLabel(st.short || st.name.split(' (')[0], 'stars', { color: st.color, cls: 'lbl--star', anchor: [-0.12, 0.5] });
+          lbl.position.copy(v);
+          this.user.add(lbl);
+        }
+      });
+      const pts = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.starMaterial);
+      pts.renderOrder = 3;
+      this.user.add(pts);
+    }
+
+    // Đường nối và tên chòm sao
+    if (s.figures.length) {
+      const seg: number[] = [];
+      const colors: number[] = [];
+      const c = new THREE.Color();
+      const byId = new Map(stars.map((x) => [x.id, x]));
+      for (const fig of s.figures) {
+        c.set(fig.color);
+        const centroid = new THREE.Vector3();
+        let count = 0;
+        for (const id of fig.starIds) {
+          const st = byId.get(id);
+          if (st) {
+            centroid.add(eqVec(st.ra, st.dec));
+            count++;
+          }
+        }
+        for (const [a, b] of fig.segs) {
+          const sa = byId.get(fig.starIds[a]);
+          const sb = byId.get(fig.starIds[b]);
+          if (!sa || !sb) continue;
+          const before = seg.length;
+          polylineToSegments(greatArc(eqVec(sa.ra, sa.dec), eqVec(sb.ra, sb.dec), R, 6), seg);
+          for (let k = before; k < seg.length; k += 3) colors.push(c.r, c.g, c.b);
+        }
+        if (count) {
+          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation' });
+          lbl.position.copy(centroid.normalize().multiplyScalar(R * 1.06));
+          this.user.add(lbl);
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      const lines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.75, depthWrite: false }));
+      lines.renderOrder = 2;
+      lines.userData.tip = 'figure';
+      this.user.add(lines);
+    }
+    this.rebuildCatalogLabels();
+  }
+
+  private rebuildCatalogLabels(): void {
+    for (const child of [...this.catalogLabels.children]) this.catalogLabels.remove(child);
+    const cat = catalogArrays();
+    for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.0; i++) {
+      if (this.catalogHidden.has(i)) continue;
+      const st = getCatalogStar(i);
+      if (!st.shortName) continue;
+      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5] });
+      lbl.position.copy(this.catalogVecs[i]);
+      this.catalogLabels.add(lbl);
+    }
+    // Ẩn điểm danh mục trùng với sao của người dùng để không vẽ chồng.
+    const alpha = this.catalog.geometry.getAttribute('aAlpha') as THREE.BufferAttribute;
+    for (let i = 0; i < cat.ra.length; i++) {
+      alpha.setX(i, this.catalogHidden.has(i) ? 0 : Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15)));
+    }
+    alpha.needsUpdate = true;
+  }
+
+  private updateSun(s: AppState): void {
+    const key = s.sunDate;
+    if (key === this.sunKey) return;
+    this.sunKey = key;
+    const p = sunEquatorial(s);
+    eqVec(p.ra, p.dec, this.R, this.sunVec);
+    this.sun.position.copy(this.sunVec);
+    if (this.sunPath) {
+      this.rot.remove(this.sunPath);
+      disposeObject(this.sunPath);
+    }
+    this.sunPath = fatLine(decCircle(p.dec, this.R * 0.998), COLORS.sun, { width: 1.6, opacity: 0.7, dashed: true, dashSize: this.R * 0.03, gapSize: this.R * 0.03 });
+    this.sunPath.userData.tip = 'sunPath';
+    this.rot.add(this.sunPath);
+  }
+
+  /** Cập nhật theo trạng thái (chỉ dựng lại phần thay đổi). */
+  update(s: AppState): void {
+    const tg = s.toggles;
+    const zk = `${s.lat}`;
+    if (zk !== this.zoneKey) {
+      this.zoneKey = zk;
+      this.rebuildZones(s.lat);
+    }
+    if (s.stars !== this.lastStars || s.figures !== this.lastFigures) {
+      this.lastStars = s.stars;
+      this.lastFigures = s.figures;
+      this.rebuildUser(s);
+    }
+    this.equator.visible = tg.equator;
+    this.equatorPlane.visible = tg.equatorPlane;
+    this.axis.visible = tg.poleAxis;
+    this.hourCircle.visible = tg.hourCircle0;
+    this.zones.circumpolar.visible = tg.zoneCircumpolar && !this.zones.circumpolar.userData.empty;
+    this.zones.riseSet.visible = tg.zoneRiseSet && !this.zones.riseSet.userData.empty;
+    this.zones.neverRise.visible = tg.zoneNeverRise && !this.zones.neverRise.userData.empty;
+    this.eqGrid.visible = tg.eqGrid;
+    this.ecliptic.visible = tg.ecliptic;
+    this.galactic.visible = tg.galactic;
+    this.catalog.visible = tg.catalog;
+    this.catalogLabels.visible = tg.catalog;
+    this.allLines.visible = tg.constellationLines;
+    this.sun.visible = tg.sun;
+    if (tg.sun) this.updateSun(s);
+    if (this.sunPath) this.sunPath.visible = tg.sun;
+
+    // Vòng đánh dấu đối tượng đang chọn
+    const local = this.selectedLocal(s);
+    this.selRing.visible = !!local;
+    if (local) this.selRing.position.copy(local);
+  }
+
+  /** Đặt ma trận theo vĩ độ và LST. */
+  setTime(lat: number, lst: number): void {
+    equatorialMatrix(this.view, lat, lst, this.rot.matrix);
+    hourFrameMatrix(this.view, lat, this.fixed.matrix);
+    this.rot.matrixWorldNeedsUpdate = true;
+    this.fixed.matrixWorldNeedsUpdate = true;
+  }
+
+  private selectedLocal(s: AppState): THREE.Vector3 | null {
+    const sel = s.selected;
+    if (!sel) return null;
+    if (sel.kind === 'user') return this.userVecs.find((u) => u.id === sel.id)?.v ?? null;
+    if (sel.kind === 'catalog') return s.toggles.catalog ? (this.catalogVecs[sel.index] ?? null) : null;
+    return s.toggles.sun ? this.sunVec : null;
+  }
+
+  /** Danh sách đối tượng có thể bấm chọn (tọa độ trong nhóm `rot`). */
+  *pickCandidates(s: AppState): Generator<PickCandidate> {
+    for (const u of this.userVecs) yield { sel: { kind: 'user', id: u.id }, local: u.v, tolerancePx: 12, priority: 2 };
+    if (s.toggles.sun) yield { sel: { kind: 'sun' }, local: this.sunVec, tolerancePx: 16, priority: 3 };
+    if (s.toggles.catalog) {
+      const cat = catalogArrays();
+      for (let i = 0; i < this.catalogVecs.length; i++) {
+        if (this.catalogHidden.has(i)) continue;
+        yield { sel: { kind: 'catalog', index: i }, local: this.catalogVecs[i], tolerancePx: cat.mag[i] < 2 ? 9 : 6, priority: 1 };
+      }
+    }
+  }
+
+  setPixelRatio(pr: number): void {
+    this.starMaterial.uniforms.uPixelRatio.value = pr;
+  }
+
+  /** Làm mờ sao nằm dưới chân trời (chỉ dùng ở khung chân trời). */
+  setBelowDim(f: number): void {
+    this.starMaterial.uniforms.uBelowDim.value = f;
+  }
+
+  /** Các đối tượng hiển thị chú thích khi rê chuột. */
+  hoverTargets(): THREE.Object3D[] {
+    const out: THREE.Object3D[] = [];
+    for (const root of [this.rot, this.fixed]) {
+      root.traverse((o) => {
+        if (o.userData.tip && !(o instanceof THREE.Points)) out.push(o);
+      });
+    }
+    return out;
+  }
+}
+
+let _glow: THREE.Texture | null = null;
+function glowTexture(): THREE.Texture {
+  if (_glow) return _glow;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,240,180,0.9)');
+  g.addColorStop(0.3, 'rgba(255,210,90,0.35)');
+  g.addColorStop(1, 'rgba(255,200,80,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  _glow = new THREE.CanvasTexture(c);
+  return _glow;
+}
