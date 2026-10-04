@@ -4,16 +4,38 @@
 
 import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
-import { equatorialToHorizontal, equatorInclination, fmtDeg, poleAltitude } from '../astro';
+import { equatorialToHorizontal, equatorInclination, fmtDeg, poleAltitude, sunPosition } from '../astro';
 import { t } from '../i18n';
-import { resolveSelection } from '../selection';
-import { lstOf, type AppState } from '../state';
+import { catalogArrays } from '../data/catalog';
+import { sunJd } from '../selection';
+import { lstOf, type AppState, type Selection } from '../state';
 import { horizonFrameMatrix, horVec, type ViewKind } from './frames';
-import { COLORS, fatLine, greatArc, polylineToSegments, sectorGeometry, setFatLinePoints, thinSegments, translucent } from './geom';
+import {
+  COLORS,
+  dynamicFatLine,
+  fatLine,
+  greatArcInto,
+  polylineToSegments,
+  sectorGeometry,
+  thinSegments,
+  translucent,
+  writeFatLine,
+} from './geom';
 import { makeLabel, setLabelText, type Label } from './labels';
+
+/** Số điểm tối đa của các cung động (cung phương vị: 0…360° mỗi 3° → 121 điểm). */
+const MAX_ARC_POINTS = 121;
+const _pts = new Float32Array(MAX_ARC_POINTS * 3);
+const _star = new THREE.Vector3();
+const _foot = new THREE.Vector3();
+const _zen = new THREE.Vector3();
+const _a = new THREE.Vector3();
+const _radec = { ra: 0, dec: 0 };
 
 export class HorizonLayer {
   readonly group = new THREE.Group();
+  /** Nhãn và đích rê chuột của lớp này cố định sau khi dựng (xem SkyLayer.structureVersion). */
+  readonly structureVersion = 0;
   private ring = new THREE.Group();
   private meridian = new THREE.Group();
   private zenith = new THREE.Group();
@@ -34,6 +56,15 @@ export class HorizonLayer {
   private poleArc: Line2;
   private poleLabel: Label;
   private latKey = NaN;
+  /** Khóa của lần dựng đường thẳng đứng gần nhất (đối tượng chọn, h, A làm tròn 0,001°, bật/tắt). */
+  private vKeySel: Selection | undefined = undefined;
+  private vKeyStars: AppState['stars'] | null = null;
+  private vKeyAlt = NaN;
+  private vKeyAz = NaN;
+  private vKeyOn = false;
+  private sunKey = '';
+  private sunRa = 0;
+  private sunDec = 0;
   private readonly view: ViewKind;
   private readonly R: number;
 
@@ -116,11 +147,12 @@ export class HorizonLayer {
     this.group.add(this.grid);
 
     // Đường thẳng đứng qua đối tượng đang chọn + cung độ cao, cung phương vị
-    this.verticalLine = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], COLORS.vertical, { width: 1.6, opacity: 0.85, dashed: true, dashSize: R * 0.03, gapSize: R * 0.02 });
+    const bounds = R * 1.01;
+    this.verticalLine = dynamicFatLine(49, COLORS.vertical, { width: 1.6, opacity: 0.85, dashed: true, dashSize: R * 0.03, gapSize: R * 0.02, boundsRadius: bounds });
     this.verticalLine.userData.tip = 'vertical';
-    this.altArc = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], COLORS.vertical, { width: 4 });
+    this.altArc = dynamicFatLine(46, COLORS.vertical, { width: 4, boundsRadius: bounds });
     this.altArc.userData.tip = 'altitudeArc';
-    this.azArc = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], '#fbbf24', { width: 4 });
+    this.azArc = dynamicFatLine(MAX_ARC_POINTS, '#fbbf24', { width: 4, boundsRadius: bounds });
     this.azArc.userData.tip = 'azimuthArc';
     this.altLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.vertical });
     this.azLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: '#fbbf24', hideBelowHorizon: false });
@@ -132,7 +164,7 @@ export class HorizonLayer {
     // Góc giữa xích đạo trời và chân trời (trong mặt phẳng kinh tuyến)
     this.angleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.angle, 0.28));
     this.angleSector.userData.tip = 'angle';
-    this.angleArc = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], COLORS.angle, { width: 2.4 });
+    this.angleArc = dynamicFatLine(41, COLORS.angle, { width: 2.4, boundsRadius: R * 0.6 });
     this.angleLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.angle, anchor: [-0.04, 0.5] });
     this.angle.add(this.angleSector, this.angleArc, this.angleLabel);
     this.group.add(this.angle);
@@ -140,7 +172,7 @@ export class HorizonLayer {
     // Độ cao thiên cực = vĩ độ
     this.poleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.axis, 0.3));
     this.poleSector.userData.tip = 'poleAltitude';
-    this.poleArc = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], COLORS.axis, { width: 2.4 });
+    this.poleArc = dynamicFatLine(41, COLORS.axis, { width: 2.4, boundsRadius: R * 0.4 });
     this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: '#93c5fd', anchor: [1.04, 0.5] });
     this.poleAlt.add(this.poleSector, this.poleArc, this.poleLabel);
     this.group.add(this.poleAlt);
@@ -158,7 +190,7 @@ export class HorizonLayer {
     const to = horVec(incl, baseAz, 1);
     this.angleSector.geometry.dispose();
     this.angleSector.geometry = sectorGeometry(from, to, r);
-    setFatLinePoints(this.angleArc, greatArc(from, to, r, 40));
+    writeFatLine(this.angleArc, _pts, greatArcInto(from, to, r, 40, _pts));
     this.angleLabel.position.copy(horVec(incl * 0.6, baseAz, r * 1.08));
     setLabelText(this.angleLabel, `90° − |φ| = ${fmtDeg(incl)}`);
 
@@ -169,7 +201,8 @@ export class HorizonLayer {
     const pt = horVec(pAlt, pAz, 1);
     this.poleSector.geometry.dispose();
     this.poleSector.geometry = pAlt < 0.01 ? new THREE.BufferGeometry() : sectorGeometry(pf, pt, rp);
-    setFatLinePoints(this.poleArc, pAlt < 0.01 ? [pf.clone().multiplyScalar(rp), pf.clone().multiplyScalar(rp * 1.001)] : greatArc(pf, pt, rp, 40));
+    if (pAlt < 0.01) writeFatLine(this.poleArc, _pts, greatArcInto(pf, pf, rp, 1, _pts));
+    else writeFatLine(this.poleArc, _pts, greatArcInto(pf, pt, rp, 40, _pts));
     this.poleLabel.position.copy(horVec(Math.max(pAlt * 0.6, 4), pAz, rp * 1.08));
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
@@ -192,29 +225,84 @@ export class HorizonLayer {
     this.updateVertical(s);
   }
 
+  /**
+   * (α, δ) của đối tượng đang chọn, không cấp phát (khác resolveSelection: không dựng tên/mô tả).
+   * Trả về null nếu không có đối tượng hợp lệ.
+   */
+  private selectedRaDec(s: AppState): { ra: number; dec: number } | null {
+    const sel = s.selected;
+    if (!sel) return null;
+    if (sel.kind === 'user') {
+      const stars = s.stars;
+      for (let i = 0; i < stars.length; i++) {
+        if (stars[i].id === sel.id) {
+          _radec.ra = stars[i].ra;
+          _radec.dec = stars[i].dec;
+          return _radec;
+        }
+      }
+      return null;
+    }
+    if (sel.kind === 'catalog') {
+      const cat = catalogArrays();
+      if (sel.index < 0 || sel.index >= cat.ra.length) return null;
+      _radec.ra = cat.ra[sel.index];
+      _radec.dec = cat.dec[sel.index];
+      return _radec;
+    }
+    if (!s.toggles.sun) return null;
+    if (s.sunDate !== this.sunKey) {
+      this.sunKey = s.sunDate;
+      const p = sunPosition(sunJd(s.sunDate));
+      this.sunRa = p.ra;
+      this.sunDec = p.dec;
+    }
+    _radec.ra = this.sunRa;
+    _radec.dec = this.sunDec;
+    return _radec;
+  }
+
   /** Cập nhật đường thẳng đứng theo vị trí hiện tại của đối tượng đang chọn. */
   updateVertical(s: AppState): void {
-    const obj = s.toggles.verticalCircle ? resolveSelection(s) : null;
+    const on = s.toggles.verticalCircle;
+    const obj = on ? this.selectedRaDec(s) : null;
     this.vertical.visible = !!obj;
-    if (!obj) return;
-    const R = this.R;
+    if (!obj) {
+      this.vKeyOn = false;
+      return;
+    }
     const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lstOf(s));
-    const star = horVec(alt, az, 1);
-    const foot = horVec(0, az, 1);
-    const zen = new THREE.Vector3(0, alt >= 0 ? 1 : -1, 0);
+    // Bỏ qua khi không có gì đổi đáng kể (0,001°): selection, danh sách sao, h, A, bật/tắt.
+    const altK = Math.round(alt * 1000);
+    const azK = Math.round(az * 1000);
+    if (this.vKeyOn && s.selected === this.vKeySel && s.stars === this.vKeyStars && altK === this.vKeyAlt && azK === this.vKeyAz) return;
+    this.vKeyOn = true;
+    this.vKeySel = s.selected;
+    this.vKeyStars = s.stars;
+    this.vKeyAlt = altK;
+    this.vKeyAz = azK;
+
+    const R = this.R;
+    const star = horVec(alt, az, 1, _star);
+    const foot = horVec(0, az, 1, _foot);
+    const zen = _zen.set(0, alt >= 0 ? 1 : -1, 0);
     // Cung từ thiên đỉnh (hoặc thiên để) qua sao tới chân trời
-    setFatLinePoints(this.verticalLine, greatArc(zen, foot, R * 1.001, 48));
+    writeFatLine(this.verticalLine, _pts, greatArcInto(zen, foot, R * 1.001, 48, _pts));
     // Cung độ cao h (từ chân trời đến sao)
-    setFatLinePoints(this.altArc, greatArc(foot, star, R * 1.002, Math.max(4, Math.ceil(Math.abs(alt) / 2))));
-    this.altLabel.position.copy(horVec(alt / 2, az + 4, R * 1.04));
+    writeFatLine(this.altArc, _pts, greatArcInto(foot, star, R * 1.002, Math.max(4, Math.ceil(Math.abs(alt) / 2)), _pts));
+    horVec(alt / 2, az + 4, R * 1.04, this.altLabel.position);
     setLabelText(this.altLabel, `h = ${fmtDeg(alt, 1)}`);
     // Cung phương vị A (dọc chân trời, từ Bắc qua Đông)
-    const azPts: THREE.Vector3[] = [];
     const rr = this.view === 'horizon' ? R * 0.35 : R * 1.003;
-    const steps = Math.max(2, Math.ceil(az / 3));
-    for (let i = 0; i <= steps; i++) azPts.push(horVec(0, (az * i) / steps, rr));
-    setFatLinePoints(this.azArc, azPts);
-    this.azLabel.position.copy(horVec(0, az / 2, rr * (this.view === 'horizon' ? 1.25 : 1.05)));
+    const steps = Math.min(MAX_ARC_POINTS - 1, Math.max(2, Math.ceil(az / 3)));
+    for (let i = 0; i <= steps; i++) {
+      horVec(0, (az * i) / steps, rr, _a);
+      _pts[i * 3] = _a.x;
+      _pts[i * 3 + 1] = _a.y;
+      _pts[i * 3 + 2] = _a.z;
+    }
+    writeFatLine(this.azArc, _pts, steps + 1);
+    horVec(0, az / 2, rr * (this.view === 'horizon' ? 1.25 : 1.05), this.azLabel.position);
     setLabelText(this.azLabel, `A = ${fmtDeg(az, 1)}`);
   }
 

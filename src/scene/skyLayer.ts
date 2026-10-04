@@ -3,9 +3,9 @@
 
 import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
-import { eclipticToEquatorial, galacticToEquatorial, zoneLimits } from '../astro';
+import { cosD, eclipticToEquatorial, galacticToEquatorial, sinD, zoneLimits } from '../astro';
 import { bvToRgb, catalogArrays, catalogIndexByHip, getCatalogStar } from '../data/catalog';
-import { ALL_FIGURES } from '../data/constellations';
+import { loadAllFigures, type FigureMap } from '../data/constellations';
 import { t } from '../i18n';
 import { sunEquatorial } from '../selection';
 import type { AppState, Selection, UserStar } from '../state';
@@ -15,22 +15,17 @@ import {
   decBandGeometry,
   decCircle,
   disposeObject,
+  dynamicFatLine,
   fatLine,
   greatArc,
   polylineToSegments,
   ringTexture,
   thinSegments,
   translucent,
+  writeFatLine,
 } from './geom';
 import { makeLabel } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
-
-export interface PickCandidate {
-  sel: NonNullable<Selection>;
-  local: THREE.Vector3;
-  tolerancePx: number;
-  priority: number;
-}
 
 type ZoneKey = 'circumpolar' | 'riseSet' | 'neverRise';
 
@@ -39,6 +34,11 @@ export class SkyLayer {
   readonly rot = new THREE.Group();
   /** Nhóm cố định (hệ góc giờ) — chứa các đối tượng bất biến khi bầu trời quay. */
   readonly fixed = new THREE.Group();
+  /**
+   * Tăng mỗi khi thêm/bớt nhãn hoặc đối tượng có chú thích (tip) trong lớp này.
+   * Khung nhìn dùng nó để giữ sẵn danh sách nhãn và đích rê chuột thay vì duyệt cả cảnh mỗi khung hình.
+   */
+  structureVersion = 0;
 
   private equator = new THREE.Group();
   private equatorPlane: THREE.Mesh;
@@ -51,10 +51,16 @@ export class SkyLayer {
   private galactic = new THREE.Group();
   private catalog: THREE.Points;
   private catalogLabels = new THREE.Group();
-  private allLines: THREE.LineSegments;
+  /** Đường nối 88 chòm sao — dựng khi bật lần đầu (dữ liệu tải động). */
+  private allLines: THREE.LineSegments | null = null;
+  private allLinesRequested = false;
+  private lastLinesOn = false;
+  /** Gọi khi một phần cảnh thay đổi bất đồng bộ (dữ liệu tải động tới) để khung nhìn vẽ lại. */
+  onAsyncChange: (() => void) | null = null;
   private user = new THREE.Group();
   private sun = new THREE.Group();
-  private sunPath: Line2 | null = null;
+  private sunPath: Line2;
+  private sunPathPts = new Float32Array(181 * 3);
   private sunKey = '';
   private selRing: THREE.Sprite;
   private starMaterial = createStarMaterial();
@@ -63,6 +69,8 @@ export class SkyLayer {
   private userVecs: { id: string; v: THREE.Vector3; mag: number }[] = [];
   private catalogVecs: THREE.Vector3[] = [];
   private catalogHidden = new Set<number>();
+  /** Số sao danh mục được vẽ/chọn (danh mục đã sắp theo cấp sao tăng dần). */
+  private catalogDrawCount = 0;
   private sunVec = new THREE.Vector3();
   private readonly view: ViewKind;
   private readonly R: number;
@@ -152,23 +160,12 @@ export class SkyLayer {
       size[i] = sizeForMagnitude(cat.mag[i]);
       alpha[i] = Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15));
     }
+    this.catalogDrawCount = n;
     this.catalog = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.starMaterial);
     this.catalog.renderOrder = 1;
     this.rot.add(this.catalog);
     this.rot.add(this.catalogLabels);
 
-    // Đường nối 88 chòm sao
-    const seg: number[] = [];
-    for (const fig of Object.values(ALL_FIGURES)) {
-      for (const [a, b] of fig.segs) {
-        const sa = fig.stars[a];
-        const sb = fig.stars[b];
-        polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
-      }
-    }
-    this.allLines = thinSegments(seg, '#6b8cc7', 0.32);
-    this.allLines.userData.tip = 'constellationLines';
-    this.rot.add(this.allLines);
 
     this.rot.add(this.user);
 
@@ -184,11 +181,32 @@ export class SkyLayer {
     const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5] });
     this.sun.add(sunLabel);
     this.rot.add(this.sun);
+    // Đường đi trong ngày của Mặt Trời: hình học cấp phát một lần, ghi lại khi đổi ngày.
+    this.sunPath = dynamicFatLine(181, COLORS.sun, { width: 1.6, opacity: 0.7, dashed: true, dashSize: R * 0.03, gapSize: R * 0.03, boundsRadius: R });
+    this.sunPath.userData.tip = 'sunPath';
+    this.rot.add(this.sunPath);
 
     this.selRing = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture('#ffffff'), depthWrite: false, depthTest: false, sizeAttenuation: false }));
     this.selRing.scale.setScalar(0.06);
     this.selRing.renderOrder = 10;
     this.rot.add(this.selRing);
+  }
+
+  private buildAllLines(figs: FigureMap): void {
+    const R = this.R;
+    const seg: number[] = [];
+    for (const fig of Object.values(figs)) {
+      for (const [a, b] of fig.segs) {
+        const sa = fig.stars[a];
+        const sb = fig.stars[b];
+        polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
+      }
+    }
+    const lines = thinSegments(seg, '#6b8cc7', 0.32);
+    lines.userData.tip = 'constellationLines';
+    this.allLines = lines;
+    this.rot.add(lines);
+    this.structureVersion++;
   }
 
   private buildEqGrid(): void {
@@ -284,6 +302,7 @@ export class SkyLayer {
   }
 
   private rebuildUser(s: AppState): void {
+    this.structureVersion++;
     for (const child of [...this.user.children]) {
       this.user.remove(child);
       if (!(child instanceof THREE.Points)) disposeObject(child);
@@ -364,6 +383,7 @@ export class SkyLayer {
   }
 
   private rebuildCatalogLabels(): void {
+    this.structureVersion++;
     for (const child of [...this.catalogLabels.children]) this.catalogLabels.remove(child);
     const cat = catalogArrays();
     for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.0; i++) {
@@ -389,13 +409,18 @@ export class SkyLayer {
     const p = sunEquatorial(s);
     eqVec(p.ra, p.dec, this.R, this.sunVec);
     this.sun.position.copy(this.sunVec);
-    if (this.sunPath) {
-      this.rot.remove(this.sunPath);
-      disposeObject(this.sunPath);
+    // Vòng xích vĩ δ☉ (181 điểm, như decCircle) ghi tại chỗ.
+    const r = this.R * 0.998;
+    const cd = cosD(p.dec) * r;
+    const z = sinD(p.dec) * r;
+    const a = this.sunPathPts;
+    for (let i = 0; i <= 180; i++) {
+      const ang = i * 2;
+      a[i * 3] = cd * cosD(ang);
+      a[i * 3 + 1] = cd * sinD(ang);
+      a[i * 3 + 2] = z;
     }
-    this.sunPath = fatLine(decCircle(p.dec, this.R * 0.998), COLORS.sun, { width: 1.6, opacity: 0.7, dashed: true, dashSize: this.R * 0.03, gapSize: this.R * 0.03 });
-    this.sunPath.userData.tip = 'sunPath';
-    this.rot.add(this.sunPath);
+    writeFatLine(this.sunPath, a, 181);
   }
 
   /** Cập nhật theo trạng thái (chỉ dựng lại phần thay đổi). */
@@ -423,10 +448,25 @@ export class SkyLayer {
     this.galactic.visible = tg.galactic;
     this.catalog.visible = tg.catalog;
     this.catalogLabels.visible = tg.catalog;
-    this.allLines.visible = tg.constellationLines;
+    if (tg.constellationLines && !this.allLinesRequested) {
+      this.allLinesRequested = true;
+      loadAllFigures().then(
+        (figs) => {
+          this.buildAllLines(figs);
+          this.allLines!.visible = this.lastLinesOn;
+          this.onAsyncChange?.();
+        },
+        (err) => {
+          console.error(err);
+          this.allLinesRequested = false;
+        },
+      );
+    }
+    this.lastLinesOn = tg.constellationLines;
+    if (this.allLines) this.allLines.visible = tg.constellationLines;
     this.sun.visible = tg.sun;
     if (tg.sun) this.updateSun(s);
-    if (this.sunPath) this.sunPath.visible = tg.sun;
+    this.sunPath.visible = tg.sun;
 
     // Vòng đánh dấu đối tượng đang chọn
     const local = this.selectedLocal(s);
@@ -450,17 +490,62 @@ export class SkyLayer {
     return s.toggles.sun ? this.sunVec : null;
   }
 
-  /** Danh sách đối tượng có thể bấm chọn (tọa độ trong nhóm `rot`). */
-  *pickCandidates(s: AppState): Generator<PickCandidate> {
-    for (const u of this.userVecs) yield { sel: { kind: 'user', id: u.id }, local: u.v, tolerancePx: 12, priority: 2 };
-    if (s.toggles.sun) yield { sel: { kind: 'sun' }, local: this.sunVec, tolerancePx: 16, priority: 3 };
-    if (s.toggles.catalog) {
-      const cat = catalogArrays();
-      for (let i = 0; i < this.catalogVecs.length; i++) {
-        if (this.catalogHidden.has(i)) continue;
-        yield { sel: { kind: 'catalog', index: i }, local: this.catalogVecs[i], tolerancePx: cat.mag[i] < 2 ? 9 : 6, priority: 1 };
+  /**
+   * Tìm đối tượng chọn được có điểm số nhỏ nhất. `score(local, tolerancePx, priority)` trả về điểm
+   * (Infinity = loại). Chỉ tạo đối tượng Selection cho kết quả thắng — không cấp phát cho từng sao.
+   * Sao danh mục bị giới hạn theo cấp sao của chất lượng thích ứng (catalogDrawCount).
+   */
+  pickBest(s: AppState, score: (local: THREE.Vector3, tolerancePx: number, priority: number) => number): NonNullable<Selection> | null {
+    let best = Infinity;
+    let kind: 'user' | 'sun' | 'catalog' | null = null;
+    let which = -1;
+    for (let i = 0; i < this.userVecs.length; i++) {
+      const sc = score(this.userVecs[i].v, 12, 2);
+      if (sc < best) {
+        best = sc;
+        kind = 'user';
+        which = i;
       }
     }
+    if (s.toggles.sun) {
+      const sc = score(this.sunVec, 16, 3);
+      if (sc < best) {
+        best = sc;
+        kind = 'sun';
+      }
+    }
+    if (s.toggles.catalog) {
+      const mag = catalogArrays().mag;
+      for (let i = 0; i < this.catalogDrawCount; i++) {
+        if (this.catalogHidden.has(i)) continue;
+        const sc = score(this.catalogVecs[i], mag[i] < 2 ? 9 : 6, 1);
+        if (sc < best) {
+          best = sc;
+          kind = 'catalog';
+          which = i;
+        }
+      }
+    }
+    if (kind === 'user') return { kind: 'user', id: this.userVecs[which].id };
+    if (kind === 'sun') return { kind: 'sun' };
+    if (kind === 'catalog') return { kind: 'catalog', index: which };
+    return null;
+  }
+
+  /**
+   * Chỉ vẽ (và cho chọn) sao danh mục có cấp ≤ `limit`; null = tất cả.
+   * Danh mục được sắp theo cấp sao tăng dần (xem catalog.test.ts) nên chỉ cần đặt drawRange.
+   */
+  setCatalogMagLimit(limit: number | null): void {
+    const mag = catalogArrays().mag;
+    let n = mag.length;
+    if (limit !== null) {
+      n = 0;
+      while (n < mag.length && mag[n] <= limit) n++;
+    }
+    if (n === this.catalogDrawCount) return;
+    this.catalogDrawCount = n;
+    this.catalog.geometry.setDrawRange(0, n);
   }
 
   setPixelRatio(pr: number): void {

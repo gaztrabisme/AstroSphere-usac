@@ -1,6 +1,9 @@
 // Mẫu chòm sao (đường nối từ d3-celestial) với tên tiếng Việt.
+//
+// Gói khởi động chỉ chứa hình của 16 mẫu (TEMPLATE_FIGURES, ~7 KB). Đủ 88 chòm sao (~29 KB) được
+// tải động bằng loadAllFigures() khi người dùng bật "Đường nối 88 chòm sao".
 
-import raw from './generated/constellations.json';
+import templateRaw from './generated/constellation-templates.json';
 
 export interface ConstellationFigure {
   /** [α (độ), δ (độ), cấp sao, HIP (0 nếu không khớp)] */
@@ -9,7 +12,18 @@ export interface ConstellationFigure {
   segs: [number, number][];
 }
 
-export const ALL_FIGURES = raw as unknown as Record<string, ConstellationFigure>;
+export type FigureMap = Record<string, ConstellationFigure>;
+
+/** Hình của các mẫu trong TEMPLATES (nạp sẵn). */
+export const TEMPLATE_FIGURES = templateRaw as unknown as FigureMap;
+
+let allFigures: Promise<FigureMap> | null = null;
+
+/** Tải hình của đủ 88 chòm sao (một lần, dùng chung). */
+export function loadAllFigures(): Promise<FigureMap> {
+  allFigures ??= import('./generated/constellations.json').then((m) => m.default as unknown as FigureMap);
+  return allFigures;
+}
 
 export interface ConstellationTemplate {
   id: string;

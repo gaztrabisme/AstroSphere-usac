@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { Line2 } from 'three/addons/lines/Line2.js';
+import type { QualitySettings, QualityTarget } from '../runtime/quality';
 import { lstOf, type AppState, type Selection, type Store } from '../state';
 import type { ViewKind } from './frames';
 import { HorizonLayer } from './horizonLayer';
@@ -21,8 +22,10 @@ export interface HoverInfo {
 
 const _v = new THREE.Vector3();
 const _p = new THREE.Vector3();
+const _ndc = new THREE.Vector2();
+const _local = { x: 0, y: 0 };
 
-export abstract class View {
+export abstract class View implements QualityTarget {
   readonly renderer: THREE.WebGLRenderer;
   readonly labelRenderer: CSS2DRenderer;
   readonly scene = new THREE.Scene();
@@ -33,10 +36,22 @@ export abstract class View {
   readonly trails: TrailLayer;
   readonly R = SKY_RADIUS;
   dirty = true;
+  /** Khung nhìn nằm trong vùng hiển thị của trang (IntersectionObserver). */
+  onScreen = true;
+  /** Tạm dừng vẽ riêng khung nhìn này. */
+  suspended = false;
+  /** Trần tỉ lệ điểm ảnh do chất lượng thích ứng đặt. */
+  private pixelRatioCap = 2;
+  private dprQuery: MediaQueryList | null = null;
   protected raycaster = new THREE.Raycaster();
   private defaultCamera: THREE.Vector3;
   private width = 0;
   private height = 0;
+  /** Danh sách nhãn CSS2D giữ sẵn; dựng lại khi structureVersion() đổi. */
+  private labelList: Label[] = [];
+  private labelKey = -1;
+  private hoverList: THREE.Object3D[] = [];
+  private hoverKey = -1;
   readonly container: HTMLElement;
   readonly kind: ViewKind;
   protected store: Store;
@@ -48,7 +63,7 @@ export abstract class View {
     this.defaultCamera = defaultCamera.clone();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.targetPixelRatio());
     this.renderer.localClippingEnabled = false;
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     container.appendChild(this.renderer.domElement);
@@ -68,9 +83,12 @@ export abstract class View {
     this.controls.maxDistance = this.R * 7;
     this.controls.rotateSpeed = 0.7;
     this.controls.addEventListener('change', () => (this.dirty = true));
+    this.raycaster.params.Line = { threshold: this.R * 0.012 };
+    (this.raycaster.params as unknown as Record<string, unknown>).Line2 = { threshold: 5 };
 
     this.sky = new SkyLayer(kind, this.R);
     this.sky.setPixelRatio(this.renderer.getPixelRatio());
+    this.sky.onAsyncChange = () => (this.dirty = true);
     this.horizon = new HorizonLayer(kind, this.R);
     this.trails = new TrailLayer(this.R);
     // Vết sao nằm trong nhóm quay cùng bầu trời (xem trails.ts)
@@ -78,13 +96,60 @@ export abstract class View {
     this.scene.add(this.sky.fixed, this.sky.rot, this.horizon.group);
 
     new ResizeObserver(() => this.resize()).observe(container);
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver((entries) => {
+        const e = entries[entries.length - 1];
+        const on = e.isIntersecting;
+        if (on && !this.onScreen) this.dirty = true;
+        this.onScreen = on;
+      }).observe(container);
+    }
+    this.watchDevicePixelRatio();
     this.resize();
+  }
+
+  private targetPixelRatio(): number {
+    return Math.min(window.devicePixelRatio || 1, this.pixelRatioCap);
+  }
+
+  /** Theo dõi thay đổi devicePixelRatio (kéo cửa sổ sang màn hình khác, phóng to trang). */
+  private watchDevicePixelRatio(): void {
+    if (typeof window.matchMedia !== 'function') return;
+    const onChange = () => {
+      this.dprQuery?.removeEventListener('change', onChange);
+      this.setPixelRatio(this.targetPixelRatio());
+      this.dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+      this.dprQuery.addEventListener('change', onChange);
+    };
+    this.dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    this.dprQuery.addEventListener('change', onChange);
+  }
+
+  /** Đặt tỉ lệ điểm ảnh cho renderer và kích thước điểm sao. */
+  setPixelRatio(pr: number): void {
+    if (pr === this.renderer.getPixelRatio()) return;
+    this.renderer.setPixelRatio(pr);
+    this.sky.setPixelRatio(pr);
+    this.dirty = true;
+  }
+
+  /** QualityTarget: trần tỉ lệ điểm ảnh và giới hạn cấp sao của danh mục. */
+  setQuality(q: QualitySettings): void {
+    this.pixelRatioCap = q.pixelRatioCap;
+    this.setPixelRatio(this.targetPixelRatio());
+    this.sky.setCatalogMagLimit(q.catalogMagLimit);
+    this.dirty = true;
   }
 
   resize(): void {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
-    if (w === 0 || h === 0) return;
+    if (w === 0 || h === 0) {
+      // Khung nhìn bị ẩn (vd. tab còn lại trên điện thoại): ghi nhận kích thước 0 để ngừng vẽ.
+      this.width = 0;
+      this.height = 0;
+      return;
+    }
     if (w === this.width && h === this.height) return;
     this.width = w;
     this.height = h;
@@ -125,33 +190,53 @@ export abstract class View {
     return false;
   }
 
-  /** Gọi mỗi khung hình từ vòng lặp chính. */
-  frame(): void {
+  /** Gọi mỗi khung hình từ vòng lặp chính. Trả về true nếu đã vẽ. */
+  frame(): boolean {
     this.controls.update();
-    if (!this.dirty || this.width === 0) return;
+    if (!this.dirty || this.width === 0 || this.height === 0 || !this.onScreen || this.suspended) return false;
     const s = this.store.state;
     this.scene.updateMatrixWorld();
     this.updateLabels(s);
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     this.dirty = false;
+    return true;
+  }
+
+  /**
+   * Phiên bản cấu trúc của cảnh (thêm/bớt nhãn hoặc đích rê chuột). Các lớp con thêm đối tượng
+   * sau khi dựng phải cộng phần của mình vào đây.
+   */
+  protected structureVersion(): number {
+    return this.sky.structureVersion + this.horizon.structureVersion;
   }
 
   private updateLabels(s: AppState): void {
+    const version = this.structureVersion();
+    if (version !== this.labelKey) {
+      this.labelKey = version;
+      const list = this.labelList;
+      list.length = 0;
+      this.scene.traverse((o) => {
+        if (o instanceof CSS2DObject) list.push(o as Label);
+      });
+    }
     const lt = s.labels;
     const clip = this.clipBelow(s);
-    this.scene.traverse((o) => {
-      if (!(o instanceof CSS2DObject)) return;
-      const lbl = o as Label;
-      const g = lbl.userData.group;
-      let vis = lt.all && lt[g];
+    const list = this.labelList;
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      // Nhóm cha bị ẩn: CSS2DRenderer tự ẩn cả nhánh, không cần tính vị trí/che khuất.
+      if (!ancestorsVisible(lbl)) continue;
+      let vis = lt.all && lt[lbl.userData.group];
       if (vis) {
-        lbl.getWorldPosition(_v);
+        // matrixWorld đã cập nhật trong frame() (scene.updateMatrixWorld) — không gọi getWorldPosition.
+        _v.setFromMatrixPosition(lbl.matrixWorld);
         if (clip && lbl.userData.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
         else if (this.isOccluded(_v)) vis = false;
       }
       lbl.visible = vis;
-    });
+    }
   }
 
   resetCamera(): void {
@@ -163,7 +248,9 @@ export abstract class View {
 
   private toLocal(clientX: number, clientY: number): { x: number; y: number } {
     const r = this.renderer.domElement.getBoundingClientRect();
-    return { x: clientX - r.left, y: clientY - r.top };
+    _local.x = clientX - r.left;
+    _local.y = clientY - r.top;
+    return _local;
   }
 
   /** Tìm sao / Mặt Trời gần vị trí con trỏ nhất (theo pixel trên màn hình). */
@@ -173,25 +260,21 @@ export abstract class View {
     this.scene.updateMatrixWorld();
     const m = this.sky.rot.matrixWorld;
     const clip = this.clipBelow(s);
-    let best: NonNullable<Selection> | null = null;
-    let bestScore = Infinity;
-    for (const c of this.sky.pickCandidates(s)) {
-      _v.copy(c.local).applyMatrix4(m);
-      if (clip && _v.y < -0.02 * this.R) continue;
-      if (this.isOccluded(_v)) continue;
+    const w = this.width;
+    const h = this.height;
+    return this.sky.pickBest(s, (local, tolerancePx, priority) => {
+      _v.copy(local).applyMatrix4(m);
+      if (clip && _v.y < -0.02 * this.R) return Infinity;
       _p.copy(_v).project(this.camera);
-      if (_p.z > 1) continue;
-      const sx = ((_p.x + 1) / 2) * this.width;
-      const sy = ((1 - _p.y) / 2) * this.height;
+      if (_p.z > 1) return Infinity;
+      const sx = ((_p.x + 1) / 2) * w;
+      const sy = ((1 - _p.y) / 2) * h;
       const d = Math.hypot(sx - x, sy - y);
-      if (d > c.tolerancePx) continue;
-      const score = d - c.priority * 3;
-      if (score < bestScore) {
-        bestScore = score;
-        best = c.sel;
-      }
-    }
-    return best;
+      if (d > tolerancePx) return Infinity;
+      // Kiểm tra che khuất sau cùng (tốn nhất) — chỉ cho điểm đã nằm gần con trỏ.
+      if (this.isOccluded(_v)) return Infinity;
+      return d - priority * 3;
+    });
   }
 
   /** Đối tượng dưới con trỏ: ưu tiên sao, sau đó tới các đường/mặt có chú thích. */
@@ -200,12 +283,15 @@ export abstract class View {
     if (sel) return { kind: 'object', sel };
     const s = this.store.state;
     const { x, y } = this.toLocal(clientX, clientY);
-    const ndc = new THREE.Vector2((x / this.width) * 2 - 1, -(y / this.height) * 2 + 1);
-    this.raycaster.setFromCamera(ndc, this.camera);
-    this.raycaster.params.Line = { threshold: this.R * 0.012 };
-    (this.raycaster.params as unknown as Record<string, unknown>).Line2 = { threshold: 5 };
+    _ndc.set((x / this.width) * 2 - 1, -(y / this.height) * 2 + 1);
+    this.raycaster.setFromCamera(_ndc, this.camera);
+    const version = this.structureVersion();
+    if (version !== this.hoverKey) {
+      this.hoverKey = version;
+      this.hoverList = this.hoverTargets();
+    }
     const clip = this.clipBelow(s);
-    const hits = this.raycaster.intersectObjects(this.hoverTargets(), false).filter((h) => {
+    const hits = this.raycaster.intersectObjects(this.hoverList, false).filter((h) => {
       if (!isShown(h.object)) return false;
       if (clip && h.point.y < -0.02 * this.R && h.object.userData.tip !== 'ground') return false;
       return true;
@@ -219,6 +305,15 @@ export abstract class View {
   protected hoverTargets(): THREE.Object3D[] {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
+}
+
+function ancestorsVisible(o: THREE.Object3D): boolean {
+  let p = o.parent;
+  while (p) {
+    if (!p.visible) return false;
+    p = p.parent;
+  }
+  return true;
 }
 
 function isShown(o: THREE.Object3D | null): boolean {

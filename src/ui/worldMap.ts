@@ -1,7 +1,7 @@
 // Bản đồ thế giới (phép chiếu trụ đều) để bấm/kéo chọn vị trí quan sát. Dữ liệu nội bộ, không cần mạng.
 
 import { fmtLat, fmtLon } from '../astro';
-import { drawLand } from '../data/land';
+import { drawLand, landRings, loadLand } from '../data/land';
 import { VN_PLACES } from '../data/places';
 import { t } from '../i18n';
 import { h } from './dom';
@@ -26,6 +26,16 @@ export class WorldMap {
     });
     this.el = h('div', { class: 'worldmap' }, this.canvas);
     this.base = this.renderBase();
+    // Lục địa tải động: vẽ biển + lưới trước, vẽ lại nền khi dữ liệu tới.
+    if (!landRings()) {
+      loadLand().then(
+        () => {
+          this.base = this.renderBase();
+          this.draw(this.lat, this.lon);
+        },
+        (err) => console.error(err),
+      );
+    }
 
     const pick = (e: PointerEvent) => {
       const r = this.canvas.getBoundingClientRect();
