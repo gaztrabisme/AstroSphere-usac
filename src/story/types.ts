@@ -24,6 +24,8 @@ export interface StoryHost {
 export interface StoryHandle {
   /** Hiện màn hình mở đầu nếu là lần đầu ghé thăm. */
   maybeShowHero(): void;
+  /** Hiện lại màn hình mở đầu theo yêu cầu (vd. từ hộp thoại Giới thiệu). */
+  showHero(): void;
   /** Mở hành trình (tùy chọn: từ chương nào, 0-based). */
   open(chapter?: number): void;
   isOpen(): boolean;
