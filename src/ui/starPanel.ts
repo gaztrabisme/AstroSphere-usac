@@ -2,7 +2,7 @@
 
 import { fmtNum, parseDegrees, parseHours } from '../astro';
 import { catalogCount, catalogMagLimit } from '../data/catalog';
-import { TEMPLATES } from '../data/constellations';
+import { templateDescription, TEMPLATES } from '../data/constellations';
 import { t } from '../i18n';
 import { MAX_USER_STARS, type Actions, type Store, type TrailMode } from '../state';
 import { button, checkbox, clear, fieldset, h, newId } from './dom';
@@ -18,12 +18,12 @@ export function starPanel(store: Store, actions: Actions): HTMLElement {
   const tplSelect = h(
     'select',
     { id: 'tpl-select', 'aria-label': t('panel.stars.templateAria') },
-    ...TEMPLATES.map((tp) => h('option', { value: tp.id, text: `${tp.name} (${tp.alias})` })),
+    ...TEMPLATES.map((tp) => h('option', { value: tp.id, text: tp.name })),
   );
   const tplNote = h('p', { class: 'hint' });
   const updateNote = () => {
     const tp = TEMPLATES.find((x) => x.id === tplSelect.value);
-    tplNote.textContent = tp ? tp.note : '';
+    tplNote.textContent = tp ? templateDescription(tp) : '';
   };
   tplSelect.addEventListener('change', updateNote);
   updateNote();
