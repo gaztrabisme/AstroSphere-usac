@@ -104,6 +104,8 @@ export const TRAIL_LENGTH_DEG: Record<TrailMode, number> = { none: 0, short: 45,
 export const RATE_MIN = 5;
 export const RATE_MAX = 60;
 export const MAX_USER_STARS = 400;
+/** Số Hipparcos của Polaris (α UMi). */
+export const POLARIS_HIP = 11767;
 
 export const DEFAULT_TOGGLES: Toggles = {
   hourCircle0: true,
@@ -242,7 +244,8 @@ export function createInitialState(): AppState {
       base.figures.push(c.figure);
     }
   }
-  const polaris = base.stars.find((x) => x.name.startsWith('Sao Bắc Cực'));
+  // Cảnh mở đầu chọn sẵn Polaris (HIP 11767) — tìm theo số Hipparcos, không theo tên hiển thị.
+  const polaris = base.stars.find((x) => x.hip === POLARIS_HIP);
   if (polaris) base.selected = { kind: 'user', id: polaris.id };
   return base;
 }
