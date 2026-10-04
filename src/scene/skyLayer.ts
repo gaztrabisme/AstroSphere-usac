@@ -27,13 +27,6 @@ import {
 import { makeLabel } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
 
-export interface PickCandidate {
-  sel: NonNullable<Selection>;
-  local: THREE.Vector3;
-  tolerancePx: number;
-  priority: number;
-}
-
 type ZoneKey = 'circumpolar' | 'riseSet' | 'neverRise';
 
 export class SkyLayer {
@@ -41,6 +34,11 @@ export class SkyLayer {
   readonly rot = new THREE.Group();
   /** Nhóm cố định (hệ góc giờ) — chứa các đối tượng bất biến khi bầu trời quay. */
   readonly fixed = new THREE.Group();
+  /**
+   * Tăng mỗi khi thêm/bớt nhãn hoặc đối tượng có chú thích (tip) trong lớp này.
+   * Khung nhìn dùng nó để giữ sẵn danh sách nhãn và đích rê chuột thay vì duyệt cả cảnh mỗi khung hình.
+   */
+  structureVersion = 0;
 
   private equator = new THREE.Group();
   private equatorPlane: THREE.Mesh;
@@ -294,6 +292,7 @@ export class SkyLayer {
   }
 
   private rebuildUser(s: AppState): void {
+    this.structureVersion++;
     for (const child of [...this.user.children]) {
       this.user.remove(child);
       if (!(child instanceof THREE.Points)) disposeObject(child);
@@ -374,6 +373,7 @@ export class SkyLayer {
   }
 
   private rebuildCatalogLabels(): void {
+    this.structureVersion++;
     for (const child of [...this.catalogLabels.children]) this.catalogLabels.remove(child);
     const cat = catalogArrays();
     for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.0; i++) {
@@ -465,17 +465,46 @@ export class SkyLayer {
     return s.toggles.sun ? this.sunVec : null;
   }
 
-  /** Danh sách đối tượng có thể bấm chọn (tọa độ trong nhóm `rot`). */
-  *pickCandidates(s: AppState): Generator<PickCandidate> {
-    for (const u of this.userVecs) yield { sel: { kind: 'user', id: u.id }, local: u.v, tolerancePx: 12, priority: 2 };
-    if (s.toggles.sun) yield { sel: { kind: 'sun' }, local: this.sunVec, tolerancePx: 16, priority: 3 };
-    if (s.toggles.catalog) {
-      const cat = catalogArrays();
-      for (let i = 0; i < this.catalogDrawCount; i++) {
-        if (this.catalogHidden.has(i)) continue;
-        yield { sel: { kind: 'catalog', index: i }, local: this.catalogVecs[i], tolerancePx: cat.mag[i] < 2 ? 9 : 6, priority: 1 };
+  /**
+   * Tìm đối tượng chọn được có điểm số nhỏ nhất. `score(local, tolerancePx, priority)` trả về điểm
+   * (Infinity = loại). Chỉ tạo đối tượng Selection cho kết quả thắng — không cấp phát cho từng sao.
+   * Sao danh mục bị giới hạn theo cấp sao của chất lượng thích ứng (catalogDrawCount).
+   */
+  pickBest(s: AppState, score: (local: THREE.Vector3, tolerancePx: number, priority: number) => number): NonNullable<Selection> | null {
+    let best = Infinity;
+    let kind: 'user' | 'sun' | 'catalog' | null = null;
+    let which = -1;
+    for (let i = 0; i < this.userVecs.length; i++) {
+      const sc = score(this.userVecs[i].v, 12, 2);
+      if (sc < best) {
+        best = sc;
+        kind = 'user';
+        which = i;
       }
     }
+    if (s.toggles.sun) {
+      const sc = score(this.sunVec, 16, 3);
+      if (sc < best) {
+        best = sc;
+        kind = 'sun';
+      }
+    }
+    if (s.toggles.catalog) {
+      const mag = catalogArrays().mag;
+      for (let i = 0; i < this.catalogDrawCount; i++) {
+        if (this.catalogHidden.has(i)) continue;
+        const sc = score(this.catalogVecs[i], mag[i] < 2 ? 9 : 6, 1);
+        if (sc < best) {
+          best = sc;
+          kind = 'catalog';
+          which = i;
+        }
+      }
+    }
+    if (kind === 'user') return { kind: 'user', id: this.userVecs[which].id };
+    if (kind === 'sun') return { kind: 'sun' };
+    if (kind === 'catalog') return { kind: 'catalog', index: which };
+    return null;
   }
 
   /**

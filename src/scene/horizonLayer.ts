@@ -34,6 +34,8 @@ const _radec = { ra: 0, dec: 0 };
 
 export class HorizonLayer {
   readonly group = new THREE.Group();
+  /** Nhãn và đích rê chuột của lớp này cố định sau khi dựng (xem SkyLayer.structureVersion). */
+  readonly structureVersion = 0;
   private ring = new THREE.Group();
   private meridian = new THREE.Group();
   private zenith = new THREE.Group();

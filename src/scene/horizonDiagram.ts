@@ -1,8 +1,8 @@
 // Khung nhìn phải: giản đồ chân trời — người quan sát đứng ở tâm mặt phẳng chân trời.
 
 import * as THREE from 'three';
-import { equatorialToHorizontal } from '../astro';
-import { sunEquatorial } from '../selection';
+import { equatorialToHorizontal, sunPosition } from '../astro';
+import { sunJd } from '../selection';
 import { lstOf, type AppState, type Store } from '../state';
 import { horVec } from './frames';
 import { COLORS, polylineToSegments, thinSegments } from './geom';
@@ -20,11 +20,18 @@ export class HorizonDiagramView extends View {
   private firstPerson = false;
   private person = new THREE.Group();
   private bg = new THREE.Color();
+  /** Mảng mặt phẳng cắt cấp phát sẵn — gán lại cùng tham chiếu, không tạo mảng mới mỗi lần cập nhật. */
+  private readonly noPlanes: THREE.Plane[] = [];
+  private readonly clipPlanes: THREE.Plane[];
+  private sunKey = '';
+  private sunRa = 0;
+  private sunDec = 0;
 
   constructor(container: HTMLElement, store: Store) {
     const R = SKY_RADIUS;
     super(container, 'horizon', store, new THREE.Vector3(R * 1.25, R * 1.05, R * 2.6));
-    this.scene.background = this.bg.copy(NIGHT);
+    this.clipPlanes = [this.clipPlane];
+    this.scene.background = new THREE.Color().copy(NIGHT);
 
     // Mặt phẳng chân trời
     this.groundMat = new THREE.MeshBasicMaterial({ color: COLORS.ground, transparent: true, opacity: 0.92, side: THREE.DoubleSide });
@@ -80,26 +87,27 @@ export class HorizonDiagramView extends View {
 
   protected onUpdate(s: AppState): void {
     const under = s.toggles.underside;
-    this.renderer.clippingPlanes = under ? [] : [this.clipPlane];
+    const planes = under ? this.noPlanes : this.clipPlanes;
+    if (this.renderer.clippingPlanes !== planes) this.renderer.clippingPlanes = planes;
     this.groundMat.opacity = under ? 0.42 : this.firstPerson ? 1 : 0.92;
     this.groundMat.depthWrite = !under;
     this.sky.setBelowDim(under ? 0.45 : 1);
 
-    // Màu nền theo độ cao Mặt Trời (khi bật Mặt Trời)
-    let target = NIGHT;
+    // Màu nền theo độ cao Mặt Trời (khi bật Mặt Trời) — tính vào màu nháp `bg`, không clone.
+    const bg = this.bg.copy(NIGHT);
     if (s.toggles.sun) {
-      const p = sunEquatorial(s);
-      const alt = equatorialToHorizontal(p.ra, p.dec, s.lat, lstOf(s)).alt;
-      if (alt > 0) target = DAY;
-      else if (alt > -12) {
-        this.bg.copy(TWILIGHT).lerp(DAY, (alt + 12) / 12 * 0.5);
-        target = this.bg.clone();
-      } else if (alt > -18) {
-        this.bg.copy(NIGHT).lerp(TWILIGHT, (alt + 18) / 6);
-        target = this.bg.clone();
+      if (s.sunDate !== this.sunKey) {
+        this.sunKey = s.sunDate;
+        const p = sunPosition(sunJd(s.sunDate));
+        this.sunRa = p.ra;
+        this.sunDec = p.dec;
       }
+      const alt = equatorialToHorizontal(this.sunRa, this.sunDec, s.lat, lstOf(s)).alt;
+      if (alt > 0) bg.copy(DAY);
+      else if (alt > -12) bg.copy(TWILIGHT).lerp(DAY, ((alt + 12) / 12) * 0.5);
+      else if (alt > -18) bg.copy(NIGHT).lerp(TWILIGHT, (alt + 18) / 6);
     }
-    (this.scene.background as THREE.Color).copy(target);
+    (this.scene.background as THREE.Color).copy(bg);
   }
 
   protected preferredFov(aspect: number): number {

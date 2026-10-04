@@ -11,6 +11,8 @@ import { makeLabel, setLabelText, type Label } from './labels';
 import { SKY_RADIUS, View } from './view';
 
 const _arc = new Float32Array(41 * 3);
+const _dir = new THREE.Vector3();
+const _hit = new THREE.Vector3();
 
 export class CelestialSphereView extends View {
   private earth: THREE.Mesh;
@@ -106,12 +108,13 @@ export class CelestialSphereView extends View {
   }
 
   protected isOccluded(world: THREE.Vector3): boolean {
-    // Đoạn thẳng từ camera tới điểm có cắt Trái Đất không?
+    // Đoạn thẳng từ camera tới điểm có cắt Trái Đất không? (vectơ nháp, không cấp phát)
     const cam = this.camera.position;
-    const dir = world.clone().sub(cam);
-    const dist = dir.length();
-    this._ray.set(cam, dir.normalize());
-    const hit = this._ray.intersectSphere(this._sphere, new THREE.Vector3());
+    const dist = _dir.copy(world).sub(cam).length();
+    if (dist < 1e-9) return false;
+    this._ray.origin.copy(cam);
+    this._ray.direction.copy(_dir).divideScalar(dist);
+    const hit = this._ray.intersectSphere(this._sphere, _hit);
     return !!hit && hit.distanceTo(cam) < dist - 1e-3;
   }
 
