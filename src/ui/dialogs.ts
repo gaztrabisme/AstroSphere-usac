@@ -101,7 +101,7 @@ function renderMath(root: HTMLElement): void {
     });
 }
 
-function makeDialog(id: string, title: string, lines: string[]): HTMLDialogElement {
+function makeDialog(id: string, title: string, lines: string[], extra: HTMLElement[] = []): HTMLDialogElement {
   const content = renderLines(lines);
   const dlg = h(
     'dialog',
@@ -113,7 +113,7 @@ function makeDialog(id: string, title: string, lines: string[]): HTMLDialogEleme
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('dialog.close'), title: t('dialog.close'), text: '×', onclick: () => dlg.close() }),
     ),
     content,
-    h('footer', { class: 'dialog__foot' }, h('button', { type: 'button', class: 'btn btn--primary', text: t('dialog.ok'), onclick: () => dlg.close() })),
+    h('footer', { class: 'dialog__foot' }, ...extra, h('button', { type: 'button', class: 'btn btn--primary', text: t('dialog.ok'), onclick: () => dlg.close() })),
   );
   // Bấm ra ngoài hộp thoại để đóng
   dlg.addEventListener('click', (e) => {
@@ -123,9 +123,25 @@ function makeDialog(id: string, title: string, lines: string[]): HTMLDialogEleme
   return dlg;
 }
 
-export function createDialogs() {
+export interface DialogOptions {
+  /** Hiện lại màn hình mở đầu (nút trong hộp thoại Giới thiệu, spec K10). */
+  onShowHero?: () => void;
+}
+
+export function createDialogs(opts: DialogOptions = {}) {
   const help = makeDialog('dlg-help', t('help.title'), tList('help.body'));
-  const about = makeDialog('dlg-about', t('about.title'), tList('about.body'));
+  const heroBtn = opts.onShowHero
+    ? h('button', {
+        type: 'button',
+        class: 'btn',
+        text: t('about.showHero'),
+        onclick: () => {
+          about.close();
+          opts.onShowHero?.();
+        },
+      })
+    : null;
+  const about = makeDialog('dlg-about', t('about.title'), tList('about.body'), heroBtn ? [heroBtn] : []);
   const open = (dlg: HTMLDialogElement) => {
     dlg.showModal();
     renderMath(dlg);

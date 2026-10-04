@@ -1,0 +1,169 @@
+// Kiểm tra luồng giao diện U1: thương hiệu, khung ứng dụng, phím tắt, trình chiếu, Ôn tập.
+// Chạy: npm run build && npx vite preview --port 4174 --strictPort (nền), rồi node docs/redesign/uat/ui.mjs
+// Ảnh chụp lưu vào docs/redesign/shots/.
+import { mkdirSync } from 'node:fs';
+import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+
+const URL = process.env.UAT_URL ?? 'http://localhost:4174/?explore=1&quality=fixed';
+const SHOTS = new globalThis.URL('../shots/', import.meta.url).pathname;
+mkdirSync(SHOTS, { recursive: true });
+
+const results = [];
+const check = (name, ok, detail = '') => {
+  results.push({ name, ok: !!ok, detail });
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
+};
+
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const errors = [];
+
+async function openPage(width, height) {
+  const page = await browser.newPage({ viewport: { width, height } });
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto(URL);
+  await page.waitForFunction(() => document.querySelectorAll('.view__canvas canvas').length >= 2, null, { timeout: 30000 });
+  await page.waitForTimeout(500);
+  return page;
+}
+const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
+
+// ------------------------------------------------------------------ Điện thoại 375×812
+{
+  const page = await openPage(375, 812);
+  const canvases = await page.evaluate(() => document.querySelectorAll('.view__canvas canvas').length);
+  check('375: both 3D canvases exist', canvases >= 2, `canvases=${canvases}`);
+  const tabs = page.locator('.paneltabs [role=tab]');
+  const n = await tabs.count();
+  for (let i = 0; i < n; i++) {
+    const tab = tabs.nth(i);
+    if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
+    const label = await tab.textContent();
+    const { sw, iw } = await noHScroll(page);
+    check(`375: no horizontal scroll with panel tab "${label}"`, sw <= iw, `scrollWidth=${sw} innerWidth=${iw}`);
+  }
+  // Tab lưu động: ←/→/Home/End trên danh sách thẻ bảng điều khiển
+  await tabs.nth(0).click();
+  await tabs.nth(0).focus();
+  await page.keyboard.press('ArrowRight');
+  const roving = await page.evaluate(() => {
+    const all = [...document.querySelectorAll('.paneltabs [role=tab]')];
+    return { sel: all.findIndex((t) => t.getAttribute('aria-selected') === 'true'), focus: all.indexOf(document.activeElement), tabindex: all.map((t) => t.getAttribute('tabindex')) };
+  });
+  check('375: ArrowRight moves panel tab selection and focus (roving tabindex)', roving.sel === 1 && roving.focus === 1 && roving.tabindex.join() === '-1,0,-1,-1', JSON.stringify(roving));
+  await page.keyboard.press('End');
+  const endSel = await page.evaluate(() => [...document.querySelectorAll('.paneltabs [role=tab]')].findIndex((t) => t.getAttribute('aria-selected') === 'true'));
+  check('375: End selects the last panel tab', endSel === n - 1, `selected=${endSel}`);
+
+  await page.screenshot({ path: `${SHOTS}ui-375.png`, fullPage: false });
+
+  await page.getByRole('button', { name: 'Ôn tập' }).click();
+  await page.waitForSelector('#learn:not([hidden])');
+  await page.waitForTimeout(200);
+  const d = await noHScroll(page);
+  check('375: no horizontal scroll with Ôn tập drawer open', d.sw <= d.iw, `scrollWidth=${d.sw} innerWidth=${d.iw}`);
+  await page.close();
+}
+
+// ------------------------------------------------------------------ Máy tính 1440×900
+{
+  const page = await openPage(1440, 900);
+  const clubLinks = await page.locator('a[href^="https://web-usac.vercel.app"]').evaluateAll((as) => as.map((a) => ({ rel: a.rel, target: a.target })));
+  check('exactly one club link (rel=noopener, target=_blank)', clubLinks.length === 1 && clubLinks[0].rel.includes('noopener') && clubLinks[0].target === '_blank', JSON.stringify(clubLinks));
+
+  const order = await page.locator('.topbar__actions .btn .btn__text').allTextContents();
+  check('top bar order', order.join('|') === 'Câu chuyện|Ôn tập|Trình chiếu|Đặt lại|Trợ giúp|Giới thiệu', order.join(' | '));
+
+  const brand = await page.evaluate(() => {
+    const cs = (sel, p) => getComputedStyle(document.querySelector(sel))[p];
+    return { body: cs('body', 'backgroundColor'), topbarBorder: cs('.topbar', 'borderBottomColor'), primaryBg: cs('.btn--primary', 'backgroundColor'), primaryText: cs('.btn--primary', 'color') };
+  });
+  check('brand: dark body, orange top rule, orange primary with dark text', brand.body === 'rgb(10, 10, 10)' && brand.topbarBorder === 'rgb(242, 101, 34)' && brand.primaryBg === 'rgb(242, 101, 34)' && brand.primaryText === 'rgb(10, 10, 10)', JSON.stringify(brand));
+
+  // Cần một thiên thể đang chọn: mặc định là Sao Bắc Cực; nếu không có thì dùng "Thiết lập" của nhiệm vụ 1.
+  const cardShown = () => page.evaluate(() => !document.querySelector('.infocard').hidden);
+  if (!(await cardShown())) {
+    await page.keyboard.press('l');
+    await page.locator('.learn__task').first().getByRole('button', { name: /Thiết lập/ }).click();
+    await page.keyboard.press('Escape');
+  }
+  check('precondition: a star is selected', await cardShown());
+  await page.locator('#lat-input').focus();
+  await page.keyboard.press('Escape');
+  check('Esc in the latitude input keeps the selection', await cardShown());
+  await page.locator('#lat-input').evaluate((el) => el.blur());
+
+  const playing = () => page.locator('.btn--play').getAttribute('aria-pressed');
+  const before = await playing();
+  const summary = page.locator('details > summary').first();
+  await summary.focus();
+  const openBefore = await summary.evaluate((s) => s.parentElement.open);
+  await page.keyboard.press(' ');
+  await page.waitForTimeout(100);
+  const after = await playing();
+  const openAfter = await summary.evaluate((s) => s.parentElement.open);
+  check('Space on a focused <summary> does not toggle playback', before === after, `playing ${before}→${after}; details open ${openBefore}→${openAfter}`);
+  await summary.evaluate((s) => s.blur());
+
+  await page.screenshot({ path: `${SHOTS}ui-1440.png` });
+
+  await page.keyboard.press('f');
+  await page.waitForTimeout(300);
+  const on = await page.evaluate(() => ({ present: document.body.classList.contains('present'), pressed: document.querySelector('.topbar__actions .btn:nth-child(3)').getAttribute('aria-pressed'), panels: getComputedStyle(document.querySelector('.panels')).display, legend: getComputedStyle(document.querySelector('.legend')).display }));
+  check('F turns presentation mode on (panels hidden, legend kept, aria-pressed)', on.present && on.pressed === 'true' && on.panels === 'none' && on.legend !== 'none', JSON.stringify(on));
+  await page.keyboard.press('f');
+  await page.waitForTimeout(300);
+  const off = await page.evaluate(() => document.body.classList.contains('present'));
+  check('F again turns presentation mode off', !off);
+
+  // Gợi ý sau khi trả lời đúng: giữ 2 điểm.
+  await page.keyboard.press('l');
+  await page.waitForSelector('#learn:not([hidden])');
+  const task = page.locator('.learn__task').first();
+  await task.locator('input.num').fill('21');
+  await task.getByRole('button', { name: 'Kiểm tra' }).click();
+  const scoreAfterCorrect = await page.locator('.learn__score').textContent();
+  await task.getByRole('button', { name: 'Gợi ý' }).click();
+  const scoreAfterHint = await page.locator('.learn__score').textContent();
+  check('hint after a correct first answer keeps 2 points', /Điểm: 2\//.test(scoreAfterCorrect) && /Điểm: 2\//.test(scoreAfterHint), `${scoreAfterCorrect} → ${scoreAfterHint}`);
+  // Esc đóng ngăn và trả tiêu điểm về nút Ôn tập (mở bằng phím L nên trả về nút).
+  await task.getByRole('button', { name: 'Gợi ý' }).focus();
+  await page.keyboard.press('Escape');
+  const focusBack = await page.evaluate(() => ({ hidden: document.getElementById('learn').hidden, focus: document.activeElement?.textContent?.trim() }));
+  check('Esc closes Ôn tập and returns focus', focusBack.hidden && /Ôn tập/.test(focusBack.focus ?? ''), JSON.stringify(focusBack));
+
+  // Giới thiệu có nút "Xem màn hình mở đầu".
+  await page.getByRole('button', { name: 'Giới thiệu' }).click();
+  await page.waitForSelector('#dlg-about[open]');
+  const heroBtn = await page.locator('#dlg-about').getByRole('button', { name: 'Xem màn hình mở đầu' }).count();
+  check('Giới thiệu dialog (lazy) opens with "Xem màn hình mở đầu"', heroBtn === 1);
+  await page.keyboard.press('Escape');
+  const dlgClosed = await page.evaluate(() => !document.getElementById('dlg-about').open && !document.querySelector('.infocard').hidden);
+  check('Esc closes the native dialog first and keeps the selection', dlgClosed);
+  await page.close();
+}
+
+// ------------------------------------------------------------------ Máy chiếu 1920×1080, chế độ trình chiếu
+{
+  const page = await openPage(1920, 1080);
+  await page.getByRole('button', { name: 'Trình chiếu' }).click();
+  await page.waitForTimeout(800);
+  const st = await page.evaluate(() => ({
+    present: document.body.classList.contains('present'),
+    font: getComputedStyle(document.body).fontSize,
+    viewsH: Math.round(document.querySelector('.views').getBoundingClientRect().height),
+    footer: getComputedStyle(document.querySelector('.site-footer')).display,
+    databar: getComputedStyle(document.querySelector('.databar')).display,
+    sw: document.documentElement.scrollWidth,
+    iw: innerWidth,
+  }));
+  check('1920: button enters presentation (20px base, views tall, footer/databar hidden)', st.present && st.font === '20px' && st.viewsH > 800 && st.footer === 'none' && st.databar === 'none', JSON.stringify(st));
+  await page.screenshot({ path: `${SHOTS}ui-present-1920.png` });
+  await page.close();
+}
+
+await browser.close();
+check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+const failed = results.filter((r) => !r.ok);
+console.log(failed.length ? `UI FAIL (${failed.length}/${results.length})` : `UI PASS (${results.length} checks)`);
+process.exit(failed.length ? 1 : 0);

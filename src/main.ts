@@ -14,13 +14,13 @@ import { mountStory } from './story/entry';
 import type { ViewKey } from './story/types';
 import { Actions, createInitialState, Store, type AppState, type Toggles } from './state';
 import { animationPanel } from './ui/animationPanel';
-import { createDialogs } from './ui/dialogs';
 import { displayPanel } from './ui/displayPanel';
 import { button, clear, h } from './ui/dom';
 import { dataBar, infoCard } from './ui/infoCard';
-import { learningDrawer } from './ui/learning';
 import { locationPanel } from './ui/locationPanel';
+import { mountQualityNotice } from './ui/qualityNotice';
 import { starPanel } from './ui/starPanel';
+import { rovingTabs } from './ui/tabs';
 import { attachViewInteraction } from './ui/viewInteraction';
 
 // Tải cảnh 3D (three.js) song song với việc dựng giao diện.
@@ -30,13 +30,57 @@ const store = new Store(createInitialState());
 const actions = new Actions(store);
 const app = document.getElementById('app')!;
 
+// ---------------------------------------------------------------- Ngăn Ôn tập và hộp thoại (tải động khi dùng lần đầu)
+type LearnDrawer = ReturnType<typeof import('./ui/learning').learningDrawer>;
+type Dialogs = ReturnType<typeof import('./ui/dialogs').createDialogs>;
+
+let learnDrawer: LearnDrawer | null = null;
+let learnLoading: Promise<LearnDrawer> | null = null;
+let learnOpener: HTMLElement | null = null;
+function loadLearn(): Promise<LearnDrawer> {
+  learnLoading ??= import('./ui/learning').then((m) => {
+    learnDrawer = m.learningDrawer(store, actions, {
+      returnFocus: () => (learnOpener?.isConnected ? learnOpener : learnBtn),
+    });
+    app.append(learnDrawer.el);
+    return learnDrawer;
+  });
+  return learnLoading;
+}
+/** Mặt tiền an toàn: dùng được trước khi mô-đun được tải. */
+const learn = {
+  isOpen: () => !!learnDrawer && !learnDrawer.el.hidden,
+  open(v: boolean) {
+    if (!v && !learnDrawer) return;
+    if (v && !learn.isOpen()) {
+      // Mở bằng phím L khi không có gì được chọn tiêu điểm → trả tiêu điểm về nút "Ôn tập".
+      const a = document.activeElement;
+      learnOpener = a instanceof HTMLElement && a !== document.body ? a : null;
+    }
+    void loadLearn().then((d) => d.open(v));
+  },
+  toggle: () => learn.open(!learn.isOpen()),
+};
+
+let dialogsMod: Dialogs | null = null;
+let dialogsLoading: Promise<Dialogs> | null = null;
+function loadDialogs(): Promise<Dialogs> {
+  dialogsLoading ??= import('./ui/dialogs').then((m) => (dialogsMod = m.createDialogs({ onShowHero: () => story.showHero() })));
+  return dialogsLoading;
+}
+const dialogs = {
+  help: () => void loadDialogs().then((d) => d.help()),
+  about: () => void loadDialogs().then((d) => d.about()),
+  isOpen: () => dialogsMod?.isOpen() ?? false,
+};
+
 // ---------------------------------------------------------------- Thanh trên cùng
-const learn = learningDrawer(store, actions);
-const dialogs = createDialogs();
 let sphere: CelestialSphereView | null = null;
 let horizon: HorizonDiagramView | null = null;
 
 const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top', icon: '🎓', title: t('top.learnTip') });
+const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top', icon: '⛶', title: t('top.presentTip') });
+presentBtn.setAttribute('aria-pressed', 'false');
 const topbar = h(
   'header',
   { class: 'topbar' },
@@ -51,6 +95,7 @@ const topbar = h(
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
     button(t('top.story'), () => story.open(), { cls: 'btn--top', icon: '✦', title: t('top.storyTip') }),
     learnBtn,
+    presentBtn,
     button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
     button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip') }),
     button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip') }),
@@ -109,54 +154,91 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     class: 'tab',
     'aria-selected': String(key === 'horizon'),
     'aria-controls': `view-${key}`,
+    'data-view': key,
     text: t(`view.${key}`),
     onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
 const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {
   views.dataset.active = key;
   viewTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tabEls[key])));
+  viewRoving.sync();
   window.dispatchEvent(new Event('resize'));
 }
 
 // ---------------------------------------------------------------- Bảng số liệu và bảng điều khiển
 const data = dataBar(store);
+const animation = animationPanel(store, actions);
 const panelDefs = [
   { key: 'location', el: locationPanel(store, actions) },
-  { key: 'animation', el: animationPanel(store, actions) },
+  { key: 'animation', el: animation.el },
   { key: 'display', el: displayPanel(store, actions) },
   { key: 'stars', el: starPanel(store, actions) },
 ];
 const panels = h('section', { class: 'panels', 'data-active': 'location', 'aria-label': t('panel.aria') });
 const panelTabs = h('div', { class: 'paneltabs', role: 'tablist', 'aria-label': t('panel.tabsAria') });
+/** Chọn bảng; bấm lại vào thẻ đang mở thì thu gọn (chỉ khi bấm, không khi dùng phím mũi tên). */
+function selectPanel(key: string, toggleCollapse: boolean) {
+  const same = panels.dataset.active === key && !panels.classList.contains('collapsed');
+  panels.dataset.active = key;
+  panels.classList.toggle('collapsed', toggleCollapse && same);
+  panelTabs.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.panel === key)));
+  panelRoving.sync();
+  loop.markUiDirty(); // bảng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
+}
 for (const p of panelDefs) {
-  const tab = h('button', {
-    type: 'button',
-    role: 'tab',
-    class: 'tab',
-    'aria-selected': String(p.key === 'location'),
-    'aria-controls': p.el.id,
-    text: t(`panel.${p.key}.short`),
-    onclick: () => {
-      const same = panels.dataset.active === p.key && !panels.classList.contains('collapsed');
-      panels.dataset.active = p.key;
-      panels.classList.toggle('collapsed', same);
-      panelTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tab)));
-    },
-  });
-  panelTabs.append(tab);
+  panelTabs.append(
+    h('button', {
+      type: 'button',
+      role: 'tab',
+      class: 'tab',
+      'aria-selected': String(p.key === 'location'),
+      'aria-controls': p.el.id,
+      'data-panel': p.key,
+      text: t(`panel.${p.key}.short`),
+      onclick: () => selectPanel(p.key, true),
+    }),
+  );
   p.el.dataset.panel = p.key;
 }
+const panelRoving = rovingTabs(panelTabs, (tab) => selectPanel(tab.dataset.panel!, false));
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
+// Chữ ký CLB và liên kết DUY NHẤT về trang CLB (AGENTS.md › Brand).
 const footer = h(
   'footer',
   { class: 'site-footer' },
-  h('p', { class: 'site-footer__credit', text: t('app.footer') }),
+  h('p', { class: 'site-footer__sig' }, h('strong', { text: t('app.signature') }), ` · ${t('app.slogan')}`),
   h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
+  h('p', { class: 'site-footer__club' }, h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗` })),
 );
-app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer, learn.el);
+
+// ---------------------------------------------------------------- Chế độ trình chiếu (spec K6, K8)
+let presenting = false;
+function setPresent(on: boolean) {
+  if (on === presenting) return;
+  presenting = on;
+  document.body.classList.toggle('present', on);
+  presentBtn.setAttribute('aria-pressed', String(on));
+  presentBtn.title = t(on ? 'top.exitPresent' : 'top.presentTip');
+  const root = document.documentElement;
+  try {
+    if (on && !document.fullscreenElement && root.requestFullscreen) void root.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement && document.exitFullscreen) void document.exitFullscreen().catch(() => {});
+  } catch {
+    /* trình duyệt không cho toàn màn hình: vẫn giữ bố cục trình chiếu */
+  }
+  window.dispatchEvent(new Event('resize'));
+}
+// Người dùng thoát toàn màn hình bằng Esc (trình duyệt tự xử lý) → tắt luôn chế độ trình chiếu.
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && presenting) setPresent(false);
+});
+// Khung nhìn đổi kích thước (đổi bố cục điện thoại ↔ máy tính, trình chiếu): ghi bù số liệu.
+window.addEventListener('resize', () => loop.markUiDirty());
+app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer);
 
 // ---------------------------------------------------------------- Chú giải màu
 const LEGEND: { key: keyof Toggles | 'horizon'; color: string; zone?: boolean }[] = [
@@ -251,10 +333,12 @@ const loop = startFrameLoop({
     data.update();
     card.update();
     updateLegend(store.state);
+    animation.tick();
   },
   isPlaying: () => store.state.playing,
   quality,
 });
+mountQualityNotice(quality, app);
 
 // ---------------------------------------------------------------- Câu chuyện
 const story = mountStory({
@@ -300,27 +384,34 @@ if (import.meta.env.DEV) {
 }
 
 // ---------------------------------------------------------------- Phím tắt
+// Không chiếm phím của phần tử tương tác: Space trên nút/liên kết/summary…, mũi tên trong tablist/slider/radiogroup.
+const SPACE_OWNERS = 'button,a,summary,label,[role=tab],input,select,textarea,[contenteditable]';
+const ARROW_OWNERS = '[role=tablist],[role=slider],[role=radiogroup]';
+
 window.addEventListener('keydown', (e) => {
+  // Ưu tiên Esc: 1) hộp thoại gốc (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) câu chuyện → 4) bỏ chọn.
   if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen()) return;
-  const target = e.target as HTMLElement;
-  const tag = target?.tagName;
-  const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target?.isContentEditable || target?.getAttribute('role') === 'slider';
+  const target = e.target instanceof HTMLElement ? e.target : null;
+  // Tính "đang gõ" TRƯỚC khi xử lý Esc: Esc trong ô nhập không được bỏ chọn hay đóng ngăn.
+  const typing = !!target && (!!target.closest('input,select,textarea') || target.isContentEditable || target.getAttribute('role') === 'slider');
+  if (typing) return;
   if (e.key === 'Escape') {
-    if (!learn.el.hidden) learn.open(false);
+    if (learn.isOpen()) learn.open(false);
+    else if (story.isOpen()) story.onKey(e);
     else actions.select(null);
     return;
   }
-  if (typing) return;
+  // Câu chuyện đang mở được xét phím trước (PageDown/PageUp/←/→/Enter để chuyển bước).
+  if (story.isOpen() && story.onKey(e)) return;
   const k = e.key.toLowerCase();
-  if (e.key === ' ' && tag !== 'BUTTON') {
+  if (e.key === ' ') {
+    if (target?.closest(SPACE_OWNERS)) return;
     e.preventDefault();
     actions.togglePlay();
-  } else if (e.key === 'ArrowRight') {
+  } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    if (target?.closest(ARROW_OWNERS)) return;
     e.preventDefault();
-    actions.stepHours(1);
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    actions.stepHours(-1);
+    actions.stepHours(e.key === 'ArrowRight' ? 1 : -1);
   } else if (e.key === '+' || e.key === '=') actions.setRate(store.state.rate - 5);
   else if (e.key === '-' || e.key === '_') actions.setRate(store.state.rate + 5);
   else if (k === 'n') actions.setNow();
@@ -330,4 +421,5 @@ window.addEventListener('keydown', (e) => {
     horizon?.resetCamera();
   } else if (k === 'h' || e.key === '?') dialogs.help();
   else if (k === 'l') learn.toggle();
+  else if (k === 'f') setPresent(!presenting);
 });

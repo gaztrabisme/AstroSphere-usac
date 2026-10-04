@@ -18,13 +18,19 @@ import {
 import { t } from '../i18n';
 import { resolveSelection, sunEquatorial } from '../selection';
 import { lstOf, type Actions, type AppState, type Store } from '../state';
-import { h } from './dom';
+import { h, setHidden, setText } from './dom';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
-/** Tên hướng (8 hướng) cho phương vị. */
+/** Tên hướng (8 hướng) cho phương vị; chuỗi rỗng nếu phương vị không xác định (vd. ở hai cực). */
 export function compassName(az: number): string {
+  if (!Number.isFinite(az)) return '';
   return t(`compass.${DIRS[Math.round(norm360(az) / 45) % 8]}`);
+}
+
+/** "A = 63,4° (ĐB)", hoặc "A = —" khi phương vị không xác định (|φ| = 90°). */
+export function azimuthText(az: number): string {
+  return Number.isFinite(az) ? `A = ${fmtDeg(az, 1)} (${compassName(az)})` : 'A = —';
 }
 
 interface Row {
@@ -37,10 +43,6 @@ function row(label: string, title?: string): Row {
   const v = h('span', { class: 'kv__v' });
   const x = h('span', { class: 'kv__x' });
   return { el: h('div', { class: 'kv', title }, h('dt', { text: label }), h('dd', null, v, x)), v, x };
-}
-
-function setText(el: HTMLElement, text: string): void {
-  if (el.textContent !== text) el.textContent = text;
 }
 
 function setRow(r: Row, value: string, extra = ''): void {
@@ -151,7 +153,7 @@ export function infoCard(store: Store, actions: Actions) {
   const update = () => {
     const s = store.state;
     const obj = resolveSelection(s);
-    el.hidden = !obj;
+    setHidden(el, !obj);
     if (!obj) return;
     const lst = lstOf(s);
     const { alt, az, ha } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
@@ -175,9 +177,9 @@ export function infoCard(store: Store, actions: Actions) {
       r.transit.el.hidden = rs.visibility === 'neverRise';
       r.lowest.el.hidden = rs.visibility !== 'circumpolar';
       r.highest.el.hidden = rs.visibility !== 'neverRise';
-      setRow(r.rise, `LST ${fmtHMS(rs.riseLst, { seconds: false })}`, `A = ${fmtDeg(rs.riseAz, 1)} (${compassName(rs.riseAz)})`);
+      setRow(r.rise, `LST ${fmtHMS(rs.riseLst, { seconds: false })}`, azimuthText(rs.riseAz));
       setRow(r.transit, `LST ${fmtHMS(rs.transitLst, { seconds: false })}`, `h = ${fmtDegSigned(rs.upperAlt, 1)}`);
-      setRow(r.set, `LST ${fmtHMS(rs.setLst, { seconds: false })}`, `A = ${fmtDeg(rs.setAz, 1)} (${compassName(rs.setAz)})`);
+      setRow(r.set, `LST ${fmtHMS(rs.setLst, { seconds: false })}`, azimuthText(rs.setAz));
       setRow(r.above, fmtDuration(rs.hoursAbove), t('info.siderealHours'));
       setRow(r.lowest, `h = ${fmtDegSigned(rs.lowerAlt, 1)}`, t('info.lowestNote'));
       setRow(r.highest, `h = ${fmtDegSigned(rs.upperAlt, 1)}`, t('info.highestNote'));
@@ -185,7 +187,7 @@ export function infoCard(store: Store, actions: Actions) {
 
     // Phần thay đổi theo thời gian
     setRow(r.ha, fmtHMS(ha, { signed: true }), ha >= 0 ? t('info.haWest') : t('info.haEast'));
-    setRow(r.az, fmtDeg(az, 2), compassName(az));
+    setRow(r.az, Number.isFinite(az) ? fmtDeg(az, 2) : '—', compassName(az));
     setRow(r.alt, fmtDegSigned(alt, 2), alt >= 0 ? t('info.above') : t('info.below'));
   };
 
@@ -217,23 +219,23 @@ export function dataBar(store: Store) {
   const update = () => {
     const s: AppState = store.state;
     const lst = lstOf(s);
-    items.lat.textContent = `φ = ${fmtLat(s.lat)}`;
-    items.lon.textContent = `λ = ${fmtLon(s.lon)}`;
-    items.lst.textContent = fmtHMS(lst);
-    items.gst.textContent = fmtHMS(s.gst);
-    items.pole.textContent = fmtDeg(poleAltitude(s.lat));
-    items.incl.textContent = fmtDeg(equatorInclination(s.lat));
-    sunCell.hidden = !s.toggles.sun;
+    setText(items.lat, `φ = ${fmtLat(s.lat)}`);
+    setText(items.lon, `λ = ${fmtLon(s.lon)}`);
+    setText(items.lst, fmtHMS(lst));
+    setText(items.gst, fmtHMS(s.gst));
+    setText(items.pole, fmtDeg(poleAltitude(s.lat)));
+    setText(items.incl, fmtDeg(equatorInclination(s.lat)));
+    setHidden(sunCell, !s.toggles.sun);
     if (s.toggles.sun) {
       const p = sunEquatorial(s);
       const haSun = equatorialToHorizontal(p.ra, p.dec, s.lat, lst).ha;
-      items.solar.textContent = `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`;
+      setText(items.solar, `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`);
     }
     const obj = resolveSelection(s);
-    selCell.hidden = !obj;
+    setHidden(selCell, !obj);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
-      items.selected.textContent = `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`;
+      setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
     }
   };
   return { el, update };
