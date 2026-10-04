@@ -51,8 +51,10 @@ export function starPanel(store: Store, actions: Actions): HTMLElement {
   const raId = newId('ra');
   const decId = newId('dec');
   const nameId = newId('nm');
-  const raInput = h('input', { type: 'text', id: raId, class: 'num', inputmode: 'decimal', placeholder: '6h45m' });
-  const decInput = h('input', { type: 'text', id: decId, class: 'num', inputmode: 'decimal', placeholder: '−16,7' });
+  // inputmode="text": bàn phím số của iOS không có dấu trừ (δ âm) và chữ h/m (dạng 6h45m).
+  const coordAttrs = { type: 'text', class: 'num', inputmode: 'text', autocapitalize: 'off', autocomplete: 'off', spellcheck: 'false' };
+  const raInput = h('input', { ...coordAttrs, id: raId, placeholder: '6h45m' });
+  const decInput = h('input', { ...coordAttrs, id: decId, placeholder: '−16,7' });
   const nameInput = h('input', { type: 'text', id: nameId, placeholder: t('panel.stars.namePlaceholder'), maxlength: 40 });
   const addManual = () => {
     const raH = parseHours(raInput.value);
