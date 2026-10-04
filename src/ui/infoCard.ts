@@ -39,10 +39,15 @@ interface Row {
   x: HTMLSpanElement;
 }
 
-function row(label: string, title?: string): Row {
+/** Các dòng của thẻ có thêm một câu nghĩa ngắn `info.<key>Note` ngay dưới giá trị. */
+export const INFO_NOTE_KEYS = ['ra', 'dec', 'ha', 'az', 'alt'] as const;
+
+function row(key: string, label: string, title?: string, note?: string): Row {
   const v = h('span', { class: 'kv__v' });
   const x = h('span', { class: 'kv__x' });
-  return { el: h('div', { class: 'kv', title }, h('dt', { text: label }), h('dd', null, v, x)), v, x };
+  const n = note ? h('span', { class: 'kv__note', text: note }) : null;
+  // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết".
+  return { el: h('div', { class: 'kv', title, 'data-emphasis': key }, h('dt', { text: label }), h('dd', null, v, x, n)), v, x };
 }
 
 function setRow(r: Row, value: string, extra = ''): void {
@@ -51,7 +56,7 @@ function setRow(r: Row, value: string, extra = ''): void {
 }
 
 export function infoCard(store: Store, actions: Actions) {
-  const title = h('h3', { class: 'infocard__title' });
+  const title = h('h3', { class: 'infocard__title', text: t('info.emptyTitle') });
   const dot = h('span', { class: 'infocard__dot', 'aria-hidden': 'true' });
   const kind = h('p', { class: 'infocard__kind' });
   const collapseBtn = h('button', {
@@ -72,18 +77,19 @@ export function infoCard(store: Store, actions: Actions) {
   });
 
   // Cấu trúc thẻ dựng một lần; mỗi lần cập nhật chỉ thay chữ (rẻ khi đang chạy hoạt ảnh).
+  const note = (k: (typeof INFO_NOTE_KEYS)[number]) => t(`info.${k}Note`);
   const r = {
-    ra: row(t('info.ra')),
-    dec: row(t('info.dec')),
-    ha: row(t('info.ha'), t('info.haTip')),
-    az: row(t('info.az')),
-    alt: row(t('info.alt')),
-    rise: row(t('info.rise')),
-    transit: row(t('info.transit')),
-    set: row(t('info.set')),
-    above: row(t('info.hoursAbove'), t('info.hoursAboveTip')),
-    lowest: row(t('info.lowest')),
-    highest: row(t('info.highest')),
+    ra: row('ra', t('info.ra'), undefined, note('ra')),
+    dec: row('dec', t('info.dec'), undefined, note('dec')),
+    ha: row('ha', t('info.ha'), t('info.haTip'), note('ha')),
+    az: row('az', t('info.az'), undefined, note('az')),
+    alt: row('alt', t('info.alt'), undefined, note('alt')),
+    rise: row('rise', t('info.rise')),
+    transit: row('transit', t('info.transit')),
+    set: row('set', t('info.set')),
+    above: row('above', t('info.hoursAbove'), t('info.hoursAboveTip')),
+    lowest: row('lowest', t('info.lowest')),
+    highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
   const body = h(
@@ -97,7 +103,7 @@ export function infoCard(store: Store, actions: Actions) {
     h(
       'dl',
       null,
-      h('div', { class: 'kv' }, h('dt', { text: t('info.status') }), h('dd', null, status)),
+      h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status)),
       r.rise.el,
       r.transit.el,
       r.set.el,
@@ -107,18 +113,21 @@ export function infoCard(store: Store, actions: Actions) {
     ),
   );
 
+  // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
+  const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
   const el = h(
     'aside',
-    { class: 'infocard', 'aria-label': t('info.aria'), hidden: true },
+    { class: 'infocard is-empty', 'aria-label': t('info.aria') },
     h(
       'header',
       { class: 'infocard__head' },
       dot,
       title,
       collapseBtn,
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
+      h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
     ),
     kind,
+    empty,
     body,
   );
 
@@ -154,10 +163,19 @@ export function infoCard(store: Store, actions: Actions) {
   if (window.matchMedia?.('(max-width: 900px)').matches) collapseBtn.click();
 
   let staticKey = '';
+  let wasEmpty: boolean | null = null;
   const update = () => {
     const s = store.state;
     const obj = resolveSelection(s);
-    setHidden(el, !obj);
+    const isEmpty = !obj;
+    if (isEmpty !== wasEmpty) {
+      wasEmpty = isEmpty;
+      el.classList.toggle('is-empty', isEmpty);
+      if (isEmpty) {
+        staticKey = '';
+        setText(title, t('info.emptyTitle'));
+      }
+    }
     if (!obj) return;
     const lst = lstOf(s);
     const { alt, az, ha } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
@@ -221,12 +239,14 @@ export function dataBar(store: Store) {
   for (const c of DATA_CELLS) {
     const v = h('span', { class: 'data__v' });
     items[c.key] = v;
+    const note = h('span', { class: 'data__n', text: t(`data.${c.key}Note`) });
     // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết" (số ↔ hình trong hai khung nhìn).
     cells[c.key] = h(
       'div',
       { class: c.end ? 'data__item data__item--end' : 'data__item', title: c.tip ? t(`data.${c.key}Tip`) : undefined, 'data-emphasis': c.key },
       h('span', { class: 'data__k', text: t(`data.${c.key}`) }),
       v,
+      note,
     );
   }
   const sunCell = cells.solar;

@@ -1774,3 +1774,56 @@ body.present .kv__x {
 body.present .firsthint {
   font-size: 17px;
 }
+
+/* ------------------------------------------------------------------ Dòng giải thích dưới hộp kiểm (chỉ khi đang bật) */
+.check__hint {
+  margin: 0 0 var(--space-1) 29px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ Câu nghĩa ngắn dưới số liệu và trạng thái trống của thẻ */
+.data__n,
+.kv__note {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--subtle);
+}
+
+.kv__note {
+  flex-basis: 100%;
+}
+
+.infocard__empty {
+  margin: var(--space-1) 0 var(--space-1);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.infocard:not(.is-empty) .infocard__empty,
+.infocard.is-empty .infocard__body,
+.infocard.is-empty .infocard__kind,
+.infocard.is-empty .infocard__dot,
+.infocard.is-empty .icon-btn {
+  display: none;
+}
+
+.infocard.is-empty .infocard__title {
+  color: var(--muted);
+}
+
+.pole-line {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+body.present .data__n,
+body.present .kv__note {
+  font-size: 14px;
+}

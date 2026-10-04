@@ -78,7 +78,15 @@
     "solar": "Giờ Mặt Trời (biểu kiến)",
     "solarTip": "Giờ Mặt Trời địa phương ≈ góc giờ của Mặt Trời + 12h.",
     "selected": "Đối tượng đang chọn",
-    "selectedNone": "—"
+    "selectedNone": "—",
+    "latNote": "vị trí Bắc – Nam của bạn",
+    "poleNote": "= |φ|, luôn bằng vĩ độ",
+    "inclNote": "= 90° − |φ|",
+    "lonNote": "chỉ dời giờ, không đổi dáng trời",
+    "lstNote": "dải trời đang qua kinh tuyến",
+    "gstNote": "giờ thiên văn ở Greenwich",
+    "solarNote": "≈ góc giờ Mặt Trời + 12h",
+    "selectedNote": "α, δ đứng yên · A, h đổi theo giờ"
   },
   "info": {
     "aria": "Thông tin đối tượng đang chọn",
@@ -115,7 +123,14 @@
     "lowest": "Thấp nhất",
     "lowestNote": "vẫn ở trên chân trời",
     "highest": "Cao nhất",
-    "highestNote": "vẫn ở dưới chân trời"
+    "highestNote": "vẫn ở dưới chân trời",
+    "emptyTitle": "Chưa chọn thiên thể nào",
+    "empty": "Bấm vào một ngôi sao trên khung nhìn để xem tọa độ và giờ mọc – lặn của nó.",
+    "raNote": "giống kinh độ, nhưng vẽ trên bầu trời",
+    "decNote": "giống vĩ độ, nhưng vẽ trên bầu trời",
+    "haNote": "= LST − α, đo từ kinh tuyến về phía Tây",
+    "azNote": "hướng nhìn, đo từ Bắc qua Đông",
+    "altNote": "góc từ chân trời lên tới sao"
   },
   "visibility": {
     "circumpolar": "Cận cực (không bao giờ lặn)",
@@ -151,6 +166,8 @@
       "errLon": "Kinh độ phải nằm trong khoảng 0–180°.",
       "latSlider": "Thanh trượt vĩ độ, từ −90° (Nam Cực) đến +90° (Bắc Cực)",
       "latSliderShort": "Kéo vĩ độ",
+      "poleLine": "Thiên cực {pole} cao {x} — đúng bằng vĩ độ của bạn.",
+      "poleLineEquator": "Hai thiên cực nằm ngay trên chân trời — vì vĩ độ của bạn là 0°.",
       "mapAria": "Bản đồ thế giới: bấm hoặc kéo để chọn vị trí; dùng phím mũi tên để di chuyển 1°, giữ Shift để di chuyển 10°",
       "mapHint": "Bấm hoặc kéo trên bản đồ để chọn vị trí. Chấm hồng: các địa điểm ở Việt Nam.",
       "vn": "Việt Nam",
@@ -282,6 +299,24 @@
     "ecliptic": "Đường đi biểu kiến của Mặt Trời trong năm, nghiêng 23,44° so với xích đạo trời.",
     "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Nhân Mã).",
     "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm."
+  },
+  "toggleHint": {
+    "poleAxis": "Trục mà cả bầu trời quay quanh. Để ý: trục chĩa vào thiên cực, cao đúng bằng vĩ độ.",
+    "equator": "Vòng chia bầu trời thành nửa Bắc và nửa Nam. Để ý: nó luôn cắt chân trời ở đúng điểm Đông và điểm Tây.",
+    "hourCircle0": "Vòng nối hai thiên cực qua điểm xuân phân. Để ý: nó quay cùng bầu trời như kim đồng hồ của giờ thiên văn.",
+    "horizonOnSphere": "Chân trời của bạn đặt lên thiên cầu. Để ý: chỉ phần trời phía trên vòng này là bạn nhìn thấy.",
+    "zenithNadir": "Thiên đỉnh ngay trên đầu, thiên để ngay dưới chân. Để ý: hai điểm này đứng yên khi bầu trời quay.",
+    "meridian": "Vòng đi qua Bắc, thiên đỉnh và Nam. Để ý: mỗi sao lên cao nhất đúng lúc đi qua vòng này.",
+    "verticalCircle": "Vòng từ thiên đỉnh qua sao đang chọn xuống chân trời. Để ý: độ cao h được đo dọc theo vòng này.",
+    "altAzGrid": "Lưới gắn với chân trời của bạn. Để ý: lưới đứng yên, sao trượt qua nên A và h đổi liên tục.",
+    "eqGrid": "Lưới gắn với bầu trời. Để ý: lưới quay cùng sao nên α và δ của sao không đổi.",
+    "poleAltitude": "Cung từ chân trời lên thiên cực. Để ý: số đo luôn bằng vĩ độ của bạn.",
+    "angle": "Độ nghiêng của xích đạo trời so với chân trời. Để ý: góc bằng 90° − |φ|, càng gần xích đạo càng dựng đứng.",
+    "equatorPlane": "Mặt phẳng chứa xích đạo trời. Để ý: nó luôn vuông góc với trục thiên cực.",
+    "underside": "Mặt đất trở nên trong suốt. Để ý: sao vẫn đi tiếp ở phía dưới chân trời rồi mọc lại.",
+    "zoneCircumpolar": "Sao trong vùng này không bao giờ lặn. Để ý: vùng rộng ra khi bạn đi xa xích đạo.",
+    "zoneRiseSet": "Sao trong vùng này mọc và lặn mỗi ngày. Để ý: ở xích đạo, mọi sao đều thuộc vùng này.",
+    "zoneNeverRise": "Sao trong vùng này không bao giờ lên khỏi chân trời của bạn. Để ý: nó đối xứng với vùng cận cực."
   },
   "labels": {
     "all": "Hiện nhãn",

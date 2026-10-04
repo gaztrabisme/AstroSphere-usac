@@ -37,16 +37,41 @@ const EXTRA: [ToggleKey, string?][] = [
   ['sun', COLORS.sun],
 ];
 
+/** Các hộp kiểm khái niệm có một dòng giải thích `toggleHint.<key>` khi đang bật. */
+export const HINTED_TOGGLES: readonly ToggleKey[] = [
+  'poleAxis',
+  'equator',
+  'hourCircle0',
+  'horizonOnSphere',
+  'zenithNadir',
+  'meridian',
+  'verticalCircle',
+  'altAzGrid',
+  'eqGrid',
+  'poleAltitude',
+  'angle',
+  'equatorPlane',
+  'underside',
+  'zoneCircumpolar',
+  'zoneRiseSet',
+  'zoneNeverRise',
+];
+
 const LABEL_KEYS: (keyof LabelToggles)[] = ['directions', 'poles', 'circles', 'stars', 'angles'];
 
 export function displayPanel(store: Store, actions: Actions): HTMLElement {
-  const boxes = new Map<ToggleKey, HTMLInputElement>();
+  const boxes = new Map<ToggleKey, ReturnType<typeof checkbox>>();
   const labelBoxes = new Map<keyof LabelToggles, HTMLInputElement>();
 
   const makeGroup = (items: [ToggleKey, string?][]) =>
     items.map(([k, swatch]) => {
-      const cb = checkbox(t(`toggle.${k}`), store.state.toggles[k], (v) => actions.setToggle(k, v), { tip: t(`toggleTip.${k}`), swatch });
-      boxes.set(k, cb.input);
+      const cb = checkbox(t(`toggle.${k}`), store.state.toggles[k], (v) => actions.setToggle(k, v), {
+        tip: t(`toggleTip.${k}`),
+        swatch,
+        hint: HINTED_TOGGLES.includes(k) ? t(`toggleHint.${k}`) : undefined,
+        emphasis: k,
+      });
+      boxes.set(k, cb);
       return cb.el;
     });
 
@@ -100,7 +125,7 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
 
   const sync = () => {
     const s = store.state;
-    for (const [k, input] of boxes) input.checked = s.toggles[k];
+    for (const [k, cb] of boxes) cb.set(s.toggles[k]);
     for (const [k, input] of labelBoxes) {
       input.checked = s.labels[k];
       if (k !== 'all') input.disabled = !s.labels.all;
