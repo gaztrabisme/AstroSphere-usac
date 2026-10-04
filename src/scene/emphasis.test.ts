@@ -74,4 +74,16 @@ describe('EmphasisFx (tô sáng trong khung nhìn)', () => {
     for (let t = 200; t <= 400; t += 16) fx.step(t);
     expect(geomStats.lineGeometries).toBe(before);
   });
+
+  it('hệ số trình chiếu nhân với tô sáng (setScale) và được giữ khi tô sáng tắt', () => {
+    const { fx, lm } = fixture();
+    fx.setScale(2);
+    fx.setTarget('pole', 0, true);
+    expect(lm.linewidth).toBeCloseTo(2 * 2 * EMPHASIS_WIDTH);
+    fx.setTarget(null, 0, true);
+    expect(lm.linewidth).toBeCloseTo(2 * 2);
+    fx.setScale(1);
+    fx.setTarget('pole', 0, true);
+    expect(lm.linewidth).toBeCloseTo(2 * EMPHASIS_WIDTH);
+  });
 });

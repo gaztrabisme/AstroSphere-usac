@@ -414,7 +414,8 @@ body.learn-open .layout {
 
 /* ------------------------------------------------------------------ Nhãn trong khung nhìn */
 .lbl {
-  font-size: 12px;
+  /* --lbl-k: hệ số cỡ chữ nhãn cảnh (1,8 trong chế độ trình chiếu). */
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
@@ -426,36 +427,36 @@ body.learn-open .layout {
 }
 
 .lbl--dir {
-  font-size: 17px;
+  font-size: calc(17px * var(--lbl-k, 1));
   font-weight: 800;
   color: var(--scene-dir);
 }
 
 /* Nhãn nhỏ nhất trong cảnh: 12 px, màu --muted trên nền trời tối (≥ 4,5:1, review-1 G3). */
 .lbl--small {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 500;
 }
 
 .lbl--catalog {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 500;
   color: var(--scene-label-dim);
 }
 
 .lbl--star {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
 }
 
 .lbl--constellation {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-style: italic;
   letter-spacing: 0.4px;
   opacity: 0.95;
 }
 
 .lbl--angle {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 650;
   padding: 1px 6px;
   border-radius: 6px;
@@ -1431,7 +1432,20 @@ kbd {
    chữ nền 20 px và chữ phụ dùng --muted thay cho --subtle (đọc được trên máy chiếu). */
 body.present {
   --subtle: var(--muted);
+  --lbl-k: 1.8;
   font-size: 20px;
+}
+
+/* Dải cốt lõi dưới giản đồ chân trời: to, yên lặng — đọc được từ cuối phòng (review-1 H1). */
+body.present .view__foot {
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+}
+
+body.present .view__key {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 body.present .panels,

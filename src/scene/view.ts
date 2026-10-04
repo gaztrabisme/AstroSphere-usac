@@ -4,11 +4,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { Line2 } from 'three/addons/lines/Line2.js';
+import type { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { emphasisGroup } from '../emphasis';
 import type { QualitySettings, QualityTarget } from '../runtime/quality';
 import { lstOf, type AppState, type Selection, type Store } from '../state';
 import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
+import { setFatLineStyle } from './geom';
 import { HorizonLayer } from './horizonLayer';
 import { declutter, LabelBoxes } from './declutter';
 import type { Label, LabelData } from './labels';
@@ -59,6 +61,9 @@ export abstract class View implements QualityTarget {
   private boxes = new LabelBoxes();
   private boxLabel: Label[] = [];
   private needMeasure = true;
+  /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
+  private lineScale = 1;
+  private baseWidths = new WeakMap<Line2, number>();
   private hoverList: THREE.Object3D[] = [];
   private hoverKey = -1;
   /** Khóa của lần tính nhóm tô sáng gần nhất (chỉ tính lại khi khóa, đối tượng chọn, vĩ độ hoặc danh sách sao đổi). */
@@ -364,6 +369,28 @@ export abstract class View implements QualityTarget {
         this.dirty = true;
       }
     }
+  }
+
+  /**
+   * Hệ số độ dày mọi đường Line2 (chế độ trình chiếu: ×2 để đọc được trên máy chiếu, review-1 H1). Chỉ đổi uniform
+   * qua setFatLineStyle — không dựng hình học. Tô sáng liên kết nhân thêm trên hệ số này (EmphasisFx.setScale).
+   */
+  setLineScale(k: number): void {
+    if (k === this.lineScale) return;
+    this.lineScale = k;
+    this.scene.traverse((o) => {
+      if (!(o as Line2).isLine2) return;
+      const line = o as Line2;
+      const m = line.material as LineMaterial;
+      let w0 = this.baseWidths.get(line);
+      if (w0 === undefined) {
+        w0 = m.linewidth;
+        this.baseWidths.set(line, w0);
+      }
+      setFatLineStyle(line, { width: w0 * k });
+    });
+    this.emphasis.setScale(k);
+    this.invalidateLabelSizes();
   }
 
   /** Cỡ chữ nhãn đổi (chế độ trình chiếu): đo lại mọi nhãn ở lần vẽ tới. */

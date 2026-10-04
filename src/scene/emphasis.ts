@@ -41,6 +41,14 @@ export class EmphasisFx {
   private t0 = 0;
   /** Đang trong lúc chuyển: khung nhìn cần vẽ lại mỗi khung hình. */
   running = false;
+  /** Hệ số độ dày chung của khung nhìn (chế độ trình chiếu); tô sáng nhân thêm trên hệ số này. */
+  private scale = 1;
+
+  /** Đổi hệ số độ dày chung và áp lại mức tô sáng hiện tại lên các đường đang được tô sáng. */
+  setScale(k: number): void {
+    this.scale = k;
+    this.apply(this.level);
+  }
 
   private item(obj: Line2 | THREE.Mesh): Item {
     let it = this.known.get(obj);
@@ -129,7 +137,7 @@ export class EmphasisFx {
     if (!list) return;
     for (let i = 0; i < list.length; i++) {
       const it = list[i];
-      if (it.line) setFatLineStyle(it.line, { width: it.w0 * (1 + (EMPHASIS_WIDTH - 1) * e), opacity: it.o0 + (1 - it.o0) * e });
+      if (it.line) setFatLineStyle(it.line, { width: it.w0 * this.scale * (1 + (EMPHASIS_WIDTH - 1) * e), opacity: it.o0 + (1 - it.o0) * e });
       else if (it.mesh) (it.mesh.material as THREE.MeshBasicMaterial).opacity = Math.min(1, it.o0 + EMPHASIS_MESH_BOOST * e);
     }
   }
