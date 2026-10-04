@@ -141,7 +141,12 @@ for (const p of panelDefs) {
 }
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
-const footer = h('footer', { class: 'site-footer' }, h('p', { text: t('app.footer') }));
+const footer = h(
+  'footer',
+  { class: 'site-footer' },
+  h('p', { class: 'site-footer__credit', text: t('app.footer') }),
+  h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
+);
 app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer, learn.el);
 
 // ---------------------------------------------------------------- Chú giải màu
