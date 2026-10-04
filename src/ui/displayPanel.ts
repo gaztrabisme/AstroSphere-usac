@@ -9,32 +9,56 @@ import { button, checkbox, h } from './dom';
 
 type ToggleKey = keyof Toggles;
 
-const BASIC: [ToggleKey, string?][] = [
-  ['hourCircle0', COLORS.hourCircle],
-  ['equator', COLORS.equator],
-  ['underside'],
-  ['zoneNeverRise', COLORS.neverRise],
-  ['zoneRiseSet', COLORS.riseSet],
-  ['zoneCircumpolar', COLORS.circumpolar],
-  ['angle', COLORS.angle],
-];
-
-const LINES: [ToggleKey, string?][] = [
-  ['poleAxis', COLORS.axis],
-  ['equatorPlane', COLORS.equator],
-  ['zenithNadir', COLORS.zenith],
-  ['meridian', COLORS.meridian],
-  ['verticalCircle', COLORS.vertical],
-  ['poleAltitude', COLORS.latitude],
-  ['horizonOnSphere', COLORS.horizon],
-  ['altAzGrid', COLORS.altAzGrid],
-  ['eqGrid', COLORS.grid],
-];
-
-const EXTRA: [ToggleKey, string?][] = [
-  ['ecliptic', COLORS.ecliptic],
-  ['galactic', COLORS.galactic],
-  ['sun', COLORS.sun],
+/**
+ * Nhóm hộp kiểm theo khái niệm, đúng thứ tự câu chuyện: bầu trời quay → chân trời của bạn → hai hệ tọa độ →
+ * mọc – lặn → mở rộng → nhãn. Chỉ nhóm đầu mở sẵn; mỗi nhóm đóng có một câu giới thiệu ngắn.
+ */
+export const DISPLAY_GROUPS: readonly { id: string; toggles: readonly [ToggleKey, string?][] }[] = [
+  {
+    id: 'sky',
+    toggles: [
+      ['poleAxis', COLORS.axis],
+      ['equator', COLORS.equator],
+      ['hourCircle0', COLORS.hourCircle],
+      ['horizonOnSphere', COLORS.horizon],
+      ['zenithNadir', COLORS.zenith],
+    ],
+  },
+  {
+    id: 'horizon',
+    toggles: [
+      ['meridian', COLORS.meridian],
+      ['verticalCircle', COLORS.vertical],
+      ['altAzGrid', COLORS.altAzGrid],
+      ['underside'],
+      ['poleAltitude', COLORS.latitude],
+    ],
+  },
+  {
+    id: 'coords',
+    toggles: [
+      ['eqGrid', COLORS.grid],
+      ['equatorPlane', COLORS.equator],
+      ['angle', COLORS.angle],
+    ],
+  },
+  {
+    id: 'riseSet',
+    toggles: [
+      ['zoneCircumpolar', COLORS.circumpolar],
+      ['zoneRiseSet', COLORS.riseSet],
+      ['zoneNeverRise', COLORS.neverRise],
+    ],
+  },
+  {
+    id: 'extra',
+    toggles: [
+      ['ecliptic', COLORS.ecliptic],
+      ['galactic', COLORS.galactic],
+      ['sun', COLORS.sun],
+    ],
+  },
+  { id: 'labels', toggles: [] },
 ];
 
 /** Các hộp kiểm khái niệm có một dòng giải thích `toggleHint.<key>` khi đang bật. */
@@ -63,7 +87,7 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
   const boxes = new Map<ToggleKey, ReturnType<typeof checkbox>>();
   const labelBoxes = new Map<keyof LabelToggles, HTMLInputElement>();
 
-  const makeGroup = (items: [ToggleKey, string?][]) =>
+  const makeGroup = (items: readonly [ToggleKey, string?][]) =>
     items.map(([k, swatch]) => {
       const cb = checkbox(t(`toggle.${k}`), store.state.toggles[k], (v) => actions.setToggle(k, v), {
         tip: t(`toggleTip.${k}`),
@@ -105,21 +129,34 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
     ),
   );
 
+  /** Phần thêm sau các hộp kiểm của từng nhóm (chú giải vùng, ngày Mặt Trời, nhãn). */
+  const extras: Record<string, HTMLElement[]> = {
+    riseSet: [legend],
+    extra: [
+      h('div', { class: 'field' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
+      h('div', { class: 'chips' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
+      sunInfo,
+    ],
+    labels: [h('div', { class: 'checks' }, master.el, h('div', { class: 'checks checks--indent' }, ...labelItems))],
+  };
+
   const el = h(
     'section',
     { class: 'panel', id: 'panel-display', 'aria-labelledby': 'h-display' },
     h('h2', { id: 'h-display', class: 'panel__title', text: t('panel.display.title') }),
-    h('details', { class: 'sub', open: true }, h('summary', { text: t('panel.display.basic') }), h('div', { class: 'checks' }, ...makeGroup(BASIC)), legend),
-    h('details', { class: 'sub' }, h('summary', { text: t('panel.display.lines') }), h('div', { class: 'checks' }, ...makeGroup(LINES))),
-    h('details', { class: 'sub' }, h('summary', { text: t('panel.display.labels') }), h('div', { class: 'checks' }, master.el, h('div', { class: 'checks checks--indent' }, ...labelItems))),
-    h(
-      'details',
-      { class: 'sub' },
-      h('summary', { text: t('panel.display.extra') }),
-      h('div', { class: 'checks' }, ...makeGroup(EXTRA)),
-      h('div', { class: 'field' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
-      h('div', { class: 'chips' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
-      sunInfo,
+    ...DISPLAY_GROUPS.map((g, i) =>
+      h(
+        'details',
+        { class: 'sub', open: i === 0, 'data-group': g.id },
+        h(
+          'summary',
+          null,
+          h('span', { class: 'sub__title', text: t(`displayGroup.${g.id}.title`) }),
+          h('span', { class: 'sub__teaser', text: t(`displayGroup.${g.id}.teaser`) }),
+        ),
+        g.toggles.length ? h('div', { class: 'checks' }, ...makeGroup(g.toggles)) : null,
+        ...(extras[g.id] ?? []),
+      ),
     ),
   );
 

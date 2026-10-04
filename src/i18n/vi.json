@@ -203,10 +203,6 @@
     "display": {
       "title": "Hiển thị",
       "short": "Hiển thị",
-      "basic": "Cơ bản",
-      "lines": "Đường và mặt phẳng",
-      "labels": "Nhãn",
-      "extra": "Mở rộng: hoàng đạo, Mặt Trời, thiên hà",
       "zoneLegend": "Chú giải các vùng",
       "sunDate": "Ngày (vị trí Mặt Trời)",
       "vernal": "Xuân phân",
@@ -317,6 +313,32 @@
     "zoneCircumpolar": "Sao trong vùng này không bao giờ lặn. Để ý: vùng rộng ra khi bạn đi xa xích đạo.",
     "zoneRiseSet": "Sao trong vùng này mọc và lặn mỗi ngày. Để ý: ở xích đạo, mọi sao đều thuộc vùng này.",
     "zoneNeverRise": "Sao trong vùng này không bao giờ lên khỏi chân trời của bạn. Để ý: nó đối xứng với vùng cận cực."
+  },
+  "displayGroup": {
+    "sky": {
+      "title": "Bầu trời quay",
+      "teaser": "Trục, xích đạo trời, vòng giờ: những gì quay cùng các sao."
+    },
+    "horizon": {
+      "title": "Chân trời của bạn",
+      "teaser": "Kinh tuyến, lưới A – h, độ cao thiên cực: những gì đứng yên với bạn."
+    },
+    "coords": {
+      "title": "Hai hệ tọa độ",
+      "teaser": "Cùng một ngôi sao, hai cách đo: (α, δ) và (A, h)."
+    },
+    "riseSet": {
+      "title": "Mọc – lặn",
+      "teaser": "Vĩ độ quyết định sao nào mọc, lặn, không lặn hay không mọc."
+    },
+    "extra": {
+      "title": "Mở rộng",
+      "teaser": "Hoàng đạo, dải Ngân Hà và Mặt Trời theo mùa."
+    },
+    "labels": {
+      "title": "Nhãn",
+      "teaser": "Bật, tắt chữ trên hai khung nhìn."
+    }
   },
   "labels": {
     "all": "Hiện nhãn",

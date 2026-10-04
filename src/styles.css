@@ -939,12 +939,55 @@ details.sub {
   padding: var(--space-1) 0 var(--space-2);
 }
 
+/* Tiêu đề nhóm: dấu mở/đóng + tên nhóm + một câu giới thiệu ngắn. */
 details.sub > summary {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: var(--space-2);
+  align-content: center;
+  padding: var(--space-2) 2px;
+  list-style: none;
   cursor: pointer;
-  padding: 4px 2px;
-  font-weight: 600;
-  font-size: 13px;
   color: var(--text);
+}
+
+details.sub > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.sub > summary::before {
+  content: '▸';
+  grid-row: 1;
+  align-self: start;
+  text-align: center;
+  line-height: 1.45;
+  transform-origin: 50% 55%;
+  color: var(--muted);
+  transition: transform 0.15s ease-out;
+}
+
+details.sub[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details.sub > summary:hover .sub__title {
+  color: var(--accent-hi);
+}
+
+.sub__title,
+.sub__teaser {
+  grid-column: 2;
+}
+
+.sub__title {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.sub__teaser {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
 }
 
 .worldmap {
@@ -1512,11 +1555,6 @@ body.present .kv__x {
   .figure-chip__x {
     margin: -8px -4px -8px 0;
     background: transparent;
-  }
-
-  details.sub > summary {
-    display: flex;
-    align-items: center;
   }
 
   .range {
