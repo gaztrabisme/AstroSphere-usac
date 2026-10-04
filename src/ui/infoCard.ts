@@ -39,10 +39,15 @@ interface Row {
   x: HTMLSpanElement;
 }
 
-function row(label: string, title?: string): Row {
+/** Các dòng của thẻ có thêm một câu nghĩa ngắn `info.<key>Note` ngay dưới giá trị. */
+export const INFO_NOTE_KEYS = ['ra', 'dec', 'ha', 'az', 'alt'] as const;
+
+function row(key: string, label: string, title?: string, note?: string): Row {
   const v = h('span', { class: 'kv__v' });
   const x = h('span', { class: 'kv__x' });
-  return { el: h('div', { class: 'kv', title }, h('dt', { text: label }), h('dd', null, v, x)), v, x };
+  const n = note ? h('span', { class: 'kv__note', text: note }) : null;
+  // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết".
+  return { el: h('div', { class: 'kv', title, 'data-emphasis': key }, h('dt', { text: label }), h('dd', null, v, x, n)), v, x };
 }
 
 function setRow(r: Row, value: string, extra = ''): void {
@@ -51,7 +56,7 @@ function setRow(r: Row, value: string, extra = ''): void {
 }
 
 export function infoCard(store: Store, actions: Actions) {
-  const title = h('h3', { class: 'infocard__title' });
+  const title = h('h3', { class: 'infocard__title', text: t('info.emptyTitle') });
   const dot = h('span', { class: 'infocard__dot', 'aria-hidden': 'true' });
   const kind = h('p', { class: 'infocard__kind' });
   const collapseBtn = h('button', {
@@ -72,18 +77,19 @@ export function infoCard(store: Store, actions: Actions) {
   });
 
   // Cấu trúc thẻ dựng một lần; mỗi lần cập nhật chỉ thay chữ (rẻ khi đang chạy hoạt ảnh).
+  const note = (k: (typeof INFO_NOTE_KEYS)[number]) => t(`info.${k}Note`);
   const r = {
-    ra: row(t('info.ra')),
-    dec: row(t('info.dec')),
-    ha: row(t('info.ha'), t('info.haTip')),
-    az: row(t('info.az')),
-    alt: row(t('info.alt')),
-    rise: row(t('info.rise')),
-    transit: row(t('info.transit')),
-    set: row(t('info.set')),
-    above: row(t('info.hoursAbove'), t('info.hoursAboveTip')),
-    lowest: row(t('info.lowest')),
-    highest: row(t('info.highest')),
+    ra: row('ra', t('info.ra'), undefined, note('ra')),
+    dec: row('dec', t('info.dec'), undefined, note('dec')),
+    ha: row('ha', t('info.ha'), t('info.haTip'), note('ha')),
+    az: row('az', t('info.az'), undefined, note('az')),
+    alt: row('alt', t('info.alt'), undefined, note('alt')),
+    rise: row('rise', t('info.rise')),
+    transit: row('transit', t('info.transit')),
+    set: row('set', t('info.set')),
+    above: row('above', t('info.hoursAbove'), t('info.hoursAboveTip')),
+    lowest: row('lowest', t('info.lowest')),
+    highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
   const body = h(
@@ -97,7 +103,7 @@ export function infoCard(store: Store, actions: Actions) {
     h(
       'dl',
       null,
-      h('div', { class: 'kv' }, h('dt', { text: t('info.status') }), h('dd', null, status)),
+      h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status)),
       r.rise.el,
       r.transit.el,
       r.set.el,
@@ -107,27 +113,34 @@ export function infoCard(store: Store, actions: Actions) {
     ),
   );
 
+  // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
+  const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
   const el = h(
     'aside',
-    { class: 'infocard', 'aria-label': t('info.aria'), hidden: true },
+    { class: 'infocard is-empty', 'aria-label': t('info.aria') },
     h(
       'header',
       { class: 'infocard__head' },
       dot,
       title,
       collapseBtn,
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
+      h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
     ),
     kind,
+    empty,
     body,
   );
 
   // Kéo thẻ bằng thanh tiêu đề để không che phần đang quan sát (chỉ trên màn hình rộng).
   const head = el.querySelector('.infocard__head') as HTMLElement;
-  head.title = t('info.dragTip');
+  head.addEventListener('pointerenter', () => {
+    head.title = getComputedStyle(el).position === 'absolute' ? t('info.dragTip') : '';
+  });
   let drag: { dx: number; dy: number } | null = null;
   head.addEventListener('pointerdown', (e) => {
+    // Chỉ kéo được khi thẻ nổi trên khung nhìn (không kéo khi là cột cố định hoặc trên điện thoại).
     if ((e.target as HTMLElement).closest('button') || window.matchMedia?.('(max-width: 900px)').matches) return;
+    if (getComputedStyle(el).position !== 'absolute') return;
     const r = el.getBoundingClientRect();
     drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
     head.setPointerCapture(e.pointerId);
@@ -150,10 +163,19 @@ export function infoCard(store: Store, actions: Actions) {
   if (window.matchMedia?.('(max-width: 900px)').matches) collapseBtn.click();
 
   let staticKey = '';
+  let wasEmpty: boolean | null = null;
   const update = () => {
     const s = store.state;
     const obj = resolveSelection(s);
-    setHidden(el, !obj);
+    const isEmpty = !obj;
+    if (isEmpty !== wasEmpty) {
+      wasEmpty = isEmpty;
+      el.classList.toggle('is-empty', isEmpty);
+      if (isEmpty) {
+        staticKey = '';
+        setText(title, t('info.emptyTitle'));
+      }
+    }
     if (!obj) return;
     const lst = lstOf(s);
     const { alt, az, ha } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
@@ -194,27 +216,41 @@ export function infoCard(store: Store, actions: Actions) {
   return { el, update };
 }
 
+/**
+ * Thứ tự ô = thứ tự khái niệm: vị trí (φ, độ cao thiên cực, góc xích đạo – chân trời) → thời gian (λ, LST, GST,
+ * giờ Mặt Trời) → đối tượng đang chọn. φ và độ cao thiên cực đứng cạnh nhau để thấy chúng bằng nhau.
+ * `group-end` đánh dấu ô cuối của một cụm (khoảng trống lớn hơn phía sau thay cho đường viền).
+ */
+export const DATA_CELLS = [
+  { key: 'lat', tip: false, end: false },
+  { key: 'pole', tip: true, end: false },
+  { key: 'incl', tip: true, end: true },
+  { key: 'lon', tip: false, end: false },
+  { key: 'lst', tip: true, end: false },
+  { key: 'gst', tip: true, end: false },
+  { key: 'solar', tip: true, end: true },
+  { key: 'selected', tip: false, end: false },
+] as const;
+export type DataKey = (typeof DATA_CELLS)[number]['key'];
+
 export function dataBar(store: Store) {
-  const items: Record<string, HTMLElement> = {};
-  const cell = (key: string, title?: string) => {
+  const items = {} as Record<DataKey, HTMLElement>;
+  const cells = {} as Record<DataKey, HTMLElement>;
+  for (const c of DATA_CELLS) {
     const v = h('span', { class: 'data__v' });
-    items[key] = v;
-    return h('div', { class: 'data__item', title }, h('span', { class: 'data__k', text: t(`data.${key}`) }), v);
-  };
-  const sunCell = cell('solar', t('data.solarTip'));
-  const selCell = cell('selected');
-  const el = h(
-    'section',
-    { class: 'databar', 'aria-label': t('data.aria') },
-    cell('lat'),
-    cell('lon'),
-    cell('lst', t('data.lstTip')),
-    cell('gst', t('data.gstTip')),
-    cell('pole', t('data.poleTip')),
-    cell('incl', t('data.inclTip')),
-    sunCell,
-    selCell,
-  );
+    items[c.key] = v;
+    const note = h('span', { class: 'data__n', text: t(`data.${c.key}Note`) });
+    // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết" (số ↔ hình trong hai khung nhìn).
+    cells[c.key] = h(
+      'div',
+      { class: c.end ? 'data__item data__item--end' : 'data__item', title: c.tip ? t(`data.${c.key}Tip`) : undefined, 'data-emphasis': c.key },
+      h('span', { class: 'data__k', text: t(`data.${c.key}`) }),
+      v,
+      note,
+    );
+  }
+  const sunCell = cells.solar;
+  const el = h('section', { class: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
 
   const update = () => {
     const s: AppState = store.state;
@@ -232,11 +268,10 @@ export function dataBar(store: Store) {
       setText(items.solar, `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`);
     }
     const obj = resolveSelection(s);
-    setHidden(selCell, !obj);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
       setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
-    }
+    } else setText(items.selected, t('data.selectedNone'));
   };
   return { el, update };
 }

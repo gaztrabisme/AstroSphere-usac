@@ -13,6 +13,7 @@ import { Actions, createInitialState, Store, type AppState, type Toggles } from 
 import { animationPanel } from './ui/animationPanel';
 import { displayPanel } from './ui/displayPanel';
 import { button, clear, h } from './ui/dom';
+import { mountFirstHint } from './ui/firstHint';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { mountQualityNotice } from './ui/qualityNotice';
@@ -25,6 +26,16 @@ const scenePromise = import('./scene/boot');
 
 const store = new Store(createInitialState());
 const actions = new Actions(store);
+
+// Cảnh mở đầu: bầu trời tự quay chậm — trừ khi người dùng yêu cầu giảm chuyển động (không tự chạy).
+const reducedMotion = (): boolean => {
+  try {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  } catch {
+    return false;
+  }
+};
+if (reducedMotion()) actions.pause();
 const app = document.getElementById('app')!;
 
 // ---------------------------------------------------------------- Ngăn Ôn tập và hộp thoại (tải động khi dùng lần đầu)
@@ -139,9 +150,13 @@ const horizonBox = viewBox('view-horizon', t('view.horizon'), t('view.horizonSub
   button(t('view.resetCamera'), () => horizon?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') }),
 ]);
 
+// Một gợi ý duy nhất, một lần, trên khung nhìn chính (không phải chuỗi hướng dẫn).
+mountFirstHint(horizonBox, [horizonHost, sphereHost], () => fpBtn);
+
 const card = infoCard(store, actions);
 const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
-const views = h('section', { class: 'views', 'data-active': 'horizon' }, sphereBox, horizonBox, card.el);
+// Thứ tự đọc = thứ tự khái niệm: giản đồ chân trời (điều bạn thấy) trước, thiên cầu (vì sao như vậy) sau.
+const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el);
 
 const viewTab = (key: 'sphere' | 'horizon') =>
   h('button', {
@@ -155,7 +170,7 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
-const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.horizon, tabEls.sphere);
 type ViewKey = 'sphere' | 'horizon';
 const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {
@@ -315,6 +330,7 @@ updateLegend(store.state);
 
 function resetAll() {
   actions.resetAll();
+  if (reducedMotion()) actions.pause();
   if (horizon?.isFirstPerson()) fpBtn.click();
   sphere?.resetCamera();
   horizon?.resetCamera();
