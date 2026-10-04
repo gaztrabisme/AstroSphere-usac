@@ -20,6 +20,7 @@ import { button, clear, h } from './ui/dom';
 import { dataBar, infoCard } from './ui/infoCard';
 import { learningDrawer } from './ui/learning';
 import { locationPanel } from './ui/locationPanel';
+import { mountQualityNotice } from './ui/qualityNotice';
 import { starPanel } from './ui/starPanel';
 import { attachViewInteraction } from './ui/viewInteraction';
 
@@ -258,6 +259,7 @@ const loop = startFrameLoop({
   isPlaying: () => store.state.playing,
   quality,
 });
+mountQualityNotice(quality, app);
 
 // ---------------------------------------------------------------- Câu chuyện
 const story = mountStory({

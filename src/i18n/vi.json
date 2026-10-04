@@ -344,6 +344,12 @@
     "ground": "Mặt phẳng chân trời|Mặt đất nơi người quan sát đứng; chia bầu trời thành nửa nhìn thấy và nửa bị che khuất.",
     "skyDome": "Vòm trời|Nửa thiên cầu phía trên chân trời mà người quan sát nhìn thấy."
   },
+  "quality": {
+    "reduced1": "Máy chạy hơi chậm nên mô phỏng đã giảm độ phân giải.",
+    "reduced2": "Máy chạy chậm nên mô phỏng đã giảm độ phân giải và chỉ vẽ các sao sáng.",
+    "restore": "Khôi phục chất lượng",
+    "dismiss": "Đóng thông báo"
+  },
   "learn": {
     "title": "Chế độ học tập",
     "close": "Đóng chế độ học tập",

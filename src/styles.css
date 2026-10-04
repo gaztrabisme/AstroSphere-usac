@@ -1306,6 +1306,34 @@ kbd {
   font-size: 13px;
 }
 
+/* ------------------------------------------------------------------ Thông báo chất lượng (góc, không chặn) */
+.qnotice {
+  position: fixed;
+  left: var(--space-3);
+  bottom: calc(var(--space-3) + var(--sheet-h));
+  z-index: var(--z-toast);
+  max-width: calc(100vw - 2 * var(--space-3));
+  pointer-events: none;
+}
+
+.qnotice__chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  font-size: 12.5px;
+  color: var(--muted);
+  pointer-events: auto;
+}
+
+.qnotice__text {
+  min-width: 0;
+}
+
 /* ------------------------------------------------------------------ Màn hình vừa */
 @media (max-width: 1400px) {
   .panels {
