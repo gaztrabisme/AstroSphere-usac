@@ -4,6 +4,9 @@ import { clamp, gmstDeg, julianDate, norm360 } from './astro';
 import { getCatalogStar, catalogIndexByHip } from './data/catalog';
 import { TEMPLATE_FIGURES, getTemplate } from './data/constellations';
 import { DEFAULT_PLACE } from './data/places';
+import type { EmphasisKey } from './emphasis';
+
+export type { EmphasisKey } from './emphasis';
 
 export type TrailMode = 'none' | 'short' | 'long';
 export type AnimMode = 'continuous' | 'oneDay' | 'stepHour';
@@ -90,6 +93,11 @@ export interface AppState {
   selected: Selection;
   /** Ngày dùng để đặt Mặt Trời (YYYY-MM-DD). */
   sunDate: string;
+  /**
+   * Tô sáng liên kết (ux-brief §6): con số đang được rê chuột / chọn tiêu điểm, hoặc hình 3D đang được rê chuột.
+   * Hình tương ứng trong hai khung nhìn đậm lên; ô số tương ứng có lớp `is-linked`. null = không tô sáng.
+   */
+  emphasis: EmphasisKey | null;
 }
 
 export const TRAIL_LENGTH_DEG: Record<TrailMode, number> = { none: 0, short: 45, long: 359 };
@@ -225,6 +233,7 @@ export function createInitialState(): AppState {
     trailStart: gst + lon,
     selected: null,
     sunDate: todayIso(now),
+    emphasis: null,
   };
   for (const id of ['UMa', 'UMi', 'Ori']) {
     const c = buildConstellation(id);
@@ -403,6 +412,12 @@ export class Actions {
 
   resetTrails(): void {
     this.store.set({ trailStart: lstCont(this.s) });
+  }
+
+  /** Đặt khóa tô sáng liên kết; không làm gì nếu không đổi (tránh phát sự kiện thừa khi rê chuột). */
+  setEmphasis(k: EmphasisKey | null): void {
+    if (k === this.s.emphasis) return;
+    this.store.set({ emphasis: k });
   }
 
   select(sel: Selection): void {
