@@ -297,7 +297,7 @@
     "catalog": "Khoảng 1300 sao sáng nhất bầu trời theo vị trí thật (dữ liệu HYG).",
     "constellationLines": "Đường nối các sao theo hình 88 chòm sao.",
     "ecliptic": "Đường đi biểu kiến của Mặt Trời trong năm, nghiêng 23,44° so với xích đạo trời.",
-    "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Nhân Mã).",
+    "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Sagittarius).",
     "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm."
   },
   "toggleHint": {
@@ -382,7 +382,7 @@
     "equator": "Xích đạo trời|Các điểm có xích vĩ δ = 0°. Nghiêng 90° − |φ| so với chân trời; cắt chân trời tại đúng Đông và Tây.",
     "equatorPlane": "Mặt phẳng xích đạo trời|Vuông góc với trục thiên cực, đi qua tâm thiên cầu.",
     "axis": "Trục thiên cực|Bầu trời quay biểu kiến quanh trục này mỗi ngày thiên văn (23h 56m 04s).",
-    "ncp": "Thiên cực Bắc|δ = +90°. Độ cao trên chân trời bằng vĩ độ người quan sát. Sao Bắc Cực ở rất gần điểm này.",
+    "ncp": "Thiên cực Bắc|δ = +90°. Độ cao trên chân trời bằng vĩ độ người quan sát. Sao Polaris ở rất gần điểm này.",
     "scp": "Thiên cực Nam|δ = −90°. Người ở Nam bán cầu thấy điểm này cao |φ| trên chân trời phía Nam.",
     "zone_circumpolar": "Vùng cận cực|Sao ở đây không bao giờ lặn: luôn ở trên chân trời.",
     "zone_riseSet": "Vùng mọc – lặn|Sao ở đây mọc ở phía Đông và lặn ở phía Tây mỗi ngày.",
@@ -529,7 +529,7 @@
     "title": "Giới thiệu",
     "body": [
       "Hệ thống mô phỏng được phát triển bởi **Câu lạc bộ Thiên văn USAC**, với định hướng xây dựng một công cụ trực quan hỗ trợ giảng dạy và tự học thiên văn học cơ bản.",
-      "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Bắc Cực gần như không bao giờ lặn.",
+      "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Polaris gần như không bao giờ lặn.",
       "## Phương pháp & độ chính xác",
       "- Thời gian thiên văn được tính theo các quy ước của IAU 1982; phép chuyển đổi tọa độ được kiểm chứng tự động với thư viện astronomy-engine, với sai số dưới \\(0{,}1^\\circ\\).",
       "- Tọa độ thiên thể được quy chiếu theo kỷ nguyên J2000.0; phiên bản hiện tại chưa hiệu chỉnh các hiệu ứng chuyển động riêng, tuế sai, chương động và khúc xạ khí quyển.",
