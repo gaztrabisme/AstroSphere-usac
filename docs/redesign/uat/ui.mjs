@@ -81,7 +81,8 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   check('brand: dark body, orange top rule, orange primary with dark text', brand.body === 'rgb(10, 10, 10)' && brand.topbarBorder === 'rgb(242, 101, 34)' && brand.primaryBg === 'rgb(242, 101, 34)' && brand.primaryText === 'rgb(10, 10, 10)', JSON.stringify(brand));
 
   // Cần một thiên thể đang chọn: mặc định là Sao Bắc Cực; nếu không có thì dùng "Thiết lập" của nhiệm vụ 1.
-  const cardShown = () => page.evaluate(() => !document.querySelector('.infocard').hidden);
+  // Thẻ thông tin không còn ẩn khi bỏ chọn (có trạng thái trống), nên "đang chọn" = thẻ hiện VÀ không ở trạng thái trống.
+  const cardShown = () => page.evaluate(() => { const c = document.querySelector('.infocard'); return !c.hidden && !c.classList.contains('is-empty'); });
   if (!(await cardShown())) {
     await page.keyboard.press('l');
     await page.locator('.learn__task').first().getByRole('button', { name: /Thiết lập/ }).click();
@@ -137,7 +138,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   await page.waitForSelector('#dlg-about[open]');
   check('Giới thiệu dialog (lazy) opens', await page.locator('#dlg-about[open]').count() === 1);
   await page.keyboard.press('Escape');
-  const dlgClosed = await page.evaluate(() => !document.getElementById('dlg-about').open && !document.querySelector('.infocard').hidden);
+  const dlgClosed = await page.evaluate(() => { const c = document.querySelector('.infocard'); return !document.getElementById('dlg-about').open && !c.hidden && !c.classList.contains('is-empty'); });
   check('Esc closes the native dialog first and keeps the selection', dlgClosed);
   await page.close();
 }
