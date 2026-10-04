@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
-import { eclipticToEquatorial, galacticToEquatorial, zoneLimits } from '../astro';
+import { cosD, eclipticToEquatorial, galacticToEquatorial, sinD, zoneLimits } from '../astro';
 import { bvToRgb, catalogArrays, catalogIndexByHip, getCatalogStar } from '../data/catalog';
 import { ALL_FIGURES } from '../data/constellations';
 import { t } from '../i18n';
@@ -15,12 +15,14 @@ import {
   decBandGeometry,
   decCircle,
   disposeObject,
+  dynamicFatLine,
   fatLine,
   greatArc,
   polylineToSegments,
   ringTexture,
   thinSegments,
   translucent,
+  writeFatLine,
 } from './geom';
 import { makeLabel } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
@@ -54,7 +56,8 @@ export class SkyLayer {
   private allLines: THREE.LineSegments;
   private user = new THREE.Group();
   private sun = new THREE.Group();
-  private sunPath: Line2 | null = null;
+  private sunPath: Line2;
+  private sunPathPts = new Float32Array(181 * 3);
   private sunKey = '';
   private selRing: THREE.Sprite;
   private starMaterial = createStarMaterial();
@@ -187,6 +190,10 @@ export class SkyLayer {
     const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5] });
     this.sun.add(sunLabel);
     this.rot.add(this.sun);
+    // Đường đi trong ngày của Mặt Trời: hình học cấp phát một lần, ghi lại khi đổi ngày.
+    this.sunPath = dynamicFatLine(181, COLORS.sun, { width: 1.6, opacity: 0.7, dashed: true, dashSize: R * 0.03, gapSize: R * 0.03, boundsRadius: R });
+    this.sunPath.userData.tip = 'sunPath';
+    this.rot.add(this.sunPath);
 
     this.selRing = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture('#ffffff'), depthWrite: false, depthTest: false, sizeAttenuation: false }));
     this.selRing.scale.setScalar(0.06);
@@ -392,13 +399,18 @@ export class SkyLayer {
     const p = sunEquatorial(s);
     eqVec(p.ra, p.dec, this.R, this.sunVec);
     this.sun.position.copy(this.sunVec);
-    if (this.sunPath) {
-      this.rot.remove(this.sunPath);
-      disposeObject(this.sunPath);
+    // Vòng xích vĩ δ☉ (181 điểm, như decCircle) ghi tại chỗ.
+    const r = this.R * 0.998;
+    const cd = cosD(p.dec) * r;
+    const z = sinD(p.dec) * r;
+    const a = this.sunPathPts;
+    for (let i = 0; i <= 180; i++) {
+      const ang = i * 2;
+      a[i * 3] = cd * cosD(ang);
+      a[i * 3 + 1] = cd * sinD(ang);
+      a[i * 3 + 2] = z;
     }
-    this.sunPath = fatLine(decCircle(p.dec, this.R * 0.998), COLORS.sun, { width: 1.6, opacity: 0.7, dashed: true, dashSize: this.R * 0.03, gapSize: this.R * 0.03 });
-    this.sunPath.userData.tip = 'sunPath';
-    this.rot.add(this.sunPath);
+    writeFatLine(this.sunPath, a, 181);
   }
 
   /** Cập nhật theo trạng thái (chỉ dựng lại phần thay đổi). */
@@ -429,7 +441,7 @@ export class SkyLayer {
     this.allLines.visible = tg.constellationLines;
     this.sun.visible = tg.sun;
     if (tg.sun) this.updateSun(s);
-    if (this.sunPath) this.sunPath.visible = tg.sun;
+    this.sunPath.visible = tg.sun;
 
     // Vòng đánh dấu đối tượng đang chọn
     const local = this.selectedLocal(s);

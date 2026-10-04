@@ -6,9 +6,11 @@ import { DEG, fmtDeg } from '../astro';
 import { t } from '../i18n';
 import type { AppState, Store } from '../state';
 import { createEarthTexture } from './earth';
-import { COLORS, fatLine, greatArc, sectorGeometry, setFatLinePoints, translucent } from './geom';
+import { COLORS, dynamicFatLine, greatArcInto, sectorGeometry, translucent, writeFatLine } from './geom';
 import { makeLabel, setLabelText, type Label } from './labels';
 import { SKY_RADIUS, View } from './view';
+
+const _arc = new Float32Array(41 * 3);
 
 export class CelestialSphereView extends View {
   private earth: THREE.Mesh;
@@ -68,7 +70,7 @@ export class CelestialSphereView extends View {
     // Góc vĩ độ φ ở tâm Trái Đất
     this.latSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.latitude, 0.35));
     this.latSector.userData.tip = 'latitude';
-    this.latArc = fatLine([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)], COLORS.latitude, { width: 2.4, depthTest: false });
+    this.latArc = dynamicFatLine(41, COLORS.latitude, { width: 2.4, depthTest: false, boundsRadius: this.earthR * 1.7 });
     this.latLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.latitude, hideBelowHorizon: false });
     this.latGroup.add(this.latSector, this.latArc, this.latLabel);
     this.scene.add(this.latGroup);
@@ -97,7 +99,7 @@ export class CelestialSphereView extends View {
     const r = this.earthR * 1.6;
     this.latSector.geometry.dispose();
     this.latSector.geometry = Math.abs(lat) < 0.01 ? new THREE.BufferGeometry() : sectorGeometry(eqDir, up, r);
-    setFatLinePoints(this.latArc, Math.abs(lat) < 0.01 ? [eqDir.clone().multiplyScalar(r), up.clone().multiplyScalar(r * 1.001)] : greatArc(eqDir, up, r, 40));
+    writeFatLine(this.latArc, _arc, Math.abs(lat) < 0.01 ? greatArcInto(eqDir, eqDir, r, 1, _arc) : greatArcInto(eqDir, up, r, 40, _arc));
     const mid = new THREE.Vector3(0, Math.sin((lat / 2) * DEG), Math.cos((lat / 2) * DEG));
     this.latLabel.position.copy(mid.multiplyScalar(r * 1.25));
     setLabelText(this.latLabel, `φ = ${fmtDeg(lat)}`);
