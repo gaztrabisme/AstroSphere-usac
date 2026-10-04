@@ -487,6 +487,200 @@
       "Hệ thống được thiết kế theo hướng offline-first, có thể vận hành hoàn toàn trên trình duyệt mà không yêu cầu kết nối mạng sau khi các tài nguyên cần thiết đã được tải xuống."
     ]
   },
-  "hero": {},
-  "story": {}
+  "hero": {
+    "aria": "Màn hình chào mừng",
+    "kicker": "CLB Thiên văn USAC",
+    "title": "Bầu trời quay như thế nào?",
+    "lead": "Mô phỏng thiên cầu 3D: xem các vì sao mọc, lặn và làm quen hai hệ tọa độ thiên văn.",
+    "start": "Bắt đầu hành trình",
+    "startSub": "3 chương ngắn · khoảng 10 phút",
+    "resume": "Tiếp tục hành trình",
+    "resumeSub": "Chương {c} · bước {s}",
+    "explore": "Khám phá tự do",
+    "slogan": "khoa học cho mọi người",
+    "logoAlt": "Biểu trưng CLB Thiên văn USAC"
+  },
+  "story": {
+    "ui": {
+      "aria": "Hành trình có hướng dẫn",
+      "next": "Tiếp ›",
+      "prev": "‹ Quay lại",
+      "exit": "Thoát",
+      "exitTip": "Thoát hành trình, đưa mô phỏng về như lúc trước khi mở (phím Esc)",
+      "progress": "Chương {c} · {s}/{n}",
+      "chapterTip": "Chương {c}: {title}",
+      "chaptersAria": "Chọn chương",
+      "stepAria": "Bước {s} trên {n}",
+      "collapse": "Thu gọn",
+      "expand": "Mở rộng",
+      "notice": "Hãy để ý",
+      "readout": "Số liệu trực tiếp",
+      "tryLabel": "Thử",
+      "quizLabel": "Chọn một đáp án",
+      "right": "Chính xác!",
+      "wrong": "Chưa đúng, thử lại nhé.",
+      "resume": "Tiếp tục chương {c} · bước {s}",
+      "resumeDismiss": "Ẩn gợi ý tiếp tục",
+      "review": "Ôn tập 12 nhiệm vụ",
+      "explore": "Tự khám phá tiếp",
+      "restart": "Xem lại từ đầu",
+      "noStar": "Chưa chọn sao nào",
+      "keys": "PageDown / → bước tiếp · PageUp / ← quay lại · Esc thoát",
+      "readoutLabel": {
+        "lat": "φ · vĩ độ",
+        "pole": "Độ cao thiên cực",
+        "lst": "LST · giờ thiên văn",
+        "ra": "α · xích kinh",
+        "dec": "δ · xích vĩ",
+        "ha": "H · góc giờ",
+        "az": "A · phương vị",
+        "alt": "h · độ cao",
+        "status": "Loại sao"
+      }
+    },
+    "stars": {
+      "polaris": "Sao Bắc Cực (Polaris)",
+      "betelgeuse": "Tham Tú (Betelgeuse)",
+      "gacrux": "Gacrux, đỉnh Nam Thập Tự"
+    },
+    "c1": {
+      "title": "Vì sao bầu trời quay?",
+      "night": {
+        "title": "Một đêm ở Hà Nội",
+        "body": "Em đang đứng ở Hà Nội, ngẩng nhìn bầu trời đêm. Về phía Bắc, thấp gần chân trời, là Sao Bắc Cực (đang được chọn). Phía Nam, chòm Thợ Săn đang lên cao.",
+        "notice": "Sao Bắc Cực chỉ cao khoảng 21° so với chân trời. Hãy nhớ con số này, nó sẽ quay lại ở bước 4."
+      },
+      "turns": {
+        "title": "Bầu trời quay",
+        "body": "Thời gian đang chạy, mỗi ngôi sao để lại một vệt sáng. Mọi sao đều quay quanh một điểm rất gần Sao Bắc Cực: mọc ở phía Đông, lên cao, rồi lặn ở phía Tây.",
+        "notice": "Một vòng mất 23 giờ 56 phút 04 giây, ít hơn 24 giờ vì Trái Đất còn đi quanh Mặt Trời: Mặt Trời cần thêm khoảng 4 phút mới về chỗ cũ, còn các sao ở rất xa thì không."
+      },
+      "earth": {
+        "title": "Thật ra là Trái Đất quay",
+        "body": "Đây là thiên cầu nhìn từ bên ngoài. Trục xanh dương là trục quay, vòng vàng là xích đạo trời, mặt phẳng ngang là chân trời của em. Trái Đất tự quay từ Tây sang Đông, nên bầu trời trông như quay ngược lại, từ Đông sang Tây.",
+        "notice": "Giống như ngồi trên xe buýt: xe chạy tới thì hàng cây bên đường như lùi về sau."
+      },
+      "pole": {
+        "title": "Độ cao thiên cực = vĩ độ",
+        "body": "Thiên cực Bắc là chỗ trục quay của Trái Đất, kéo dài ra, chạm vào bầu trời. Sao Bắc Cực nằm sát điểm đó. Ở Hà Nội, vĩ độ φ = 21,03° B, và thiên cực Bắc cũng cao đúng 21,03°.",
+        "notice": "φ (đọc là \"phi\") là vĩ độ: em đứng cách xích đạo bao nhiêu độ về phía Bắc hay Nam. Góc được tô trên hình chính là độ cao thiên cực."
+      },
+      "latitudes": {
+        "title": "Thử đổi vĩ độ",
+        "body": "Bấm các nút bên dưới để \"bay\" tới nơi khác. Càng đi về phía Bắc, thiên cực càng lên cao. Ở xích đạo nó nằm sát chân trời, ở Bắc Cực nó ở ngay trên đỉnh đầu.",
+        "notice": "Ở Sydney (Nam bán cầu), thiên cực Bắc chìm dưới chân trời. Thay vào đó, thiên cực Nam nhô lên, cao đúng bằng 33,87°.",
+        "try": {
+          "hanoi": "Hà Nội",
+          "hcm": "TP.HCM",
+          "equator": "Xích đạo",
+          "northpole": "Bắc Cực",
+          "sydney": "Sydney"
+        }
+      },
+      "quiz": {
+        "title": "Câu hỏi: ở Huế",
+        "body": "Huế nằm ở vĩ độ φ ≈ 16,5° B. Đứng ở Huế, thiên cực Bắc cao bao nhiêu độ so với chân trời?",
+        "options": [
+          "0°",
+          "16,5°",
+          "73,5°",
+          "90°"
+        ],
+        "explain": "Độ cao thiên cực luôn bằng vĩ độ nơi em đứng, nên ở Huế nó cao khoảng 16,5°. Còn 73,5° = 90° − 16,5° là khoảng cách từ thiên cực tới đỉnh đầu."
+      }
+    },
+    "c2": {
+      "title": "Hai hệ tọa độ",
+      "altaz": {
+        "title": "Phương vị A và độ cao h",
+        "body": "Đây là Tham Tú (Betelgeuse), ngôi sao đỏ ở vai chòm Thợ Săn. Muốn chỉ cho bạn thấy nó, em chỉ cần hai con số của hệ chân trời.",
+        "notice": "A (phương vị): xoay người bao nhiêu độ, tính từ hướng Bắc sang Đông. h (độ cao): ngẩng đầu bao nhiêu độ từ chân trời lên. Cung thẳng đứng qua ngôi sao chính là đường đo h."
+      },
+      "radec": {
+        "title": "Xích kinh α và xích vĩ δ",
+        "body": "A và h đổi theo chỗ em đứng và theo giờ. Để mọi người cùng gọi một ngôi sao bằng một \"địa chỉ\" cố định, ta dùng hệ xích đạo, giống kinh độ và vĩ độ trên Trái Đất.",
+        "notice": "Xích vĩ δ ≈ vĩ độ của sao: cách xích đạo trời bao nhiêu độ. Xích kinh α ≈ kinh độ của sao: đo bằng giờ, từ vòng giờ 0h về phía Đông."
+      },
+      "turning": {
+        "title": "Khi bầu trời quay",
+        "body": "Bầu trời đang quay, hãy nhìn bảng số. A và h thay đổi liên tục, còn α và δ đứng yên, vì lưới xích đạo quay cùng các sao.",
+        "notice": "Thử bay tới TP.HCM hay Sydney: vẫn ngôi sao ấy, α và δ giữ nguyên, nhưng A và h khác hẳn, vì chân trời của em đã đổi.",
+        "try": {
+          "hcm": "TP.HCM",
+          "hanoi": "Hà Nội",
+          "sydney": "Sydney"
+        }
+      },
+      "lst": {
+        "title": "Giờ thiên văn LST",
+        "body": "Kinh tuyến trời là nửa vòng tròn đi từ hướng Bắc, qua đỉnh đầu, xuống hướng Nam. Giờ thiên văn LST cho biết dải trời nào đang đi ngang kinh tuyến lúc này: LST = 5h nghĩa là các sao có α ≈ 5h đang ở cao nhất.",
+        "notice": "LST là chiếc đồng hồ của bầu trời: nó chạy đủ 24h trong một vòng quay 23 giờ 56 phút. Xem số LST tăng dần khi bầu trời quay."
+      },
+      "hourangle": {
+        "title": "Góc giờ H = LST − α",
+        "body": "Góc giờ H cho biết ngôi sao đã đi qua kinh tuyến được bao lâu. H âm: sao chưa tới, đang lên. H = 0: sao ở cao nhất. H dương: sao đã qua và đang đi xuống.",
+        "notice": "Lúc này LST bằng α của Tham Tú nên H = 0 và sao ở cao nhất. Thử lùi hoặc tiến 2 giờ rồi xem H và h thay đổi ra sao.",
+        "try": {
+          "minus2": "−2 giờ",
+          "plus2": "+2 giờ",
+          "transit": "Đưa lên kinh tuyến"
+        }
+      },
+      "quiz": {
+        "title": "Câu hỏi: cái gì đứng yên?",
+        "body": "Khi bầu trời quay, đại lượng nào của sao không đổi?",
+        "options": [
+          "A (phương vị)",
+          "h (độ cao)",
+          "Cả α và δ",
+          "H (góc giờ)"
+        ],
+        "explain": "α và δ gắn với chính bầu trời nên quay cùng các sao và không đổi. A, h và H đều đo từ chỗ em đứng (chân trời, kinh tuyến) nên thay đổi từng phút."
+      }
+    },
+    "c3": {
+      "title": "Mọc – lặn và sao cận cực",
+      "zones": {
+        "title": "Ba vùng trên bầu trời",
+        "body": "Ở Hà Nội, bầu trời chia thành ba vùng. Tím: sao không bao giờ lặn (sao cận cực). Xanh ngọc: sao mọc rồi lặn, như Mặt Trời. Đỏ: sao không bao giờ mọc.",
+        "notice": "Ranh giới = 90° − vĩ độ = 90° − 21,03° = 68,97°. Sao có δ lớn hơn +68,97° luôn ở trên trời; sao có δ nhỏ hơn −68,97° không bao giờ thấy được ở Hà Nội."
+      },
+      "ground": {
+        "title": "Nhìn từ mặt đất",
+        "body": "Trở lại giản đồ chân trời, lần này nhìn xuyên xuống dưới chân trời: phần trời dưới chân em hiện mờ, nên thấy cả đoạn đường sao đi sau khi lặn.",
+        "notice": "Sao gần Sao Bắc Cực vẽ trọn vòng tròn mà không chạm chân trời. Vòng của các sao xa hơn bị chân trời cắt: chỗ cắt chính là lúc mọc và lúc lặn."
+      },
+      "equator": {
+        "title": "Ở xích đạo",
+        "body": "Bây giờ em đứng trên xích đạo, φ = 0°. Dùng quy tắc cũ: ranh giới = 90° − 0° = 90°. Không sao nào có δ lớn hơn 90°, nên ở đây không có sao cận cực.",
+        "notice": "Mọi sao đều mọc và lặn, và ở trên trời đúng 12 giờ thiên văn mỗi ngày. Hai thiên cực nằm ngay trên chân trời."
+      },
+      "pole": {
+        "title": "Ở Bắc Cực",
+        "body": "Tới Bắc Cực, φ = 90°. Ranh giới = 90° − 90° = 0°: sao nào có δ dương thì luôn ở trên trời, sao có δ âm thì không bao giờ mọc.",
+        "notice": "Thiên cực Bắc ở ngay đỉnh đầu, các sao chạy vòng song song với chân trời: không sao nào mọc hay lặn."
+      },
+      "crux": {
+        "title": "Nam Thập Tự nhìn từ Việt Nam",
+        "body": "Nam Thập Tự là chòm sao nhỏ nằm gần thiên cực Nam. Ngôi sao ở đỉnh chữ thập là Gacrux, δ ≈ −57,1°. Lúc này nó đang ở cao nhất, trên bầu trời phía Nam.",
+        "notice": "Ở TP.HCM nó cao khoảng 22°, ở Hà Nội chỉ khoảng 12°, nên cần chỗ trống nhìn về phía Nam. Ở Sydney thì nó không bao giờ lặn.",
+        "try": {
+          "hcm": "TP.HCM",
+          "hanoi": "Hà Nội",
+          "sydney": "Sydney",
+          "spin": "Cho quay"
+        }
+      },
+      "end": {
+        "title": "Tổng kết",
+        "body": "Em đã thấy: bầu trời quay vì Trái Đất quay; độ cao thiên cực bằng vĩ độ; α, δ là địa chỉ cố định của sao, còn A, h đổi theo giờ và nơi đứng; ranh giới sao cận cực là 90° − φ. Câu hỏi cuối: ở vĩ độ 40° B, sao có δ = +60° là…",
+        "options": [
+          "sao cận cực",
+          "sao mọc – lặn",
+          "sao không bao giờ mọc"
+        ],
+        "explain": "Ranh giới = 90° − 40° = 50°. δ = +60° lớn hơn 50°, nên sao luôn ở trên trời: đó là sao cận cực."
+      }
+    }
+  }
 }
