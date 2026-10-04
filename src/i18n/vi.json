@@ -538,7 +538,5 @@
       "- **Tham khảo học thuật & thiết kế:** hệ thống có tham khảo cách tiếp cận trực quan của các công cụ mô phỏng thiên văn giáo dục như Rotating Sky Explorer của NAAP, Đại học Nebraska–Lincoln. Toàn bộ mã nguồn, giao diện và tài nguyên của hệ thống được phát triển độc lập bởi USAC.",
       "Hệ thống được thiết kế theo hướng offline-first, có thể vận hành hoàn toàn trên trình duyệt mà không yêu cầu kết nối mạng sau khi các tài nguyên cần thiết đã được tải xuống."
     ]
-  },
-  "hero": {},
-  "story": {}
+  }
 }
