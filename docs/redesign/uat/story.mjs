@@ -64,6 +64,7 @@ const viewCovered = (page) =>
   check('1. hero hiện với hai nút (375×812)', (await startBtn.isVisible()) && (await exploreBtn.isVisible()));
   check('1. hero: tiêu điểm ở nút chính', await page.evaluate(() => document.activeElement?.classList.contains('hero__cta--primary')));
   check('1. hero: không cuộn ngang', await noHScroll(page));
+  check('1. hero: phần còn lại của trang bị inert', await page.evaluate(() => document.querySelector('main.layout')?.closest('[inert]') !== null));
   await page.screenshot({ path: join(SHOTS, 'hero-375.png') });
 
   await startBtn.click();
@@ -213,6 +214,29 @@ const viewCovered = (page) =>
   await page.getByRole('button', { name: 'Thoát' }).click();
   const after = await page.evaluate(() => ({ lat: window.__app.store.state.lat, ecl: window.__app.store.state.toggles.ecliptic }));
   check('7. Thoát khôi phục trạng thái trước khi mở', after.lat === before.lat && after.ecl === true, JSON.stringify(after));
+  await context.close();
+}
+
+{
+  // Điện thoại: tự thu gọn khi người dùng cho chạy, mở lại khi dừng; Esc thoát và khôi phục.
+  const { context, page } = await ctx();
+  await page.goto(`${DEV}?quality=fixed&story=1.1`);
+  await page.locator('.story').waitFor({ state: 'visible', timeout: 30000 });
+  await page.waitForFunction(() => !!window.__app?.store);
+  const hOpen = await page.evaluate(() => document.querySelector('.story').getBoundingClientRect().height);
+  await page.evaluate(() => window.__app.actions.play());
+  await page.waitForTimeout(300);
+  const collapsed = await page.evaluate(() => document.querySelector('.story').classList.contains('is-collapsed'));
+  const hPlay = await page.evaluate(() => document.querySelector('.story').getBoundingClientRect().height);
+  check('8. điện thoại: đang chạy thì thẻ thu thành thanh mảnh', collapsed && hPlay < 70 && hOpen <= 812 * 0.38 + 1, `${Math.round(hOpen)}px → ${Math.round(hPlay)}px`);
+  const cov = await viewCovered(page);
+  check('8. thanh mảnh không che khung nhìn', !cov, cov);
+  await page.evaluate(() => window.__app.actions.pause());
+  await page.waitForTimeout(300);
+  check('8. dừng thì thẻ mở lại', !(await page.evaluate(() => document.querySelector('.story').classList.contains('is-collapsed'))));
+  await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+  await page.keyboard.press('Escape');
+  check('8. Esc đóng câu chuyện', (await page.locator('.story').count()) === 0);
   await context.close();
 }
 
