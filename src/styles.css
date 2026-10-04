@@ -1778,6 +1778,7 @@ body.present .kv__x {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  width: max-content; /* left: 50% chỉ chừa nửa bề ngang cho co giãn tự nhiên → chữ bị ngắt dòng */
   max-width: calc(100% - 2 * var(--space-3));
   padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
   transform: translateX(-50%);
