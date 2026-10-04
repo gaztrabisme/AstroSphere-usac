@@ -63,6 +63,8 @@ export class SkyLayer {
   private userVecs: { id: string; v: THREE.Vector3; mag: number }[] = [];
   private catalogVecs: THREE.Vector3[] = [];
   private catalogHidden = new Set<number>();
+  /** Số sao danh mục được vẽ/chọn (danh mục đã sắp theo cấp sao tăng dần). */
+  private catalogDrawCount = 0;
   private sunVec = new THREE.Vector3();
   private readonly view: ViewKind;
   private readonly R: number;
@@ -152,6 +154,7 @@ export class SkyLayer {
       size[i] = sizeForMagnitude(cat.mag[i]);
       alpha[i] = Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15));
     }
+    this.catalogDrawCount = n;
     this.catalog = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.starMaterial);
     this.catalog.renderOrder = 1;
     this.rot.add(this.catalog);
@@ -456,11 +459,27 @@ export class SkyLayer {
     if (s.toggles.sun) yield { sel: { kind: 'sun' }, local: this.sunVec, tolerancePx: 16, priority: 3 };
     if (s.toggles.catalog) {
       const cat = catalogArrays();
-      for (let i = 0; i < this.catalogVecs.length; i++) {
+      for (let i = 0; i < this.catalogDrawCount; i++) {
         if (this.catalogHidden.has(i)) continue;
         yield { sel: { kind: 'catalog', index: i }, local: this.catalogVecs[i], tolerancePx: cat.mag[i] < 2 ? 9 : 6, priority: 1 };
       }
     }
+  }
+
+  /**
+   * Chỉ vẽ (và cho chọn) sao danh mục có cấp ≤ `limit`; null = tất cả.
+   * Danh mục được sắp theo cấp sao tăng dần (xem catalog.test.ts) nên chỉ cần đặt drawRange.
+   */
+  setCatalogMagLimit(limit: number | null): void {
+    const mag = catalogArrays().mag;
+    let n = mag.length;
+    if (limit !== null) {
+      n = 0;
+      while (n < mag.length && mag[n] <= limit) n++;
+    }
+    if (n === this.catalogDrawCount) return;
+    this.catalogDrawCount = n;
+    this.catalog.geometry.setDrawRange(0, n);
   }
 
   setPixelRatio(pr: number): void {

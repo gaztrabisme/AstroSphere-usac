@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { Line2 } from 'three/addons/lines/Line2.js';
+import type { QualitySettings, QualityTarget } from '../runtime/quality';
 import { lstOf, type AppState, type Selection, type Store } from '../state';
 import type { ViewKind } from './frames';
 import { HorizonLayer } from './horizonLayer';
@@ -22,7 +23,7 @@ export interface HoverInfo {
 const _v = new THREE.Vector3();
 const _p = new THREE.Vector3();
 
-export abstract class View {
+export abstract class View implements QualityTarget {
   readonly renderer: THREE.WebGLRenderer;
   readonly labelRenderer: CSS2DRenderer;
   readonly scene = new THREE.Scene();
@@ -33,6 +34,13 @@ export abstract class View {
   readonly trails: TrailLayer;
   readonly R = SKY_RADIUS;
   dirty = true;
+  /** Khung nhìn nằm trong vùng hiển thị của trang (IntersectionObserver). */
+  onScreen = true;
+  /** Tạm dừng vẽ riêng khung nhìn này. */
+  suspended = false;
+  /** Trần tỉ lệ điểm ảnh do chất lượng thích ứng đặt. */
+  private pixelRatioCap = 2;
+  private dprQuery: MediaQueryList | null = null;
   protected raycaster = new THREE.Raycaster();
   private defaultCamera: THREE.Vector3;
   private width = 0;
@@ -48,7 +56,7 @@ export abstract class View {
     this.defaultCamera = defaultCamera.clone();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.targetPixelRatio());
     this.renderer.localClippingEnabled = false;
     this.renderer.domElement.setAttribute('aria-hidden', 'true');
     container.appendChild(this.renderer.domElement);
@@ -78,13 +86,60 @@ export abstract class View {
     this.scene.add(this.sky.fixed, this.sky.rot, this.horizon.group);
 
     new ResizeObserver(() => this.resize()).observe(container);
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver((entries) => {
+        const e = entries[entries.length - 1];
+        const on = e.isIntersecting;
+        if (on && !this.onScreen) this.dirty = true;
+        this.onScreen = on;
+      }).observe(container);
+    }
+    this.watchDevicePixelRatio();
     this.resize();
+  }
+
+  private targetPixelRatio(): number {
+    return Math.min(window.devicePixelRatio || 1, this.pixelRatioCap);
+  }
+
+  /** Theo dõi thay đổi devicePixelRatio (kéo cửa sổ sang màn hình khác, phóng to trang). */
+  private watchDevicePixelRatio(): void {
+    if (typeof window.matchMedia !== 'function') return;
+    const onChange = () => {
+      this.dprQuery?.removeEventListener('change', onChange);
+      this.setPixelRatio(this.targetPixelRatio());
+      this.dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+      this.dprQuery.addEventListener('change', onChange);
+    };
+    this.dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    this.dprQuery.addEventListener('change', onChange);
+  }
+
+  /** Đặt tỉ lệ điểm ảnh cho renderer và kích thước điểm sao. */
+  setPixelRatio(pr: number): void {
+    if (pr === this.renderer.getPixelRatio()) return;
+    this.renderer.setPixelRatio(pr);
+    this.sky.setPixelRatio(pr);
+    this.dirty = true;
+  }
+
+  /** QualityTarget: trần tỉ lệ điểm ảnh và giới hạn cấp sao của danh mục. */
+  setQuality(q: QualitySettings): void {
+    this.pixelRatioCap = q.pixelRatioCap;
+    this.setPixelRatio(this.targetPixelRatio());
+    this.sky.setCatalogMagLimit(q.catalogMagLimit);
+    this.dirty = true;
   }
 
   resize(): void {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
-    if (w === 0 || h === 0) return;
+    if (w === 0 || h === 0) {
+      // Khung nhìn bị ẩn (vd. tab còn lại trên điện thoại): ghi nhận kích thước 0 để ngừng vẽ.
+      this.width = 0;
+      this.height = 0;
+      return;
+    }
     if (w === this.width && h === this.height) return;
     this.width = w;
     this.height = h;
@@ -125,16 +180,17 @@ export abstract class View {
     return false;
   }
 
-  /** Gọi mỗi khung hình từ vòng lặp chính. */
-  frame(): void {
+  /** Gọi mỗi khung hình từ vòng lặp chính. Trả về true nếu đã vẽ. */
+  frame(): boolean {
     this.controls.update();
-    if (!this.dirty || this.width === 0) return;
+    if (!this.dirty || this.width === 0 || this.height === 0 || !this.onScreen || this.suspended) return false;
     const s = this.store.state;
     this.scene.updateMatrixWorld();
     this.updateLabels(s);
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     this.dirty = false;
+    return true;
   }
 
   private updateLabels(s: AppState): void {
