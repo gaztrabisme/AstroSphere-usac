@@ -12,7 +12,7 @@ export interface AnimationPanel {
 }
 
 export function animationPanel(store: Store, actions: Actions): AnimationPanel {
-  const playBtn = h('button', { type: 'button', class: 'btn btn--primary btn--play', 'aria-pressed': 'false', onclick: () => actions.togglePlay() });
+  const playBtn = h('button', { type: 'button', class: 'btn btn--play', 'aria-pressed': 'false', onclick: () => actions.togglePlay() });
 
   const mode = h(
     'select',
@@ -75,6 +75,9 @@ export function animationPanel(store: Store, actions: Actions): AnimationPanel {
   const syncPlaying = (playing: boolean) => {
     setText(playBtn, playing ? t('panel.animation.pause') : t('panel.animation.play'));
     playBtn.setAttribute('aria-pressed', String(playing));
+    // Đang chạy: "Tạm dừng" là nút phụ yên lặng, để đường đọc không dừng ở nút phát (review-1 B1–B3).
+    // Đang dừng: "Bắt đầu" là hành động chính (cam).
+    playBtn.classList.toggle('btn--primary', !playing);
   };
   const syncMode = (m: AnimMode) => {
     if (mode.value !== m) mode.value = m;

@@ -2,6 +2,7 @@
   "app": {
     "org": "CLB Thiên văn USAC",
     "title": "Hệ thống Mô phỏng Hệ toạ độ",
+    "shortTitle": "Mô phỏng hệ tọa độ",
     "logoAlt": "Logo CLB Thiên văn USAC",
     "footer": "HỆ THỐNG ĐƯỢC PHÁT TRIỂN BỞI CLB THIÊN VĂN USAC",
     "contact": "Mọi sự góp ý và liên hệ xin gửi về email:",
@@ -39,14 +40,11 @@
     "firstPerson": "👁 Nhìn từ người quan sát",
     "firstPersonTip": "Đứng ở tâm mặt phẳng chân trời và nhìn quanh bầu trời",
     "outside": "↩ Nhìn từ bên ngoài",
-    "dragHint": "Kéo để xoay · cuộn/chụm để phóng to · bấm vào sao để xem thông tin",
     "webglError": "Trình duyệt không hỗ trợ WebGL nên không thể hiển thị mô phỏng 3D. Hãy thử trình duyệt khác hoặc bật tăng tốc phần cứng.",
     "loading": "Đang tải mô phỏng 3D…",
-    "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang."
-  },
-  "firstHint": {
-    "text": "Kéo để xoay · bấm vào một ngôi sao",
-    "close": "Đóng gợi ý"
+    "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang.",
+    "hint": "Kéo để xoay · bấm vào một ngôi sao",
+    "keyline": "φ = {lat}  ·  Độ cao thiên cực {pole} = {alt}"
   },
   "legend": {
     "aria": "Chú giải màu",

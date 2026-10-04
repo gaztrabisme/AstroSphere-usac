@@ -145,6 +145,10 @@ select {
   color: var(--accent-hi);
 }
 
+.brand__short {
+  display: none;
+}
+
 .brand__name {
   font-size: 17px;
   font-weight: 700;
@@ -241,6 +245,13 @@ select {
 
 .btn--primary[aria-pressed='true'] {
   background: var(--accent);
+}
+
+/* Đang chạy: "Tạm dừng" là nút phụ yên lặng, không phải điểm dừng của mắt (review-1 B1–B3). */
+.btn--play[aria-pressed='true'] {
+  border-color: var(--border-control);
+  background: var(--surface-3);
+  font-weight: 600;
 }
 
 .icon-btn {
@@ -348,14 +359,39 @@ body.learn-open .layout {
   display: block;
 }
 
-.view__hint {
-  position: absolute;
-  left: 10px;
-  bottom: 6px;
+.view__canvas .label-layer {
+  z-index: 1;
+}
+
+/* Chân khung nhìn: điều cốt lõi + một dòng gợi ý, nằm DƯỚI cảnh (không che cảnh — review-1 D2). */
+.view__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.view__key {
   margin: 0;
-  font-size: 11px;
-  color: var(--subtle);
-  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.view__hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Lần đầu vào trang: gợi ý đọc như chữ thường; sau lần kéo/bấm đầu tiên nó lùi về màu phụ. */
+.view__hint.is-new {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .label-layer {
@@ -671,6 +707,16 @@ body.learn-open .layout {
   .infocard__head {
     cursor: default;
   }
+}
+
+/* Thẻ dài hơn khung: thanh cuộn luôn thấy và mép dưới mờ dần để biết còn nội dung (review-1 D2). */
+.infocard {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-control) transparent;
+}
+
+.infocard.can-scroll {
+  mask-image: linear-gradient(to bottom, var(--bg) calc(100% - 40px), transparent);
 }
 
 /* ------------------------------------------------------------------ Bảng điều khiển */
@@ -1428,10 +1474,13 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
-body.present .view__sub,
-body.present .view__hint {
+body.present .view__sub {
   font-size: 15px;
   color: var(--muted);
+}
+
+body.present .view__hint {
+  display: none;
 }
 
 body.present .legend {
@@ -1605,10 +1654,11 @@ body.present .kv__x {
     box-shadow: inset 0 -2px 0 var(--accent);
   }
 
+  /* Điện thoại: cảnh 3D cao hơn (review-1 B4) — dải số liệu ở ngay dưới, dòng cốt lõi nằm trong khung. */
   .views {
     grid-template-columns: 1fr;
-    height: 56vh;
-    min-height: 320px;
+    height: 70svh;
+    min-height: 360px;
   }
 
   .views[data-active='sphere'] #view-horizon,
@@ -1637,7 +1687,16 @@ body.present .kv__x {
     padding: 8px 10px;
   }
 
-  .view__hint {
+  .view__foot {
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .view__key {
+    font-size: 13.5px;
+  }
+
+  /* Điện thoại: gợi ý chỉ hiện tới lần chạm đầu tiên, để dành chiều cao cho cảnh. */
+  .view__hint:not(.is-new) {
     display: none;
   }
 
@@ -1649,6 +1708,10 @@ body.present .kv__x {
     left: 8px !important;
     top: auto !important;
     right: 8px !important;
+  }
+
+  .views[data-active='horizon'] .infocard {
+    bottom: calc(var(--foot-h, 0px) + 8px);
   }
 
   .legend {
@@ -1708,9 +1771,11 @@ body.present .kv__x {
   }
 }
 
-/* Rất hẹp: chỉ giữ logo để sáu nút trên cùng vừa một hàng (tên vẫn có cho trình đọc màn hình). */
+/* Rất hẹp: logo + tên ngắn; "Ôn tập" giữ chữ (hành động chính), các nút khác chỉ biểu tượng có tên truy cập
+   và chú thích (title). Trình chiếu không có ích trên điện thoại nên ẩn (phím F vẫn dùng được). */
 @media (max-width: 480px) {
-  .brand__text {
+  .brand__org,
+  .brand__name {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1719,8 +1784,30 @@ body.present .kv__x {
     white-space: nowrap;
   }
 
+  .brand__short {
+    display: block;
+    max-width: 9ch;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
   .topbar__actions {
     gap: 2px;
+  }
+
+  .btn--top-present {
+    display: none;
+  }
+
+  .btn--top.btn--top-main {
+    padding: 4px 8px 4px 4px;
+    border-color: var(--border-control);
+  }
+
+  .btn--top-main .btn__text {
+    display: inline;
   }
 }
 
@@ -1779,51 +1866,6 @@ body.present .kv__x {
   padding: var(--space-4);
   color: var(--muted);
   text-align: center;
-}
-
-/* ------------------------------------------------------------------ Gợi ý lần đầu trên khung giản đồ chân trời */
-.firsthint {
-  position: absolute;
-  left: 50%;
-  bottom: 34px;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  width: max-content; /* left: 50% chỉ chừa nửa bề ngang cho co giãn tự nhiên → chữ bị ngắt dòng */
-  max-width: calc(100% - 2 * var(--space-3));
-  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-  transform: translateX(-50%);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
-  box-shadow: var(--shadow-pop);
-  color: var(--text);
-  font-size: 13.5px;
-}
-
-.firsthint:not([data-ready]) {
-  opacity: 0;
-}
-
-.firsthint {
-  transition: opacity 0.3s ease-out;
-}
-
-.firsthint__x {
-  border-radius: var(--radius-pill);
-}
-
-@media (max-width: 900px) {
-  /* Trên điện thoại thẻ thông tin nằm ở đáy khung nhìn: đặt gợi ý ngay dưới thanh công cụ của khung. */
-  .firsthint {
-    top: 60px;
-    bottom: auto;
-  }
-}
-
-body.present .firsthint {
-  font-size: 17px;
 }
 
 /* ------------------------------------------------------------------ Dòng giải thích dưới hộp kiểm (chỉ khi đang bật) */

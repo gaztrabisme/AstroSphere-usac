@@ -33,15 +33,30 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 // ------------------------------------------------------------------ (a) gợi ý một lần, (b) cảnh mở đầu, (h) không còn hero/story
 {
   const { ctx, page } = await open();
-  const hint = page.locator('.firsthint');
-  const hintText = (await hint.isVisible()) ? await hint.locator('.firsthint__text').textContent() : null;
-  const inHorizon = await page.evaluate(() => !!document.querySelector('#view-horizon .firsthint'));
-  check('(a) first visit: hint is visible over the horizon view', hintText === 'Kéo để xoay · bấm vào một ngôi sao' && inHorizon, `text=${JSON.stringify(hintText)} inHorizon=${inHorizon}`);
-  const a11y = await hint.evaluate((el) => ({ role: el.getAttribute('role'), close: el.querySelector('button')?.getAttribute('aria-label') }));
-  check('(a) hint is a polite status with a labelled close button', a11y.role === 'status' && !!a11y.close, JSON.stringify(a11y));
+  // Fix round 1 (review-1 B4, E3): the floating toast is gone; the hint is ONE caption under the horizon view,
+  // stronger (is-new) until the first drag/click on a view.
+  const cap = await page.evaluate(() => {
+    const el = document.querySelector('#view-horizon .view__hint');
+    const canvas = document.querySelector('#view-horizon .view__canvas');
+    if (!el || !canvas) return null;
+    return {
+      text: el.textContent,
+      isNew: el.classList.contains('is-new'),
+      below: el.getBoundingClientRect().top >= canvas.getBoundingClientRect().bottom - 0.5,
+      toasts: document.querySelectorAll('.firsthint').length,
+      captions: document.querySelectorAll('.view__hint').length,
+    };
+  });
+  check(
+    '(a) first visit: one hint caption, under (not over) the horizon canvas, emphasised, no floating toast',
+    cap && cap.text === 'Kéo để xoay · bấm vào một ngôi sao' && cap.isNew && cap.below && cap.toasts === 0 && cap.captions === 1,
+    JSON.stringify(cap),
+  );
 
   const pressed = await page.locator('.btn--play').getAttribute('aria-pressed');
   check('(b) first load plays: play button aria-pressed="true"', pressed === 'true', `aria-pressed=${pressed}`);
+  const playQuiet = await page.locator('.btn--play').evaluate((el) => !el.classList.contains('btn--primary'));
+  check('(b) while playing, "Tạm dừng" is a quiet secondary button (not orange primary)', playQuiet);
   const rate = await page.locator('#rate + .ticks, output[for=rate]').first().textContent();
   check('(b) opening speed is one sidereal day in 60 s', /= 60 giây/.test(rate ?? ''), rate ?? '');
 
@@ -50,25 +65,32 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 
   await page.screenshot({ path: `${SHOTS}ux-after-1440.png` });
 
-  await page.getByRole('button', { name: 'Đóng gợi ý' }).click();
+  const box = await page.locator('#view-horizon .view__canvas').boundingBox();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.8);
+  await page.mouse.up();
+  const muted = await page.evaluate(() => !document.querySelector('#view-horizon .view__hint').classList.contains('is-new'));
   const flag = await page.evaluate(() => localStorage.getItem('astrosphere.hint.v1'));
   await page.reload();
   await page.waitForFunction(() => document.querySelectorAll('.view__canvas canvas').length >= 2, null, { timeout: 30000 });
   await page.waitForTimeout(400);
-  const after = await page.locator('.firsthint').count();
-  check('(a) after closing and reloading (flag set), the hint is gone', flag === 'true' && after === 0, `flag=${flag} hints=${after}`);
+  const after = await page.locator('.view__hint.is-new').count();
+  check('(a) after the first drag the caption is muted, and stays muted after reload (flag set)', muted && flag === 'true' && after === 0, `muted=${muted} flag=${flag} new=${after}`);
   await ctx.close();
 }
 {
   const { ctx, page } = await open({ init: () => localStorage.setItem('astrosphere.hint.v1', 'true') });
-  const n = await page.locator('.firsthint').count();
-  check('(a) with astrosphere.hint.v1 preset, no hint is shown', n === 0, `hints=${n}`);
+  const n = await page.locator('.view__hint.is-new').count();
+  check('(a) with astrosphere.hint.v1 preset, the caption starts muted', n === 0, `new=${n}`);
   await ctx.close();
 }
 {
   const { ctx, page } = await open({ reducedMotion: 'reduce' });
   const pressed = await page.locator('.btn--play').getAttribute('aria-pressed');
   check('(b) prefers-reduced-motion: nothing autoplays (aria-pressed="false")', pressed === 'false', `aria-pressed=${pressed}`);
+  const playPrimary = await page.locator('.btn--play').evaluate((el) => el.classList.contains('btn--primary') && /Bắt đầu/.test(el.textContent));
+  check('(b) while paused, "Bắt đầu" is the orange primary action', playPrimary);
   await page.getByRole('button', { name: 'Đặt lại', exact: true }).click();
   await page.waitForTimeout(200);
   const afterReset = await page.locator('.btn--play').getAttribute('aria-pressed');

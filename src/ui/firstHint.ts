@@ -1,8 +1,7 @@
-// Gợi ý một lần trên khung nhìn chính: một bước kế tiếp đúng lúc, không phải chuỗi hướng dẫn.
-// Ẩn vĩnh viễn khi người dùng đóng nó hoặc lần đầu chạm vào một khung nhìn 3D (đã làm đúng điều gợi ý).
+// Gợi ý thao tác: MỘT dòng chú thích nằm dưới khung nhìn chính (không phải lớp nổi che cảnh — review-1 B4, E3).
+// Lần đầu vào trang dòng này đậm (màu chữ thường); sau lần đầu người dùng kéo hoặc bấm vào một khung nhìn 3D
+// (đã làm đúng điều gợi ý) nó lùi về màu phụ và trạng thái được nhớ (`astrosphere.hint.v1`).
 
-import { t } from '../i18n';
-import { h } from './dom';
 import { readJson, writeJson } from './storage';
 
 export const HINT_KEY = 'astrosphere.hint.v1';
@@ -14,38 +13,16 @@ export function hintSeen(): boolean {
 }
 
 /**
- * Gắn gợi ý vào `host` (khung giản đồ chân trời) nếu người dùng chưa thấy nó.
- * `canvases`: chạm vào một trong các vùng này cũng coi như đã hiểu gợi ý.
- * `focusAfter`: nơi nhận tiêu điểm nếu nút đóng đang được chọn khi gợi ý biến mất.
+ * `caption`: dòng gợi ý dưới khung nhìn. `canvases`: chạm vào một trong các vùng này = đã hiểu gợi ý.
+ * Lớp `is-new` làm dòng gợi ý nổi hơn cho tới lần tương tác đầu tiên.
  */
-export function mountFirstHint(host: HTMLElement, canvases: HTMLElement[], focusAfter: () => HTMLElement | null): void {
+export function bindHintCaption(caption: HTMLElement, canvases: HTMLElement[]): void {
   if (hintSeen()) return;
-
-  const text = h('span', { class: 'firsthint__text' });
-  const close = h('button', {
-    type: 'button',
-    class: 'icon-btn firsthint__x',
-    'aria-label': t('firstHint.close'),
-    title: t('firstHint.close'),
-    text: '×',
-  });
-  // role=status (lịch sự): chữ được đặt sau khi vùng đã có trong DOM để trình đọc màn hình đọc nó một lần.
-  const el = h('div', { class: 'firsthint', role: 'status' }, text, close);
-
-  const dismiss = () => {
+  caption.classList.add('is-new');
+  const done = () => {
     writeJson(HINT_KEY, true);
-    const hadFocus = el.contains(document.activeElement);
-    el.remove();
-    for (const c of canvases) c.removeEventListener('pointerdown', dismiss);
-    if (hadFocus) focusAfter()?.focus();
+    caption.classList.remove('is-new');
+    for (const c of canvases) c.removeEventListener('pointerdown', done);
   };
-  close.addEventListener('click', dismiss);
-  for (const c of canvases) c.addEventListener('pointerdown', dismiss);
-
-  host.append(el);
-  setTimeout(() => {
-    if (!el.isConnected) return;
-    text.textContent = t('firstHint.text');
-    el.dataset.ready = '';
-  }, 150);
+  for (const c of canvases) c.addEventListener('pointerdown', done);
 }
