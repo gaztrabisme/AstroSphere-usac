@@ -669,6 +669,7 @@ body.learn-open .layout {
 }
 
 .group {
+  min-width: 0; /* fieldset mặc định rộng theo nội dung (min-content) → tràn khỏi bảng */
   margin: 10px 0 0;
   padding: 8px 10px 10px;
   border: 1px solid var(--border);
@@ -1483,6 +1484,11 @@ body.present .kv__x {
   .figure-chip__x {
     width: var(--tap);
     height: var(--tap);
+  }
+
+  .figure-chip__x {
+    margin: -8px -4px -8px 0;
+    background: transparent;
   }
 
   details.sub > summary {
