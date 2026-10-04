@@ -205,11 +205,11 @@ export abstract class View implements QualityTarget {
     this.sky.setTime(s.lat, lstOf(s));
     this.horizon.update(s, group);
     this.trails.update(s);
-    this.onUpdate(s);
+    this.onUpdate(s, group);
     this.dirty = true;
   }
 
-  protected abstract onUpdate(s: AppState): void;
+  protected abstract onUpdate(s: AppState, emphasis: string | null): void;
 
   /**
    * Nhóm đối tượng cần tô sáng. Chỉ tính lại khi khóa tô sáng, đối tượng chọn, vĩ độ, danh sách sao hoặc
@@ -229,6 +229,12 @@ export abstract class View implements QualityTarget {
     if (group !== this.emGroup) {
       this.emGroup = group;
       this.emphasis.setTarget(group, performance.now(), this.reducedMotion?.matches ?? false);
+      // Nhãn số đo của nhóm đang tô sáng: chip đậm hơn (lớp is-em; chỉ ghi khi đổi).
+      const list = this.labelList;
+      for (let i = 0; i < list.length; i++) {
+        const ud = list[i].userData;
+        if (ud.emph) list[i].element.classList.toggle('is-em', ud.emph === group);
+      }
     }
     return group;
   }
@@ -314,11 +320,18 @@ export abstract class View implements QualityTarget {
       lbl.visible = vis;
       if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
-    // Đối tượng đang chọn được giữ chỗ đầu tiên, rồi tới các nhãn khác theo hạng.
-    if (sel) this.pushBox(sel, W, H, true);
+    // Nhãn số đo của nhóm đang tô sáng giữ chỗ đầu tiên, rồi đối tượng đang chọn, rồi các nhãn khác theo hạng.
+    const em = this.emGroup;
+    if (em !== null) {
+      for (let i = 0; i < list.length; i++) {
+        const lbl = list[i];
+        if (lbl.userData.emph === em && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
+      }
+    }
+    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true);
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
-      if (lbl === sel || !lbl.visible || !ancestorsVisible(lbl)) continue;
+      if (lbl === sel || !lbl.visible || (em !== null && lbl.userData.emph === em) || !ancestorsVisible(lbl)) continue;
       this.pushBox(lbl, W, H, lbl.userData.rank < 20);
     }
     declutter(boxes, W, H);

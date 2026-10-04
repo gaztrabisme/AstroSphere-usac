@@ -85,7 +85,7 @@ export class HorizonDiagramView extends View {
     return !s.toggles.underside;
   }
 
-  protected onUpdate(s: AppState): void {
+  protected onUpdate(s: AppState, _emphasis: string | null = null): void {
     const under = s.toggles.underside;
     const planes = under ? this.noPlanes : this.clipPlanes;
     if (this.renderer.clippingPlanes !== planes) this.renderer.clippingPlanes = planes;

@@ -26,6 +26,8 @@ export interface LabelData {
   selKind: '' | 'user' | 'catalog' | 'sun';
   selId: string;
   selIdx: number;
+  /** Nhóm tô sáng liên kết mà nhãn này thuộc về ('' = không): khi nhóm đang tô sáng, nhãn được xét trước tiên. */
+  emph: string;
 }
 
 export interface Label extends CSS2DObject {
@@ -45,6 +47,10 @@ export interface LabelOpts {
   mag?: number;
   /** Đối tượng mà nhãn gọi tên. */
   sel?: { kind: 'user'; id: string } | { kind: 'catalog'; index: number } | { kind: 'sun' };
+  /** Nhóm tô sáng liên kết của nhãn (vd. 'pole', 'incl'). */
+  emph?: string;
+  /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
+  edge?: string;
 }
 
 /** Hạng ưu tiên mặc định (tách riêng để kiểm thử). */
@@ -60,6 +66,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
   el.className = `lbl lbl--${group}${opts.cls ? ` ${opts.cls}` : ''}`;
   el.textContent = text;
   if (opts.color) el.style.color = opts.color;
+  if (opts.edge) el.style.borderLeftColor = opts.edge;
   const obj = new CSS2DObject(el) as Label;
   // Điểm neo của nhãn (0,5; 0,5 = chính giữa). Nhãn tên sao đặt lệch sang phải để không che sao.
   if (opts.anchor) obj.center.set(opts.anchor[0], opts.anchor[1]);
@@ -75,6 +82,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     selKind: sel ? sel.kind : '',
     selId: sel?.kind === 'user' ? sel.id : '',
     selIdx: sel?.kind === 'catalog' ? sel.index : -1,
+    emph: opts.emph ?? '',
   };
   return obj;
 }

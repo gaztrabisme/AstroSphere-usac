@@ -15,7 +15,7 @@ import { setFatLineStyle } from './geom';
 /** Hệ số độ dày đường khi được tô sáng. */
 export const EMPHASIS_WIDTH = 1.8;
 /** Độ mờ cộng thêm cho mặt (hình quạt, vùng) khi được tô sáng. */
-export const EMPHASIS_MESH_BOOST = 0.2;
+export const EMPHASIS_MESH_BOOST = 0.3;
 /** Thời gian chuyển (ms). */
 export const EMPHASIS_MS = 150;
 

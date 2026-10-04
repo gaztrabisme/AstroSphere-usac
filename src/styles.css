@@ -463,6 +463,20 @@ body.learn-open .layout {
   background: color-mix(in srgb, var(--bg) 72%, transparent);
 }
 
+/* Số đo góc gắn với tô sáng liên kết: chip tối, chữ sáng, viền trái mang màu ngữ nghĩa của hình (review-1 F2). */
+.lbl--key {
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-left: 3px solid;
+  padding: 2px 7px;
+}
+
+.lbl--key.is-em {
+  background: var(--bg);
+  font-weight: 800;
+  box-shadow: 0 0 0 1px var(--border-control);
+}
+
 /* ------------------------------------------------------------------ Chú giải */
 .legend {
   display: flex;
@@ -555,6 +569,7 @@ body.learn-open .layout {
 }
 
 .data__item:last-child .data__v {
+  font-size: 15px;
   white-space: normal;
 }
 

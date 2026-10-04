@@ -43,6 +43,7 @@ export class SkyLayer {
 
   private equator = new THREE.Group();
   private equatorPlane: THREE.Mesh;
+  private equatorLine: Line2;
   private axis = new THREE.Group();
   private axisLine: Line2;
   private hourCircleLine: Line2;
@@ -87,6 +88,7 @@ export class SkyLayer {
     // --- Đối tượng cố định (bất biến khi quay quanh trục thiên cực) -------------
     const eqLine = fatLine(decCircle(0, R), COLORS.equator, { width: 2.6 });
     eqLine.userData.tip = 'equator';
+    this.equatorLine = eqLine;
     this.equator.add(eqLine);
     const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator });
     // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
@@ -437,6 +439,8 @@ export class SkyLayer {
   /** Đăng ký các đối tượng của lớp này cho tô sáng liên kết (xem emphasis.ts). */
   registerEmphasis(fx: EmphasisFx): void {
     fx.add('pole', this.axisLine);
+    // Góc xích đạo trời – chân trời: xích đạo trời cũng đậm lên ở cả hai khung (khung thiên cầu không có hình quạt góc).
+    fx.add('incl', this.equatorLine);
     fx.add('meridian', this.hourCircleLine);
     for (const k of Object.keys(this.zones) as ZoneKey[]) fx.add(`zone_${k}`, this.zones[k]);
   }
