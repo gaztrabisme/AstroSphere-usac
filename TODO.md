@@ -7,7 +7,7 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 
 ## Trung bình / Medium
 
-- [ ] **Per-frame line rebuild during playback** — `src/scene/horizonLayer.ts:196-208` (`updateVertical`) → `src/scene/geom.ts:57` (`setFatLinePoints`).
+- [x] **Per-frame line rebuild during playback** (22784f7) — `src/scene/horizonLayer.ts:196-208` (`updateVertical`) → `src/scene/geom.ts:57` (`setFatLinePoints`).
   Each call allocates a new `LineGeometry` and disposes the old one; with defaults (vertical circle on, Polaris selected) that is 6 rebuilds per frame across both views.
   Fix: update fixed-size buffers in place, or skip when alt/az changed less than an epsilon.
 - [x] **Hint after solving lowers the score** (1203fa0) — `src/ui/learning.ts:129-135`, `points()` at `:33-35`.
@@ -31,8 +31,8 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 - [ ] **Hover tooltip ignores Earth occlusion** — `src/scene/view.ts:208-215`, `src/scene/celestialSphere.ts:116-118`. Hovering Earth names a sky line behind it.
 - [ ] **Selection ring draws through Earth** — `src/scene/skyLayer.ts:188` (`depthTest: false`).
 - [ ] **Horizon ring half-hidden by the ground disc** — `src/scene/horizonDiagram.ts:150-153` vs `src/scene/horizonLayer.ts:171`. Lift ring ~0.01 or disable depth test.
-- [ ] **devicePixelRatio read only once** — `src/scene/view.ts:51,73`. Moving to a 2× screen leaves the canvas blurry and star sizes wrong.
-- [ ] **Per-frame allocations in label occlusion** — `src/scene/celestialSphere.ts:109,112` (`clone()` / `new Vector3`); also `hoverAt` rebuilding targets, `src/scene/horizonDiagram.ts:203,216,219`.
+- [x] **devicePixelRatio read only once** (906399a) — `src/scene/view.ts:51,73`. Moving to a 2× screen leaves the canvas blurry and star sizes wrong.
+- [x] **Per-frame allocations in label occlusion** (5fcc197) — `src/scene/celestialSphere.ts:109,112` (`clone()` / `new Vector3`); also `hoverAt` rebuilding targets, `src/scene/horizonDiagram.ts:203,216,219`.
 
 ## Phản biện thiết kế (deferred) / Design objections deferred
 
@@ -42,5 +42,5 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 ## Kho mã / Repository
 
 - [ ] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped).
-- [ ] Main bundle 878 kB (258 kB gzip); `vite.config.ts` raises `chunkSizeWarningLimit` to hide the warning. Split Three.js / lazy-load data.
+- [x] Main bundle 878 kB (258 kB gzip); `vite.config.ts` raises `chunkSizeWarningLimit` to hide the warning. Split Three.js / lazy-load data. (5c51d6f; entry JS now 64 kB gzip, see `docs/redesign/perf.md`)
 - [ ] Use descriptive commit messages (recent history: "f", "y", "d").
