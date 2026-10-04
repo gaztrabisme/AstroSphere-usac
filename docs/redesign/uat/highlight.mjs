@@ -72,7 +72,8 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   const hov = await probe(page);
   check("(1) hover pole cell → store.emphasis === 'pole'", hov.emphasis === 'pole', `emphasis=${hov.emphasis}`);
   check('(1) pole-altitude geometry visible although its toggle is off', hov.poleAltVisible && !hov.poleToggle, JSON.stringify({ visible: hov.poleAltVisible, toggle: hov.poleToggle }));
-  check('(1) arc width ×1.8 (2,4 → 4,32 px) and sector opacity +0,2 (0,3 → 0,5)', Math.abs(hov.poleArcWidth - 4.32) < 1e-6 && Math.abs(hov.poleSectorOpacity - 0.5) < 1e-3, `width=${hov.poleArcWidth} opacity=${hov.poleSectorOpacity}`);
+  // Fix round 1 (review-1 F2): base arc 3 px (was 2,4), sector 0,35 (was 0,3), mesh boost +0,3 (was +0,2).
+  check('(1) arc width ×1.8 (3 → 5,4 px) and sector opacity +0,3 (0,35 → 0,65)', Math.abs(hov.poleArcWidth - 5.4) < 1e-6 && Math.abs(hov.poleSectorOpacity - 0.65) < 1e-3, `width=${hov.poleArcWidth} opacity=${hov.poleSectorOpacity}`);
   check('(1) both views emphasise the pole group', hov.sphereGroup === 'pole' && hov.horizonGroup === 'pole', `sphere=${hov.sphereGroup} horizon=${hov.horizonGroup}`);
   check('(4) cell has class is-linked while emphasised', hov.cellLinked);
   const style = await page.locator(`${POLE_CELL} .data__v`).evaluate((el) => {
@@ -87,7 +88,7 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   await page.waitForFunction(() => window.__app.store.state.emphasis === null, null, { timeout: 5000 }).catch(() => {});
   await page.waitForFunction(() => !window.__perf.views.horizon.emphasis.running, null, { timeout: 5000 }).catch(() => {});
   const away = await probe(page);
-  check('(2) pointer away clears emphasis, geometry hidden again, class removed', away.emphasis === null && !away.poleAltVisible && !away.cellLinked && away.poleArcWidth === 2.4, JSON.stringify(away));
+  check('(2) pointer away clears emphasis, geometry hidden again, class removed', away.emphasis === null && !away.poleAltVisible && !away.cellLinked && away.poleArcWidth === 3, JSON.stringify(away));
 
   // (3) Bàn phím: Tab tới ô
   check('(3) cell is focusable (tabindex=0) and described', away.cellTabindex === '0' && /emphasis-hint/.test(away.cellDescribedBy ?? ''), `tabindex=${away.cellTabindex} describedby=${away.cellDescribedBy}`);
