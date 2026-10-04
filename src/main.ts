@@ -20,6 +20,7 @@ import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { mountQualityNotice } from './ui/qualityNotice';
 import { starPanel } from './ui/starPanel';
+import { rovingTabs } from './ui/tabs';
 import { attachViewInteraction } from './ui/viewInteraction';
 
 // Tải cảnh 3D (three.js) song song với việc dựng giao diện.
@@ -149,14 +150,17 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     class: 'tab',
     'aria-selected': String(key === 'horizon'),
     'aria-controls': `view-${key}`,
+    'data-view': key,
     text: t(`view.${key}`),
     onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
 const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {
   views.dataset.active = key;
   viewTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tabEls[key])));
+  viewRoving.sync();
   window.dispatchEvent(new Event('resize'));
 }
 
@@ -171,25 +175,31 @@ const panelDefs = [
 ];
 const panels = h('section', { class: 'panels', 'data-active': 'location', 'aria-label': t('panel.aria') });
 const panelTabs = h('div', { class: 'paneltabs', role: 'tablist', 'aria-label': t('panel.tabsAria') });
+/** Chọn bảng; bấm lại vào thẻ đang mở thì thu gọn (chỉ khi bấm, không khi dùng phím mũi tên). */
+function selectPanel(key: string, toggleCollapse: boolean) {
+  const same = panels.dataset.active === key && !panels.classList.contains('collapsed');
+  panels.dataset.active = key;
+  panels.classList.toggle('collapsed', toggleCollapse && same);
+  panelTabs.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.panel === key)));
+  panelRoving.sync();
+  loop.markUiDirty(); // bảng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
+}
 for (const p of panelDefs) {
-  const tab = h('button', {
-    type: 'button',
-    role: 'tab',
-    class: 'tab',
-    'aria-selected': String(p.key === 'location'),
-    'aria-controls': p.el.id,
-    text: t(`panel.${p.key}.short`),
-    onclick: () => {
-      const same = panels.dataset.active === p.key && !panels.classList.contains('collapsed');
-      panels.dataset.active = p.key;
-      panels.classList.toggle('collapsed', same);
-      panelTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tab)));
-      loop.markUiDirty(); // bảng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
-    },
-  });
-  panelTabs.append(tab);
+  panelTabs.append(
+    h('button', {
+      type: 'button',
+      role: 'tab',
+      class: 'tab',
+      'aria-selected': String(p.key === 'location'),
+      'aria-controls': p.el.id,
+      'data-panel': p.key,
+      text: t(`panel.${p.key}.short`),
+      onclick: () => selectPanel(p.key, true),
+    }),
+  );
   p.el.dataset.panel = p.key;
 }
+const panelRoving = rovingTabs(panelTabs, (tab) => selectPanel(tab.dataset.panel!, false));
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
 // Chữ ký CLB và liên kết DUY NHẤT về trang CLB (AGENTS.md › Brand).
@@ -370,27 +380,34 @@ if (import.meta.env.DEV) {
 }
 
 // ---------------------------------------------------------------- Phím tắt
+// Không chiếm phím của phần tử tương tác: Space trên nút/liên kết/summary…, mũi tên trong tablist/slider/radiogroup.
+const SPACE_OWNERS = 'button,a,summary,label,[role=tab],input,select,textarea,[contenteditable]';
+const ARROW_OWNERS = '[role=tablist],[role=slider],[role=radiogroup]';
+
 window.addEventListener('keydown', (e) => {
+  // Ưu tiên Esc: 1) hộp thoại gốc (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) câu chuyện → 4) bỏ chọn.
   if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen()) return;
-  const target = e.target as HTMLElement;
-  const tag = target?.tagName;
-  const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target?.isContentEditable || target?.getAttribute('role') === 'slider';
+  const target = e.target instanceof HTMLElement ? e.target : null;
+  // Tính "đang gõ" TRƯỚC khi xử lý Esc: Esc trong ô nhập không được bỏ chọn hay đóng ngăn.
+  const typing = !!target && (!!target.closest('input,select,textarea') || target.isContentEditable || target.getAttribute('role') === 'slider');
+  if (typing) return;
   if (e.key === 'Escape') {
     if (learn.isOpen()) learn.open(false);
+    else if (story.isOpen()) story.onKey(e);
     else actions.select(null);
     return;
   }
-  if (typing) return;
+  // Câu chuyện đang mở được xét phím trước (PageDown/PageUp/←/→/Enter để chuyển bước).
+  if (story.isOpen() && story.onKey(e)) return;
   const k = e.key.toLowerCase();
-  if (e.key === ' ' && tag !== 'BUTTON') {
+  if (e.key === ' ') {
+    if (target?.closest(SPACE_OWNERS)) return;
     e.preventDefault();
     actions.togglePlay();
-  } else if (e.key === 'ArrowRight') {
+  } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    if (target?.closest(ARROW_OWNERS)) return;
     e.preventDefault();
-    actions.stepHours(1);
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    actions.stepHours(-1);
+    actions.stepHours(e.key === 'ArrowRight' ? 1 : -1);
   } else if (e.key === '+' || e.key === '=') actions.setRate(store.state.rate - 5);
   else if (e.key === '-' || e.key === '_') actions.setRate(store.state.rate + 5);
   else if (k === 'n') actions.setNow();
