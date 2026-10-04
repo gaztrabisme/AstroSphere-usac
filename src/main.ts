@@ -14,11 +14,9 @@ import { mountStory } from './story/entry';
 import type { ViewKey } from './story/types';
 import { Actions, createInitialState, Store, type AppState, type Toggles } from './state';
 import { animationPanel } from './ui/animationPanel';
-import { createDialogs } from './ui/dialogs';
 import { displayPanel } from './ui/displayPanel';
 import { button, clear, h } from './ui/dom';
 import { dataBar, infoCard } from './ui/infoCard';
-import { learningDrawer } from './ui/learning';
 import { locationPanel } from './ui/locationPanel';
 import { mountQualityNotice } from './ui/qualityNotice';
 import { starPanel } from './ui/starPanel';
@@ -31,9 +29,47 @@ const store = new Store(createInitialState());
 const actions = new Actions(store);
 const app = document.getElementById('app')!;
 
+// ---------------------------------------------------------------- Ngăn Ôn tập và hộp thoại (tải động khi dùng lần đầu)
+type LearnDrawer = ReturnType<typeof import('./ui/learning').learningDrawer>;
+type Dialogs = ReturnType<typeof import('./ui/dialogs').createDialogs>;
+
+let learnDrawer: LearnDrawer | null = null;
+let learnLoading: Promise<LearnDrawer> | null = null;
+let learnOpener: HTMLElement | null = null;
+function loadLearn(): Promise<LearnDrawer> {
+  learnLoading ??= import('./ui/learning').then((m) => {
+    learnDrawer = m.learningDrawer(store, actions, {
+      returnFocus: () => (learnOpener?.isConnected ? learnOpener : learnBtn),
+    });
+    app.append(learnDrawer.el);
+    return learnDrawer;
+  });
+  return learnLoading;
+}
+/** Mặt tiền an toàn: dùng được trước khi mô-đun được tải. */
+const learn = {
+  isOpen: () => !!learnDrawer && !learnDrawer.el.hidden,
+  open(v: boolean) {
+    if (!v && !learnDrawer) return;
+    if (v && !learn.isOpen()) learnOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    void loadLearn().then((d) => d.open(v));
+  },
+  toggle: () => learn.open(!learn.isOpen()),
+};
+
+let dialogsMod: Dialogs | null = null;
+let dialogsLoading: Promise<Dialogs> | null = null;
+function loadDialogs(): Promise<Dialogs> {
+  dialogsLoading ??= import('./ui/dialogs').then((m) => (dialogsMod = m.createDialogs({ onShowHero: () => story.showHero() })));
+  return dialogsLoading;
+}
+const dialogs = {
+  help: () => void loadDialogs().then((d) => d.help()),
+  about: () => void loadDialogs().then((d) => d.about()),
+  isOpen: () => dialogsMod?.isOpen() ?? false,
+};
+
 // ---------------------------------------------------------------- Thanh trên cùng
-const learn = learningDrawer(store, actions);
-const dialogs = createDialogs();
 let sphere: CelestialSphereView | null = null;
 let horizon: HorizonDiagramView | null = null;
 
@@ -159,7 +195,7 @@ const footer = h(
   h('p', { class: 'site-footer__credit', text: t('app.footer') }),
   h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
 );
-app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer, learn.el);
+app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer);
 
 // ---------------------------------------------------------------- Chú giải màu
 const LEGEND: { key: keyof Toggles | 'horizon'; color: string; zone?: boolean }[] = [
@@ -311,7 +347,7 @@ window.addEventListener('keydown', (e) => {
   const tag = target?.tagName;
   const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target?.isContentEditable || target?.getAttribute('role') === 'slider';
   if (e.key === 'Escape') {
-    if (!learn.el.hidden) learn.open(false);
+    if (learn.isOpen()) learn.open(false);
     else actions.select(null);
     return;
   }

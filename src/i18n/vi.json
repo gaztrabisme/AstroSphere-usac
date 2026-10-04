@@ -451,6 +451,7 @@
   },
   "about": {
     "title": "Giới thiệu",
+    "showHero": "Xem màn hình mở đầu",
     "body": [
       "Hệ thống mô phỏng được phát triển bởi **Câu lạc bộ Thiên văn USAC**, với định hướng xây dựng một công cụ trực quan hỗ trợ giảng dạy và tự học thiên văn học cơ bản.",
       "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Bắc Cực gần như không bao giờ lặn.",
