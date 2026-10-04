@@ -181,7 +181,7 @@ function selectView(key: ViewKey) {
 }
 
 // ---------------------------------------------------------------- Bảng số liệu và bảng điều khiển
-const data = dataBar(store);
+const data = dataBar(store, actions);
 const animation = animationPanel(store, actions);
 const panelDefs = [
   { key: 'location', el: locationPanel(store, actions) },

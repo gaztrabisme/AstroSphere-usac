@@ -137,6 +137,9 @@
     "riseSet": "Mọc và lặn",
     "neverRise": "Không bao giờ mọc"
   },
+  "emphasis": {
+    "hint": "Rê chuột hoặc dùng phím Tab tới ô này để tô đậm hình tương ứng trong hai khung nhìn 3D."
+  },
   "compass": {
     "N": "Bắc",
     "NE": "Đông Bắc",

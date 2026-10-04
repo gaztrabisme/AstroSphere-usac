@@ -19,6 +19,7 @@ import { t } from '../i18n';
 import { resolveSelection, sunEquatorial } from '../selection';
 import { lstOf, type Actions, type AppState, type Store } from '../state';
 import { h, setHidden, setText } from './dom';
+import { bindEmphasis } from './emphasis';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
@@ -46,7 +47,7 @@ function row(key: string, label: string, title?: string, note?: string): Row {
   const v = h('span', { class: 'kv__v' });
   const x = h('span', { class: 'kv__x' });
   const n = note ? h('span', { class: 'kv__note', text: note }) : null;
-  // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết".
+  // data-emphasis: khóa "tô sáng liên kết" (ui/emphasis.ts nối các khóa có hình tương ứng).
   return { el: h('div', { class: 'kv', title, 'data-emphasis': key }, h('dt', { text: label }), h('dd', null, v, x, n)), v, x };
 }
 
@@ -92,6 +93,7 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
+  const statusRow = h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
   const body = h(
     'div',
     { class: 'infocard__body' },
@@ -103,7 +105,7 @@ export function infoCard(store: Store, actions: Actions) {
     h(
       'dl',
       null,
-      h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status)),
+      statusRow,
       r.rise.el,
       r.transit.el,
       r.set.el,
@@ -112,6 +114,8 @@ export function infoCard(store: Store, actions: Actions) {
       r.highest.el,
     ),
   );
+
+  for (const row of [r.ha.el, r.az.el, r.alt.el, statusRow]) bindEmphasis(row, store, actions);
 
   // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
   const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
@@ -233,14 +237,14 @@ export const DATA_CELLS = [
 ] as const;
 export type DataKey = (typeof DATA_CELLS)[number]['key'];
 
-export function dataBar(store: Store) {
+export function dataBar(store: Store, actions: Actions) {
   const items = {} as Record<DataKey, HTMLElement>;
   const cells = {} as Record<DataKey, HTMLElement>;
   for (const c of DATA_CELLS) {
     const v = h('span', { class: 'data__v' });
     items[c.key] = v;
     const note = h('span', { class: 'data__n', text: t(`data.${c.key}Note`) });
-    // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết" (số ↔ hình trong hai khung nhìn).
+    // data-emphasis: khóa "tô sáng liên kết" (số ↔ hình trong hai khung nhìn), xem ui/emphasis.ts.
     cells[c.key] = h(
       'div',
       { class: c.end ? 'data__item data__item--end' : 'data__item', title: c.tip ? t(`data.${c.key}Tip`) : undefined, 'data-emphasis': c.key },
@@ -249,6 +253,7 @@ export function dataBar(store: Store) {
       note,
     );
   }
+  for (const c of DATA_CELLS) bindEmphasis(cells[c.key], store, actions);
   const sunCell = cells.solar;
   const el = h('section', { class: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
 
