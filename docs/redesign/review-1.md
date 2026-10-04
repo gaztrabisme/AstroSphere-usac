@@ -38,3 +38,15 @@ The reviewer was a fresh-context agent that saw only the six renders in `review-
 ## Fix round 1 (dispositions)
 
 All of the above are fixed in round 1 except those marked deferred. Results go in `review-2.md` after a new fresh-context review and a re-measure.
+
+| Finding | Commit | What changed |
+|---|---|---|
+| D2, C2 | 3b1a831 | Screen-space label declutter by priority; edge band hide/nudge (`docs/redesign/uat/declutter.mjs`, 6d3e0c5) |
+| D2 caption, B1–B4, E1, E3, A2 | 5f3189f | Toast removed; one hint caption under the horizon canvas; key line φ = pole altitude in the view card; quiet "Tạm dừng"; info-card scroll fade; phone title, labelled "Ôn tập", taller view |
+| G1, G2, G3, D1 | 9eff9da | Orange only on interactive things; Orion indigo; captions 12 px `--muted`; key values 17 px |
+| E2, C2 (LST) | a5d71c0 | One-line toggle hints without "Để ý:"; "Giờ thiên văn (LST)" |
+| H1 (K7) | a597273 | Presentation: lines ×2, scene labels ×1,8, large key strip, hint hidden |
+| F2 | 66a4404 | Pole-altitude sector and arc larger and more opaque; chip labels next to the arc; sphere φ arc and equator join the highlight |
+| T1 value focal | c40ee44 | Horizon view framed tighter; sphere starfield dimmed. Re-measure: 0.81x (was 0.76x), still below the 2x default |
+
+Renders for the next review are in `review-2/` (made with `docs/redesign/uat/review-shots.mjs`). Vision checks: not judged, awaiting a fresh reviewer.

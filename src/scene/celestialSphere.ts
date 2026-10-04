@@ -73,20 +73,22 @@ export class CelestialSphereView extends View {
     this.latSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.latitude, 0.35));
     this.latSector.userData.tip = 'latitude';
     this.latArc = dynamicFatLine(41, COLORS.latitude, { width: 2.4, depthTest: false, boundsRadius: this.earthR * 1.7 });
-    this.latLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.latitude, hideBelowHorizon: false });
+    this.latLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.latitude, hideBelowHorizon: false, emph: 'pole' });
     this.latGroup.add(this.latSector, this.latArc, this.latLabel);
     this.scene.add(this.latGroup);
+    // Tô sáng "độ cao thiên cực": trục (SkyLayer) và góc vĩ độ φ ở tâm Trái Đất cùng đậm lên (review-1 F2).
+    this.emphasis.add('pole', this.latArc, this.latSector);
 
     this.update(store.state);
   }
 
-  protected onUpdate(s: AppState): void {
+  protected onUpdate(s: AppState, emphasis: string | null): void {
     const key = `${s.lat},${s.lon}`;
     if (key !== this.lastLoc) {
       this.lastLoc = key;
       this.placeObserver(s.lat, s.lon);
     }
-    this.latGroup.visible = s.toggles.poleAltitude;
+    this.latGroup.visible = s.toggles.poleAltitude || emphasis === 'pole';
   }
 
   private placeObserver(lat: number, lon: number): void {

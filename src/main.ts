@@ -6,14 +6,15 @@ import { Animator } from './animator';
 import { t } from './i18n';
 import { startFrameLoop, type FrameView } from './runtime/frameLoop';
 import { createQuality } from './runtime/quality';
+import { fmtDeg, fmtLat, poleAltitude } from './astro';
 import { COLORS } from './scene/colors';
 import type { CelestialSphereView } from './scene/celestialSphere';
 import type { HorizonDiagramView } from './scene/horizonDiagram';
 import { Actions, createInitialState, Store, type AppState, type Toggles } from './state';
 import { animationPanel } from './ui/animationPanel';
 import { displayPanel } from './ui/displayPanel';
-import { button, clear, h } from './ui/dom';
-import { mountFirstHint } from './ui/firstHint';
+import { button, clear, h, setText } from './ui/dom';
+import { bindHintCaption } from './ui/firstHint';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { mountQualityNotice } from './ui/qualityNotice';
@@ -86,8 +87,8 @@ const dialogs = {
 let sphere: CelestialSphereView | null = null;
 let horizon: HorizonDiagramView | null = null;
 
-const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top', icon: '🎓', title: t('top.learnTip') });
-const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top', icon: '⛶', title: t('top.presentTip') });
+const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top btn--top-main', icon: '✎', title: t('top.learnTip') });
+const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top btn--top-present', icon: '⛶', title: t('top.presentTip') });
 presentBtn.setAttribute('aria-pressed', 'false');
 const topbar = h(
   'header',
@@ -96,7 +97,14 @@ const topbar = h(
     'div',
     { class: 'brand' },
     h('img', { class: 'brand__logo', src: logoUrl, alt: t('app.logoAlt'), width: 44, height: 44, decoding: 'async' }),
-    h('h1', { class: 'brand__text' }, h('span', { class: 'brand__org', text: t('app.org') }), h('span', { class: 'brand__name', text: t('app.title') })),
+    h(
+      'h1',
+      { class: 'brand__text' },
+      h('span', { class: 'brand__org', text: t('app.org') }),
+      h('span', { class: 'brand__name', text: t('app.title') }),
+      // Tên ngắn cho điện thoại (tên đầy đủ vẫn có cho trình đọc màn hình).
+      h('span', { class: 'brand__short', 'aria-hidden': 'true', text: t('app.shortTitle') }),
+    ),
   ),
   h(
     'nav',
@@ -127,7 +135,7 @@ const fpBtn = h('button', {
   },
 });
 
-function viewBox(id: string, title: string, sub: string, host: HTMLElement, tools: HTMLElement[]) {
+function viewBox(id: string, title: string, sub: string, host: HTMLElement, tools: HTMLElement[], foot: HTMLElement | null = null) {
   return h(
     'article',
     { class: 'view', id, 'aria-labelledby': `${id}-title` },
@@ -138,25 +146,52 @@ function viewBox(id: string, title: string, sub: string, host: HTMLElement, tool
       h('div', { class: 'view__tools' }, ...tools),
     ),
     host,
-    h('p', { class: 'view__hint', text: t('view.dragHint') }),
+    foot,
   );
+}
+
+// Chân khung giản đồ chân trời: điều cốt lõi (φ = độ cao thiên cực) và MỘT dòng gợi ý thao tác, nằm DƯỚI cảnh
+// (không che cảnh, review-1 D2). Trong chế độ trình chiếu dòng cốt lõi to lên, dòng gợi ý ẩn đi.
+const keyLine = h('p', { class: 'view__key', 'aria-live': 'off' });
+const hintLine = h('p', { class: 'view__hint', text: t('view.hint') });
+const horizonFoot = h('footer', { class: 'view__foot' }, keyLine, hintLine);
+let keyText = '';
+function updateKeyLine(s: AppState) {
+  const text = t('view.keyline', {
+    lat: fmtLat(s.lat),
+    pole: t(s.lat >= 0 ? 'panel.location.north' : 'panel.location.south'),
+    alt: fmtDeg(poleAltitude(s.lat)),
+  });
+  if (text !== keyText) {
+    keyText = text;
+    setText(keyLine, text);
+  }
 }
 
 const sphereBox = viewBox('view-sphere', t('view.sphere'), t('view.sphereSub'), sphereHost, [
   button(t('view.resetCamera'), () => sphere?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') }),
 ]);
-const horizonBox = viewBox('view-horizon', t('view.horizon'), t('view.horizonSub'), horizonHost, [
-  fpBtn,
-  button(t('view.resetCamera'), () => horizon?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') }),
-]);
+const horizonBox = viewBox(
+  'view-horizon',
+  t('view.horizon'),
+  t('view.horizonSub'),
+  horizonHost,
+  [fpBtn, button(t('view.resetCamera'), () => horizon?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') })],
+  horizonFoot,
+);
 
-// Một gợi ý duy nhất, một lần, trên khung nhìn chính (không phải chuỗi hướng dẫn).
-mountFirstHint(horizonBox, [horizonHost, sphereHost], () => fpBtn);
+// Dòng gợi ý nổi hơn cho tới lần kéo/bấm đầu tiên vào một khung nhìn.
+bindHintCaption(hintLine, [horizonHost, sphereHost]);
 
 const card = infoCard(store, actions);
 const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
 // Thứ tự đọc = thứ tự khái niệm: giản đồ chân trời (điều bạn thấy) trước, thiên cầu (vì sao như vậy) sau.
 const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el);
+
+// Điện thoại: thẻ thông tin nổi ở đáy khung nhìn phải nằm trên chân khung (dòng cốt lõi + gợi ý).
+if (typeof ResizeObserver !== 'undefined') {
+  new ResizeObserver(() => views.style.setProperty('--foot-h', `${horizonFoot.offsetHeight}px`)).observe(horizonFoot);
+}
 
 const viewTab = (key: 'sphere' | 'horizon') =>
   h('button', {
@@ -229,10 +264,13 @@ const footer = h(
 
 // ---------------------------------------------------------------- Chế độ trình chiếu (spec K6, K8)
 let presenting = false;
+const PRESENT_LINE_SCALE = 2;
 function setPresent(on: boolean) {
   if (on === presenting) return;
   presenting = on;
   document.body.classList.toggle('present', on);
+  // Máy chiếu: đường ×2, nhãn cảnh ×1,8 (CSS: body.present --lbl-k), đo lại nhãn để gỡ chồng chéo đúng cỡ.
+  for (const v of [sphere, horizon]) v?.setLineScale(on ? PRESENT_LINE_SCALE : 1);
   presentBtn.setAttribute('aria-pressed', String(on));
   presentBtn.title = t(on ? 'top.exitPresent' : 'top.presentTip');
   const root = document.documentElement;
@@ -304,6 +342,7 @@ scenePromise.then(
       sphere = v.sphere;
       horizon = v.horizon;
       for (const view of [sphere, horizon]) attachViewInteraction(view, store, actions);
+      if (presenting) for (const view of [sphere, horizon]) view.setLineScale(PRESENT_LINE_SCALE);
       sphere.update(store.state);
       horizon.update(store.state);
       loop.markUiDirty();
@@ -327,6 +366,7 @@ store.subscribe((s) => {
   loop.markUiDirty();
 });
 updateLegend(store.state);
+updateKeyLine(store.state);
 
 function resetAll() {
   actions.resetAll();
@@ -346,6 +386,7 @@ const loop = startFrameLoop({
     data.update();
     card.update();
     updateLegend(store.state);
+    updateKeyLine(store.state);
     animation.tick();
   },
   isPlaying: () => store.state.playing,

@@ -4,13 +4,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { Line2 } from 'three/addons/lines/Line2.js';
+import type { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { emphasisGroup } from '../emphasis';
 import type { QualitySettings, QualityTarget } from '../runtime/quality';
 import { lstOf, type AppState, type Selection, type Store } from '../state';
 import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
+import { setFatLineStyle } from './geom';
 import { HorizonLayer } from './horizonLayer';
-import type { Label } from './labels';
+import { declutter, LabelBoxes } from './declutter';
+import type { Label, LabelData } from './labels';
 import { SkyLayer } from './skyLayer';
 import { TrailLayer } from './trails';
 
@@ -49,11 +52,19 @@ export abstract class View implements QualityTarget {
   private dprQuery: MediaQueryList | null = null;
   protected raycaster = new THREE.Raycaster();
   private defaultCamera: THREE.Vector3;
+  private defaultTarget: THREE.Vector3;
   private width = 0;
   private height = 0;
   /** Danh sách nhãn CSS2D giữ sẵn; dựng lại khi structureVersion() đổi. */
   private labelList: Label[] = [];
   private labelKey = -1;
+  /** Hộp màn hình của các nhãn đang hiện (gỡ chồng chéo) và nhãn tương ứng với từng hộp — cấp phát sẵn. */
+  private boxes = new LabelBoxes();
+  private boxLabel: Label[] = [];
+  private needMeasure = true;
+  /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
+  private lineScale = 1;
+  private baseWidths = new WeakMap<Line2, number>();
   private hoverList: THREE.Object3D[] = [];
   private hoverKey = -1;
   /** Khóa của lần tính nhóm tô sáng gần nhất (chỉ tính lại khi khóa, đối tượng chọn, vĩ độ hoặc danh sách sao đổi). */
@@ -69,11 +80,12 @@ export abstract class View implements QualityTarget {
   readonly kind: ViewKind;
   protected store: Store;
 
-  constructor(container: HTMLElement, kind: ViewKind, store: Store, defaultCamera: THREE.Vector3) {
+  constructor(container: HTMLElement, kind: ViewKind, store: Store, defaultCamera: THREE.Vector3, defaultTarget = new THREE.Vector3()) {
     this.container = container;
     this.kind = kind;
     this.store = store;
     this.defaultCamera = defaultCamera.clone();
+    this.defaultTarget = defaultTarget.clone();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(this.targetPixelRatio());
@@ -89,6 +101,7 @@ export abstract class View implements QualityTarget {
     this.camera.position.copy(defaultCamera);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.copy(this.defaultTarget);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.enablePan = false;
@@ -195,11 +208,11 @@ export abstract class View implements QualityTarget {
     this.sky.setTime(s.lat, lstOf(s));
     this.horizon.update(s, group);
     this.trails.update(s);
-    this.onUpdate(s);
+    this.onUpdate(s, group);
     this.dirty = true;
   }
 
-  protected abstract onUpdate(s: AppState): void;
+  protected abstract onUpdate(s: AppState, emphasis: string | null): void;
 
   /**
    * Nhóm đối tượng cần tô sáng. Chỉ tính lại khi khóa tô sáng, đối tượng chọn, vĩ độ, danh sách sao hoặc
@@ -219,6 +232,12 @@ export abstract class View implements QualityTarget {
     if (group !== this.emGroup) {
       this.emGroup = group;
       this.emphasis.setTarget(group, performance.now(), this.reducedMotion?.matches ?? false);
+      // Nhãn số đo của nhóm đang tô sáng: chip đậm hơn (lớp is-em; chỉ ghi khi đổi).
+      const list = this.labelList;
+      for (let i = 0; i < list.length; i++) {
+        const ud = list[i].userData;
+        if (ud.emph) list[i].element.classList.toggle('is-em', ud.emph === group);
+      }
     }
     return group;
   }
@@ -248,6 +267,7 @@ export abstract class View implements QualityTarget {
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     this.dirty = false;
+    this.measureLabels();
     return true;
   }
 
@@ -259,6 +279,11 @@ export abstract class View implements QualityTarget {
     return this.sky.structureVersion + this.horizon.structureVersion;
   }
 
+  /**
+   * Hiện/ẩn nhãn theo hộp kiểm, chân trời và Trái Đất che khuất, rồi gỡ chồng chéo trong không gian màn hình
+   * (review-1 D2): nhãn của đối tượng đang chọn trước, sau đó theo hạng ưu tiên tĩnh (labels.ts). Không cấp phát:
+   * danh sách nhãn được sắp một lần khi cấu trúc cảnh đổi; hộp nằm trong mảng cấp phát sẵn (declutter.ts).
+   */
   private updateLabels(s: AppState): void {
     const version = this.structureVersion();
     if (version !== this.labelKey) {
@@ -268,28 +293,132 @@ export abstract class View implements QualityTarget {
       this.scene.traverse((o) => {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
+      list.sort((a, b) => a.userData.rank - b.userData.rank);
+      this.boxLabel.length = list.length;
+      this.boxes.ensure(list.length);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
     const list = this.labelList;
+    const W = this.width;
+    const H = this.height;
+    const cam = this.camera;
+    cam.updateMatrixWorld();
+    const boxes = this.boxes;
+    boxes.reset();
+    let sel: Label | null = null;
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
+      const ud = lbl.userData;
+      lbl.center.set(ud.cx0, ud.cy0);
       // Nhóm cha bị ẩn: CSS2DRenderer tự ẩn cả nhánh, không cần tính vị trí/che khuất.
       if (!ancestorsVisible(lbl)) continue;
-      let vis = lt.all && lt[lbl.userData.group];
+      let vis = lt.all && lt[ud.group];
       if (vis) {
         // matrixWorld đã cập nhật trong frame() (scene.updateMatrixWorld) — không gọi getWorldPosition.
         _v.setFromMatrixPosition(lbl.matrixWorld);
-        if (clip && lbl.userData.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
+        if (clip && ud.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
         else if (this.isOccluded(_v)) vis = false;
       }
       lbl.visible = vis;
+      if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
+    // Nhãn số đo của nhóm đang tô sáng giữ chỗ đầu tiên, rồi đối tượng đang chọn, rồi các nhãn khác theo hạng.
+    const em = this.emGroup;
+    if (em !== null) {
+      for (let i = 0; i < list.length; i++) {
+        const lbl = list[i];
+        if (lbl.userData.emph === em && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
+      }
+    }
+    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true);
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      if (lbl === sel || !lbl.visible || (em !== null && lbl.userData.emph === em) || !ancestorsVisible(lbl)) continue;
+      this.pushBox(lbl, W, H, lbl.userData.rank < 20);
+    }
+    declutter(boxes, W, H);
+    for (let k = 0; k < boxes.n; k++) {
+      const lbl = this.boxLabel[k];
+      if (!boxes.keep[k]) {
+        lbl.visible = false;
+        continue;
+      }
+      const ud = lbl.userData;
+      const w = ud.w || estimateWidth(lbl);
+      const h = ud.h || EST_H;
+      if (boxes.dx[k] !== 0) lbl.center.x = ud.cx0 - boxes.dx[k] / w;
+      if (boxes.dy[k] !== 0) lbl.center.y = ud.cy0 - boxes.dy[k] / h;
+    }
+  }
+
+  /** Chiếu nhãn ra hộp màn hình và đưa vào danh sách gỡ chồng chéo (bỏ qua nhãn nằm sau camera). */
+  private pushBox(lbl: Label, W: number, H: number, canNudge: boolean): void {
+    _p.setFromMatrixPosition(lbl.matrixWorld).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const ud = lbl.userData;
+    if (ud.w === 0) this.needMeasure = true;
+    const w = ud.w || estimateWidth(lbl);
+    const h = ud.h || EST_H;
+    const sx = ((_p.x + 1) / 2) * W;
+    const sy = ((1 - _p.y) / 2) * H;
+    // Chỉ đẩy vào trong khi điểm neo còn nằm trong khung; điểm ở ngoài khung thì nhãn bị ẩn.
+    const inside = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
+    this.boxLabel[this.boxes.n] = lbl;
+    this.boxes.push(sx - ud.cx0 * w, sy - ud.cy0 * h, w, h, canNudge && inside);
+  }
+
+  /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
+  private measureLabels(): void {
+    if (!this.needMeasure) return;
+    this.needMeasure = false;
+    const list = this.labelList;
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      const ud = lbl.userData;
+      if (ud.w !== 0 || !lbl.visible || lbl.element.style.display === 'none' || !lbl.element.isConnected) continue;
+      const w = lbl.element.offsetWidth;
+      if (w > 0) {
+        ud.w = w;
+        ud.h = lbl.element.offsetHeight;
+        // Gỡ chồng chéo lại ở khung hình sau với kích thước thật.
+        this.dirty = true;
+      }
+    }
+  }
+
+  /**
+   * Hệ số độ dày mọi đường Line2 (chế độ trình chiếu: ×2 để đọc được trên máy chiếu, review-1 H1). Chỉ đổi uniform
+   * qua setFatLineStyle — không dựng hình học. Tô sáng liên kết nhân thêm trên hệ số này (EmphasisFx.setScale).
+   */
+  setLineScale(k: number): void {
+    if (k === this.lineScale) return;
+    this.lineScale = k;
+    this.scene.traverse((o) => {
+      if (!(o as Line2).isLine2) return;
+      const line = o as Line2;
+      const m = line.material as LineMaterial;
+      let w0 = this.baseWidths.get(line);
+      if (w0 === undefined) {
+        w0 = m.linewidth;
+        this.baseWidths.set(line, w0);
+      }
+      setFatLineStyle(line, { width: w0 * k });
+    });
+    this.emphasis.setScale(k);
+    this.invalidateLabelSizes();
+  }
+
+  /** Cỡ chữ nhãn đổi (chế độ trình chiếu): đo lại mọi nhãn ở lần vẽ tới. */
+  invalidateLabelSizes(): void {
+    for (const lbl of this.labelList) lbl.userData.w = 0;
+    this.needMeasure = true;
+    this.dirty = true;
   }
 
   resetCamera(): void {
     this.camera.position.copy(this.defaultCamera);
-    this.controls.target.set(0, 0, 0);
+    this.controls.target.copy(this.defaultTarget);
     this.controls.update();
     this.dirty = true;
   }
@@ -353,6 +482,21 @@ export abstract class View implements QualityTarget {
   protected hoverTargets(): THREE.Object3D[] {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
+}
+
+/** Chiều cao ước lượng của nhãn chưa đo (px). */
+const EST_H = 16;
+
+/** Bề rộng ước lượng của nhãn chưa đo (px) — chỉ dùng cho khung hình đầu tiên trước khi đo. */
+function estimateWidth(lbl: Label): number {
+  return (lbl.element.textContent?.length ?? 0) * 7 + 6;
+}
+
+function isSelectedLabel(ud: LabelData, sel: Selection): boolean {
+  if (!sel || ud.selKind !== sel.kind) return false;
+  if (sel.kind === 'user') return ud.selId === sel.id;
+  if (sel.kind === 'catalog') return ud.selIdx === sel.index;
+  return true;
 }
 
 function ancestorsVisible(o: THREE.Object3D): boolean {

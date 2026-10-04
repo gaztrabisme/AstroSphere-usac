@@ -43,6 +43,7 @@ export class SkyLayer {
 
   private equator = new THREE.Group();
   private equatorPlane: THREE.Mesh;
+  private equatorLine: Line2;
   private axis = new THREE.Group();
   private axisLine: Line2;
   private hourCircleLine: Line2;
@@ -77,16 +78,23 @@ export class SkyLayer {
   private sunVec = new THREE.Vector3();
   private readonly view: ViewKind;
   private readonly R: number;
+  /**
+   * Hệ số độ mờ của nền sao danh mục. Khung thiên cầu là khung phụ: nền sao mờ hơn để khung giản đồ chân trời
+   * giữ tiêu điểm (bớt tương phản quanh tiêu điểm — 5642 · U4 · L55 · 01:27–02:33; color-theory T1).
+   */
+  private readonly catalogK: number;
 
   constructor(view: ViewKind, R: number) {
     this.view = view;
     this.R = R;
+    this.catalogK = view === 'sphere' ? 0.55 : 1;
     this.rot.matrixAutoUpdate = false;
     this.fixed.matrixAutoUpdate = false;
 
     // --- Đối tượng cố định (bất biến khi quay quanh trục thiên cực) -------------
     const eqLine = fatLine(decCircle(0, R), COLORS.equator, { width: 2.6 });
     eqLine.userData.tip = 'equator';
+    this.equatorLine = eqLine;
     this.equator.add(eqLine);
     const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator });
     // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
@@ -163,7 +171,7 @@ export class SkyLayer {
       pos.set([v.x, v.y, v.z], i * 3);
       col.set(bvToRgb(cat.bv[i]), i * 3);
       size[i] = sizeForMagnitude(cat.mag[i]);
-      alpha[i] = Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15));
+      alpha[i] = catalogAlpha(cat.mag[i], this.catalogK);
     }
     this.catalogDrawCount = n;
     this.catalog = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.starMaterial);
@@ -183,7 +191,7 @@ export class SkyLayer {
     );
     glow.scale.setScalar(R * 0.3);
     this.sun.add(glow);
-    const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5] });
+    const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5], rank: 38, sel: { kind: 'sun' } });
     this.sun.add(sunLabel);
     this.rot.add(this.sun);
     // Đường đi trong ngày của Mặt Trời: hình học cấp phát một lần, ghi lại khi đổi ngày.
@@ -335,7 +343,13 @@ export class SkyLayer {
         const idx = st.hip ? catalogIndexByHip(st.hip) : undefined;
         if (idx !== undefined) this.catalogHidden.add(idx);
         if (st.labelled) {
-          const lbl = makeLabel(st.short || st.name.split(' (')[0], 'stars', { color: st.color, cls: 'lbl--star', anchor: [-0.12, 0.5] });
+          const lbl = makeLabel(st.short || st.name.split(' (')[0], 'stars', {
+            color: st.color,
+            cls: 'lbl--star',
+            anchor: [-0.12, 0.5],
+            mag: st.mag,
+            sel: { kind: 'user', id: st.id },
+          });
           lbl.position.copy(v);
           this.user.add(lbl);
         }
@@ -371,7 +385,7 @@ export class SkyLayer {
           for (let k = before; k < seg.length; k += 3) colors.push(c.r, c.g, c.b);
         }
         if (count) {
-          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation' });
+          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation', rank: 30 });
           lbl.position.copy(centroid.normalize().multiplyScalar(R * 1.06));
           this.user.add(lbl);
         }
@@ -395,14 +409,14 @@ export class SkyLayer {
       if (this.catalogHidden.has(i)) continue;
       const st = getCatalogStar(i);
       if (!st.shortName) continue;
-      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5] });
+      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5], mag: cat.mag[i], sel: { kind: 'catalog', index: i } });
       lbl.position.copy(this.catalogVecs[i]);
       this.catalogLabels.add(lbl);
     }
     // Ẩn điểm danh mục trùng với sao của người dùng để không vẽ chồng.
     const alpha = this.catalog.geometry.getAttribute('aAlpha') as THREE.BufferAttribute;
     for (let i = 0; i < cat.ra.length; i++) {
-      alpha.setX(i, this.catalogHidden.has(i) ? 0 : Math.max(0.35, Math.min(1, 1.15 - cat.mag[i] * 0.15)));
+      alpha.setX(i, this.catalogHidden.has(i) ? 0 : catalogAlpha(cat.mag[i], this.catalogK));
     }
     alpha.needsUpdate = true;
   }
@@ -431,6 +445,8 @@ export class SkyLayer {
   /** Đăng ký các đối tượng của lớp này cho tô sáng liên kết (xem emphasis.ts). */
   registerEmphasis(fx: EmphasisFx): void {
     fx.add('pole', this.axisLine);
+    // Góc xích đạo trời – chân trời: xích đạo trời cũng đậm lên ở cả hai khung (khung thiên cầu không có hình quạt góc).
+    fx.add('incl', this.equatorLine);
     fx.add('meridian', this.hourCircleLine);
     for (const k of Object.keys(this.zones) as ZoneKey[]) fx.add(`zone_${k}`, this.zones[k]);
   }
@@ -582,6 +598,11 @@ export class SkyLayer {
     }
     return out;
   }
+}
+
+/** Độ mờ của một sao danh mục theo cấp sao, nhân hệ số của khung nhìn. */
+function catalogAlpha(mag: number, k: number): number {
+  return Math.max(0.35, Math.min(1, 1.15 - mag * 0.15)) * k;
 }
 
 let _glow: THREE.Texture | null = null;

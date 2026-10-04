@@ -168,15 +168,17 @@ export class HorizonLayer {
     this.angleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.angle, 0.28));
     this.angleSector.userData.tip = 'angle';
     this.angleArc = dynamicFatLine(41, COLORS.angle, { width: 2.4, boundsRadius: R * 0.6 });
-    this.angleLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.angle, anchor: [-0.04, 0.5] });
+    this.angleLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.angle, anchor: [-0.04, 0.5], emph: 'incl' });
     this.angle.add(this.angleSector, this.angleArc, this.angleLabel);
     this.group.add(this.angle);
 
     // Độ cao thiên cực = vĩ độ
-    this.poleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.axis, 0.3));
+    this.poleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.axis, 0.35));
     this.poleSector.userData.tip = 'poleAltitude';
-    this.poleArc = dynamicFatLine(41, COLORS.axis, { width: 2.4, boundsRadius: R * 0.4 });
-    this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: '#93c5fd', anchor: [1.04, 0.5] });
+    this.poleArc = dynamicFatLine(41, COLORS.axis, { width: 3, boundsRadius: R * 0.6 });
+    // Chip tối, chữ sáng, viền xanh của trục: không còn "xanh trên xanh trên xanh lá" (review-1 F2). Nhãn đặt ngay
+    // ngoài trung điểm của cung, chữ chạy ra xa trục.
+    this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.axis, anchor: [-0.04, 0.5], emph: 'pole' });
     this.poleAlt.add(this.poleSector, this.poleArc, this.poleLabel);
     this.group.add(this.poleAlt);
   }
@@ -184,7 +186,7 @@ export class HorizonLayer {
   private rebuildAngles(lat: number): void {
     const R = this.R;
     const r = R * 0.55;
-    const rp = R * 0.34;
+    const rp = R * 0.5;
     const north = lat >= 0;
     // Góc xích đạo – chân trời: từ điểm Nam (Bắc bán cầu) lên tới điểm cao nhất của xích đạo trời.
     const incl = equatorInclination(lat);
@@ -206,7 +208,7 @@ export class HorizonLayer {
     this.poleSector.geometry = pAlt < 0.01 ? new THREE.BufferGeometry() : sectorGeometry(pf, pt, rp);
     if (pAlt < 0.01) writeFatLine(this.poleArc, _pts, greatArcInto(pf, pf, rp, 1, _pts));
     else writeFatLine(this.poleArc, _pts, greatArcInto(pf, pt, rp, 40, _pts));
-    this.poleLabel.position.copy(horVec(Math.max(pAlt * 0.6, 4), pAz, rp * 1.08));
+    this.poleLabel.position.copy(horVec(Math.max(pAlt / 2, 4), pAz, rp * 1.06));
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
 

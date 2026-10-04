@@ -47,6 +47,7 @@
   --scrim: #000000b3; /* nền mờ sau hộp thoại */
   --veil: #ffffff14; /* lớp phủ sáng nhẹ khi rê chuột */
   --label-halo: #000; /* viền chữ cho nhãn trong cảnh 3D */
+  --scene-label-dim: #d4d4d4; /* tên sao danh mục: 13,4:1 trên nền trời, 5,26:1 trên mặt đất xanh (cả khi không có viền) */
 
   /* Màu ngữ nghĩa của cảnh 3D (trùng scene/colors.ts) — không đổi theo thương hiệu. */
   --scene-dir: #bbf7d0; /* nhãn hướng B/Đ/N/T (xanh lá như chân trời) */
@@ -112,7 +113,7 @@ select {
   gap: 12px;
   padding: 8px 16px;
   background: var(--bg);
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 1px solid var(--border);
 }
 
 .brand {
@@ -142,7 +143,11 @@ select {
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  color: var(--accent-hi);
+  color: var(--muted);
+}
+
+.brand__short {
+  display: none;
 }
 
 .brand__name {
@@ -243,6 +248,13 @@ select {
   background: var(--accent);
 }
 
+/* Đang chạy: "Tạm dừng" là nút phụ yên lặng, không phải điểm dừng của mắt (review-1 B1–B3). */
+.btn--play[aria-pressed='true'] {
+  border-color: var(--border-control);
+  background: var(--surface-3);
+  font-weight: 600;
+}
+
 .icon-btn {
   flex: none;
   width: 30px;
@@ -325,7 +337,7 @@ body.learn-open .layout {
 
 .view__sub {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -348,14 +360,39 @@ body.learn-open .layout {
   display: block;
 }
 
-.view__hint {
-  position: absolute;
-  left: 10px;
-  bottom: 6px;
+.view__canvas .label-layer {
+  z-index: 1;
+}
+
+/* Chân khung nhìn: điều cốt lõi + một dòng gợi ý, nằm DƯỚI cảnh (không che cảnh — review-1 D2). */
+.view__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.view__key {
   margin: 0;
-  font-size: 11px;
-  color: var(--subtle);
-  pointer-events: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.view__hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Lần đầu vào trang: gợi ý đọc như chữ thường; sau lần kéo/bấm đầu tiên nó lùi về màu phụ. */
+.view__hint.is-new {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .label-layer {
@@ -377,7 +414,8 @@ body.learn-open .layout {
 
 /* ------------------------------------------------------------------ Nhãn trong khung nhìn */
 .lbl {
-  font-size: 12px;
+  /* --lbl-k: hệ số cỡ chữ nhãn cảnh (1,8 trong chế độ trình chiếu). */
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
@@ -389,40 +427,54 @@ body.learn-open .layout {
 }
 
 .lbl--dir {
-  font-size: 17px;
+  font-size: calc(17px * var(--lbl-k, 1));
   font-weight: 800;
   color: var(--scene-dir);
 }
 
+/* Nhãn nhỏ nhất trong cảnh: 12 px, màu --muted trên nền trời tối (≥ 4,5:1, review-1 G3). */
 .lbl--small {
-  font-size: 10.5px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 500;
 }
 
 .lbl--catalog {
-  font-size: 10.5px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 500;
-  color: var(--muted);
-  opacity: 0.85;
+  color: var(--scene-label-dim);
 }
 
 .lbl--star {
-  font-size: 11.5px;
+  font-size: calc(12px * var(--lbl-k, 1));
 }
 
 .lbl--constellation {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-style: italic;
   letter-spacing: 0.4px;
   opacity: 0.95;
 }
 
 .lbl--angle {
-  font-size: 12px;
+  font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 650;
   padding: 1px 6px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+/* Số đo góc gắn với tô sáng liên kết: chip tối, chữ sáng, viền trái mang màu ngữ nghĩa của hình (review-1 F2). */
+.lbl--key {
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-left: 3px solid;
+  padding: 2px 7px;
+}
+
+.lbl--key.is-em {
+  background: var(--bg);
+  font-weight: 800;
+  box-shadow: 0 0 0 1px var(--border-control);
 }
 
 /* ------------------------------------------------------------------ Chú giải */
@@ -499,13 +551,15 @@ body.learn-open .layout {
 }
 
 .data__k {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 
+/* Giá trị chính đủ lớn để đọc lướt (review-1 D1: trước đây ~14 px như chữ thường). */
 .data__v {
+  font-size: 17px;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -515,6 +569,7 @@ body.learn-open .layout {
 }
 
 .data__item:last-child .data__v {
+  font-size: 15px;
   white-space: normal;
 }
 
@@ -585,10 +640,10 @@ body.learn-open .layout {
 
 .infocard h4 {
   margin: 10px 0 4px;
-  font-size: 11.5px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--accent-hi);
+  color: var(--muted);
 }
 
 .infocard dl {
@@ -673,6 +728,16 @@ body.learn-open .layout {
   }
 }
 
+/* Thẻ dài hơn khung: thanh cuộn luôn thấy và mép dưới mờ dần để biết còn nội dung (review-1 D2). */
+.infocard {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-control) transparent;
+}
+
+.infocard.can-scroll {
+  mask-image: linear-gradient(to bottom, var(--bg) calc(100% - 40px), transparent);
+}
+
 /* ------------------------------------------------------------------ Bảng điều khiển */
 .panels {
   display: grid;
@@ -691,17 +756,6 @@ body.learn-open .layout {
 .panel__title {
   margin: 0 0 8px;
   font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.panel__title::before {
-  content: '';
-  width: 4px;
-  height: 16px;
-  border-radius: 2px;
-  background: var(--accent);
 }
 
 /* Nhóm trong bảng: tách bằng khoảng trống và tiêu đề nhỏ, không đóng khung. */
@@ -802,7 +856,7 @@ input[aria-invalid='true'] {
   margin: 8px 0 0;
   padding: 6px 8px;
   font-size: 12px;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border-control);
   background: var(--surface-2);
   color: var(--text);
   border-radius: 0 6px 6px 0;
@@ -856,13 +910,13 @@ input[aria-invalid='true'] {
 
 .value--big {
   font-size: 16px;
-  color: var(--accent-hi);
+  color: var(--text);
 }
 
 .ticks {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   padding: 0 2px;
 }
@@ -1140,7 +1194,7 @@ details.sub > summary:hover .sub__title {
 .dialog__content h3 {
   margin: 16px 0 6px;
   font-size: 15px;
-  color: var(--accent-hi);
+  color: var(--text);
 }
 
 .dialog__content p,
@@ -1189,7 +1243,7 @@ details.sub > summary:hover .sub__title {
   margin: 0;
   padding: 8px 12px 6px;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border-control);
   border-radius: 8px;
   background: var(--surface-2);
   min-width: 0;
@@ -1277,7 +1331,7 @@ kbd {
   overflow: auto;
   padding: 0 14px 20px;
   background: var(--surface);
-  border-left: 2px solid var(--accent);
+  border-left: 1px solid var(--border);
   box-shadow: var(--shadow-pop);
 }
 
@@ -1301,8 +1355,8 @@ kbd {
   margin: 6px 0 10px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: var(--accent-a12);
-  border: 1px solid var(--accent-a46);
+  background: var(--surface-3);
+  border: 1px solid var(--border-control);
   font-weight: 600;
 }
 
@@ -1344,7 +1398,7 @@ kbd {
 }
 
 .learn__badge[data-kind='try'] {
-  color: var(--accent-hi);
+  color: var(--muted);
 }
 
 .learn__q {
@@ -1372,7 +1426,7 @@ kbd {
   margin: 4px 0;
   padding: 6px 8px;
   border-radius: 6px;
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border-control);
   background: var(--surface-2);
   color: var(--text);
   font-size: 13px;
@@ -1393,7 +1447,20 @@ kbd {
    chữ nền 20 px và chữ phụ dùng --muted thay cho --subtle (đọc được trên máy chiếu). */
 body.present {
   --subtle: var(--muted);
+  --lbl-k: 1.8;
   font-size: 20px;
+}
+
+/* Dải cốt lõi dưới giản đồ chân trời: to, yên lặng — đọc được từ cuối phòng (review-1 H1). */
+body.present .view__foot {
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+}
+
+body.present .view__key {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 body.present .panels,
@@ -1428,10 +1495,13 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
-body.present .view__sub,
-body.present .view__hint {
+body.present .view__sub {
   font-size: 15px;
   color: var(--muted);
+}
+
+body.present .view__hint {
+  display: none;
 }
 
 body.present .legend {
@@ -1509,7 +1579,7 @@ body.present .kv__x {
   }
 
   .brand__org {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .brand__name {
@@ -1605,10 +1675,11 @@ body.present .kv__x {
     box-shadow: inset 0 -2px 0 var(--accent);
   }
 
+  /* Điện thoại: cảnh 3D cao hơn (review-1 B4) — dải số liệu ở ngay dưới, dòng cốt lõi nằm trong khung. */
   .views {
     grid-template-columns: 1fr;
-    height: 56vh;
-    min-height: 320px;
+    height: 70svh;
+    min-height: 360px;
   }
 
   .views[data-active='sphere'] #view-horizon,
@@ -1637,7 +1708,16 @@ body.present .kv__x {
     padding: 8px 10px;
   }
 
-  .view__hint {
+  .view__foot {
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .view__key {
+    font-size: 13.5px;
+  }
+
+  /* Điện thoại: gợi ý chỉ hiện tới lần chạm đầu tiên, để dành chiều cao cho cảnh. */
+  .view__hint:not(.is-new) {
     display: none;
   }
 
@@ -1651,8 +1731,12 @@ body.present .kv__x {
     right: 8px !important;
   }
 
+  .views[data-active='horizon'] .infocard {
+    bottom: calc(var(--foot-h, 0px) + 8px);
+  }
+
   .legend {
-    font-size: 11.5px;
+    font-size: 12px;
     gap: 4px 10px;
   }
 
@@ -1708,9 +1792,11 @@ body.present .kv__x {
   }
 }
 
-/* Rất hẹp: chỉ giữ logo để sáu nút trên cùng vừa một hàng (tên vẫn có cho trình đọc màn hình). */
+/* Rất hẹp: logo + tên ngắn; "Ôn tập" giữ chữ (hành động chính), các nút khác chỉ biểu tượng có tên truy cập
+   và chú thích (title). Trình chiếu không có ích trên điện thoại nên ẩn (phím F vẫn dùng được). */
 @media (max-width: 480px) {
-  .brand__text {
+  .brand__org,
+  .brand__name {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1719,8 +1805,30 @@ body.present .kv__x {
     white-space: nowrap;
   }
 
+  .brand__short {
+    display: block;
+    max-width: 9ch;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
   .topbar__actions {
     gap: 2px;
+  }
+
+  .btn--top-present {
+    display: none;
+  }
+
+  .btn--top.btn--top-main {
+    padding: 4px 8px 4px 4px;
+    border-color: var(--border-control);
+  }
+
+  .btn--top-main .btn__text {
+    display: inline;
   }
 }
 
@@ -1736,7 +1844,7 @@ body.present .kv__x {
   }
 
   .data__v {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .kv__v {
@@ -1781,51 +1889,6 @@ body.present .kv__x {
   text-align: center;
 }
 
-/* ------------------------------------------------------------------ Gợi ý lần đầu trên khung giản đồ chân trời */
-.firsthint {
-  position: absolute;
-  left: 50%;
-  bottom: 34px;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  width: max-content; /* left: 50% chỉ chừa nửa bề ngang cho co giãn tự nhiên → chữ bị ngắt dòng */
-  max-width: calc(100% - 2 * var(--space-3));
-  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-  transform: translateX(-50%);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
-  box-shadow: var(--shadow-pop);
-  color: var(--text);
-  font-size: 13.5px;
-}
-
-.firsthint:not([data-ready]) {
-  opacity: 0;
-}
-
-.firsthint {
-  transition: opacity 0.3s ease-out;
-}
-
-.firsthint__x {
-  border-radius: var(--radius-pill);
-}
-
-@media (max-width: 900px) {
-  /* Trên điện thoại thẻ thông tin nằm ở đáy khung nhìn: đặt gợi ý ngay dưới thanh công cụ của khung. */
-  .firsthint {
-    top: 60px;
-    bottom: auto;
-  }
-}
-
-body.present .firsthint {
-  font-size: 17px;
-}
-
 /* ------------------------------------------------------------------ Dòng giải thích dưới hộp kiểm (chỉ khi đang bật) */
 .check__hint {
   margin: 0 0 var(--space-1) 29px;
@@ -1837,9 +1900,9 @@ body.present .firsthint {
 /* ------------------------------------------------------------------ Câu nghĩa ngắn dưới số liệu và trạng thái trống của thẻ */
 .data__n,
 .kv__note {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
-  color: var(--subtle);
+  color: var(--muted);
 }
 
 .kv__note {
@@ -1867,7 +1930,7 @@ body.present .firsthint {
 .pole-line {
   margin: 0 0 var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--border-control);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--surface-2);
   font-size: 13px;

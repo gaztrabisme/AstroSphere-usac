@@ -78,7 +78,14 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
     const cs = (sel, p) => getComputedStyle(document.querySelector(sel))[p];
     return { body: cs('body', 'backgroundColor'), topbarBorder: cs('.topbar', 'borderBottomColor'), primaryBg: cs('.btn--primary', 'backgroundColor'), primaryText: cs('.btn--primary', 'color') };
   });
-  check('brand: dark body, orange top rule, orange primary with dark text', brand.body === 'rgb(10, 10, 10)' && brand.topbarBorder === 'rgb(242, 101, 34)' && brand.primaryBg === 'rgb(242, 101, 34)' && brand.primaryText === 'rgb(10, 10, 10)', JSON.stringify(brand));
+  // Fix round 1 (review-1 G1): orange is reserved for interactive things, so the top rule is now neutral.
+  check('brand: dark body, neutral top rule, orange primary with dark text', brand.body === 'rgb(10, 10, 10)' && brand.topbarBorder === 'rgb(46, 46, 46)' && brand.primaryBg === 'rgb(242, 101, 34)' && brand.primaryText === 'rgb(10, 10, 10)', JSON.stringify(brand));
+  const staticOrange = await page.evaluate(() => {
+    const orange = ['rgb(242, 101, 34)', 'rgb(255, 138, 76)'];
+    const sels = ['.brand__org', '.panel__title', '.infocard h4', '.value--big', '.view__key', '.data__v'];
+    return sels.filter((sel) => [...document.querySelectorAll(sel)].some((el) => orange.includes(getComputedStyle(el).color) || orange.includes(getComputedStyle(el, '::before').backgroundColor)));
+  });
+  check('accent discipline: no static heading, kicker, title bar or value is orange', staticOrange.length === 0, staticOrange.join(', '));
 
   // Cần một thiên thể đang chọn: mặc định là Polaris (HIP 11767); nếu không có thì dùng "Thiết lập" của nhiệm vụ 1.
   // Thẻ thông tin không còn ẩn khi bỏ chọn (có trạng thái trống), nên "đang chọn" = thẻ hiện VÀ không ở trạng thái trống.

@@ -2,6 +2,7 @@
   "app": {
     "org": "CLB Thiên văn USAC",
     "title": "Hệ thống Mô phỏng Hệ toạ độ",
+    "shortTitle": "Mô phỏng hệ tọa độ",
     "logoAlt": "Logo CLB Thiên văn USAC",
     "footer": "HỆ THỐNG ĐƯỢC PHÁT TRIỂN BỞI CLB THIÊN VĂN USAC",
     "contact": "Mọi sự góp ý và liên hệ xin gửi về email:",
@@ -39,14 +40,11 @@
     "firstPerson": "👁 Nhìn từ người quan sát",
     "firstPersonTip": "Đứng ở tâm mặt phẳng chân trời và nhìn quanh bầu trời",
     "outside": "↩ Nhìn từ bên ngoài",
-    "dragHint": "Kéo để xoay · cuộn/chụm để phóng to · bấm vào sao để xem thông tin",
     "webglError": "Trình duyệt không hỗ trợ WebGL nên không thể hiển thị mô phỏng 3D. Hãy thử trình duyệt khác hoặc bật tăng tốc phần cứng.",
     "loading": "Đang tải mô phỏng 3D…",
-    "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang."
-  },
-  "firstHint": {
-    "text": "Kéo để xoay · bấm vào một ngôi sao",
-    "close": "Đóng gợi ý"
+    "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang.",
+    "hint": "Kéo để xoay · bấm vào một ngôi sao",
+    "keyline": "φ = {lat}  ·  Độ cao thiên cực {pole} = {alt}"
   },
   "legend": {
     "aria": "Chú giải màu",
@@ -67,9 +65,9 @@
     "aria": "Bảng số liệu trực tiếp",
     "lat": "Vĩ độ",
     "lon": "Kinh độ",
-    "lst": "Giờ thiên văn địa phương (LST)",
+    "lst": "Giờ thiên văn (LST)",
     "lstTip": "LST = GST + λ. Một sao qua kinh tuyến trên khi LST bằng xích kinh của nó.",
-    "gst": "Giờ thiên văn Greenwich (GST)",
+    "gst": "Giờ Greenwich (GST)",
     "gstTip": "Giờ thiên văn tại kinh tuyến gốc Greenwich.",
     "pole": "Độ cao thiên cực",
     "poleTip": "Độ cao của thiên cực trên chân trời = |φ|.",
@@ -188,7 +186,7 @@
       "modeOneDay": "Chạy 1 ngày thiên văn rồi dừng",
       "modeStep": "Bước theo từng giờ",
       "oneDayProgress": "Đã quay được {p}% ngày thiên văn",
-      "lst": "Giờ thiên văn địa phương (LST)",
+      "lst": "Giờ thiên văn (LST)",
       "lstAria": "Thanh trượt giờ thiên văn địa phương, từ 0h đến 24h",
       "stepBack": "◀ 1 giờ",
       "stepBackTip": "Lùi 1 giờ thiên văn (phím ←)",
@@ -301,22 +299,22 @@
     "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm."
   },
   "toggleHint": {
-    "poleAxis": "Trục mà cả bầu trời quay quanh. Để ý: trục chĩa vào thiên cực, cao đúng bằng vĩ độ.",
-    "equator": "Vòng chia bầu trời thành nửa Bắc và nửa Nam. Để ý: nó luôn cắt chân trời ở đúng điểm Đông và điểm Tây.",
-    "hourCircle0": "Vòng nối hai thiên cực qua điểm xuân phân. Để ý: nó quay cùng bầu trời như kim đồng hồ của giờ thiên văn.",
-    "horizonOnSphere": "Chân trời của bạn đặt lên thiên cầu. Để ý: chỉ phần trời phía trên vòng này là bạn nhìn thấy.",
-    "zenithNadir": "Thiên đỉnh ngay trên đầu, thiên để ngay dưới chân. Để ý: hai điểm này đứng yên khi bầu trời quay.",
-    "meridian": "Vòng đi qua Bắc, thiên đỉnh và Nam. Để ý: mỗi sao lên cao nhất đúng lúc đi qua vòng này.",
-    "verticalCircle": "Vòng từ thiên đỉnh qua sao đang chọn xuống chân trời. Để ý: độ cao h được đo dọc theo vòng này.",
-    "altAzGrid": "Lưới gắn với chân trời của bạn. Để ý: lưới đứng yên, sao trượt qua nên A và h đổi liên tục.",
-    "eqGrid": "Lưới gắn với bầu trời. Để ý: lưới quay cùng sao nên α và δ của sao không đổi.",
-    "poleAltitude": "Cung từ chân trời lên thiên cực. Để ý: số đo luôn bằng vĩ độ của bạn.",
-    "angle": "Độ nghiêng của xích đạo trời so với chân trời. Để ý: góc bằng 90° − |φ|, càng gần xích đạo càng dựng đứng.",
-    "equatorPlane": "Mặt phẳng chứa xích đạo trời. Để ý: nó luôn vuông góc với trục thiên cực.",
-    "underside": "Mặt đất trở nên trong suốt. Để ý: sao vẫn đi tiếp ở phía dưới chân trời rồi mọc lại.",
-    "zoneCircumpolar": "Sao trong vùng này không bao giờ lặn. Để ý: vùng rộng ra khi bạn đi xa xích đạo.",
-    "zoneRiseSet": "Sao trong vùng này mọc và lặn mỗi ngày. Để ý: ở xích đạo, mọi sao đều thuộc vùng này.",
-    "zoneNeverRise": "Sao trong vùng này không bao giờ lên khỏi chân trời của bạn. Để ý: nó đối xứng với vùng cận cực."
+    "poleAxis": "Trục mà cả bầu trời quay quanh, chĩa vào thiên cực.",
+    "equator": "Chia bầu trời thành nửa Bắc và nửa Nam.",
+    "hourCircle0": "Nối hai thiên cực qua điểm xuân phân, quay cùng bầu trời.",
+    "horizonOnSphere": "Bạn chỉ nhìn thấy phần trời phía trên vòng này.",
+    "zenithNadir": "Thiên đỉnh ngay trên đầu, thiên để ngay dưới chân.",
+    "meridian": "Mỗi sao lên cao nhất khi đi qua vòng này.",
+    "verticalCircle": "Độ cao h của sao được đo dọc theo vòng này.",
+    "altAzGrid": "Lưới đứng yên với bạn, nên A và h của sao đổi liên tục.",
+    "eqGrid": "Lưới quay cùng sao, nên α và δ của sao không đổi.",
+    "poleAltitude": "Số đo này luôn bằng vĩ độ của bạn.",
+    "angle": "Xích đạo trời nghiêng so với chân trời một góc 90° − |φ|.",
+    "equatorPlane": "Luôn vuông góc với trục thiên cực.",
+    "underside": "Mặt đất trong suốt: sao vẫn đi tiếp dưới chân trời.",
+    "zoneCircumpolar": "Sao trong vùng này không bao giờ lặn.",
+    "zoneRiseSet": "Sao trong vùng này mọc và lặn mỗi ngày.",
+    "zoneNeverRise": "Sao trong vùng này không bao giờ mọc."
   },
   "displayGroup": {
     "sky": {

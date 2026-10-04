@@ -166,6 +166,23 @@ export function infoCard(store: Store, actions: Actions) {
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
 
+  // Còn nội dung bên dưới mép thẻ → mép dưới mờ dần (lớp can-scroll). Chỉ đọc kích thước khi cuộn hoặc khi
+  // ResizeObserver báo đổi kích thước (sau bố cục), không đọc trong nhịp cập nhật của vòng lặp.
+  let canScroll = false;
+  const syncScroll = () => {
+    const can = el.scrollHeight - el.scrollTop - el.clientHeight > 4;
+    if (can !== canScroll) {
+      canScroll = can;
+      el.classList.toggle('can-scroll', can);
+    }
+  };
+  el.addEventListener('scroll', syncScroll, { passive: true });
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(syncScroll);
+    ro.observe(el);
+    ro.observe(body);
+  }
+
   // Trên màn hình hẹp, thẻ bắt đầu ở dạng thu gọn để không che khung nhìn.
   if (window.matchMedia?.('(max-width: 900px)').matches) collapseBtn.click();
 

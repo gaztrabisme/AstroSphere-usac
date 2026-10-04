@@ -29,7 +29,10 @@ export class HorizonDiagramView extends View {
 
   constructor(container: HTMLElement, store: Store) {
     const R = SKY_RADIUS;
-    super(container, 'horizon', store, new THREE.Vector3(R * 1.25, R * 1.05, R * 2.6));
+    // Nhìn vào điểm hơi cao hơn tâm (0,2 R): vòm trời và mặt phẳng chân trời lấp đầy khung, không để trống dải dưới
+    // đĩa chân trời (khung chân trời là tiêu điểm của trang — review-1 B1, color-theory T1).
+    const target = new THREE.Vector3(0, R * 0.2, 0);
+    super(container, 'horizon', store, new THREE.Vector3(R * 1.17, R * 1.0, R * 2.42).add(target), target);
     this.clipPlanes = [this.clipPlane];
     this.scene.background = new THREE.Color().copy(NIGHT);
 
@@ -85,7 +88,7 @@ export class HorizonDiagramView extends View {
     return !s.toggles.underside;
   }
 
-  protected onUpdate(s: AppState): void {
+  protected onUpdate(s: AppState, _emphasis: string | null = null): void {
     const under = s.toggles.underside;
     const planes = under ? this.noPlanes : this.clipPlanes;
     if (this.renderer.clippingPlanes !== planes) this.renderer.clippingPlanes = planes;

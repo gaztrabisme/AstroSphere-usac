@@ -37,7 +37,7 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 ## Phản biện thiết kế (deferred) / Design objections deferred
 
 - [ ] **Offline use for club sessions** (spec K3). Add a service worker that precaches the hashed assets, star data and constellation data; test with the network off; plan cache invalidation for GitHub Pages deploys.
-- [ ] **Thicker lines in presentation mode** (spec K7). Add `View.setLineScale(k)` that scales `LineMaterial.linewidth` and label size when `body.present` is on.
+- [x] **Thicker lines in presentation mode** (spec K7). Add `View.setLineScale(k)` that scales `LineMaterial.linewidth` and label size when `body.present` is on. Done in a597273 (lines ×2, scene labels ×1,8, emphasis composes with the scale).
 
 ## Kho mã / Repository
 
