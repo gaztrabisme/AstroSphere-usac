@@ -80,7 +80,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   });
   check('brand: dark body, orange top rule, orange primary with dark text', brand.body === 'rgb(10, 10, 10)' && brand.topbarBorder === 'rgb(242, 101, 34)' && brand.primaryBg === 'rgb(242, 101, 34)' && brand.primaryText === 'rgb(10, 10, 10)', JSON.stringify(brand));
 
-  // Cần một thiên thể đang chọn: mặc định là Sao Bắc Cực; nếu không có thì dùng "Thiết lập" của nhiệm vụ 1.
+  // Cần một thiên thể đang chọn: mặc định là Polaris (HIP 11767); nếu không có thì dùng "Thiết lập" của nhiệm vụ 1.
   // Thẻ thông tin không còn ẩn khi bỏ chọn (có trạng thái trống), nên "đang chọn" = thẻ hiện VÀ không ở trạng thái trống.
   const cardShown = () => page.evaluate(() => { const c = document.querySelector('.infocard'); return !c.hidden && !c.classList.contains('is-empty'); });
   if (!(await cardShown())) {
