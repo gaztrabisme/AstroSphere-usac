@@ -1309,6 +1309,70 @@ kbd {
   font-size: 13px;
 }
 
+/* ------------------------------------------------------------------ Chế độ trình chiếu (body.present)
+   Ẩn bảng điều khiển, thanh số liệu và chân trang; giữ chú giải; khung nhìn chiếm hết chiều cao;
+   chữ nền 20 px và chữ phụ dùng --muted thay cho --subtle (đọc được trên máy chiếu). */
+body.present {
+  --subtle: var(--muted);
+  font-size: 20px;
+}
+
+body.present .panels,
+body.present .databar,
+body.present .site-footer {
+  display: none !important;
+}
+
+body.present .topbar {
+  height: var(--topbar-h);
+  padding-block: var(--space-1);
+}
+
+body.present .brand__logo {
+  width: 40px;
+  height: 40px;
+}
+
+body.present .layout {
+  height: calc(100dvh - var(--topbar-h));
+  max-width: none;
+  padding-bottom: var(--space-3);
+}
+
+body.present .views {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+body.present .view__head h2 {
+  font-size: 20px;
+}
+
+body.present .view__sub,
+body.present .view__hint {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+body.present .legend {
+  font-size: 17px;
+  color: var(--muted);
+}
+
+body.present .infocard {
+  font-size: 16px;
+}
+
+body.present .infocard__title {
+  font-size: 19px;
+}
+
+body.present .kv dt,
+body.present .kv__x {
+  font-size: 15px;
+}
+
 /* ------------------------------------------------------------------ Thông báo chất lượng (góc, không chặn) */
 .qnotice {
   position: fixed;

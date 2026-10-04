@@ -74,6 +74,8 @@ let sphere: CelestialSphereView | null = null;
 let horizon: HorizonDiagramView | null = null;
 
 const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top', icon: '🎓', title: t('top.learnTip') });
+const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top', icon: '⛶', title: t('top.presentTip') });
+presentBtn.setAttribute('aria-pressed', 'false');
 const topbar = h(
   'header',
   { class: 'topbar' },
@@ -88,6 +90,7 @@ const topbar = h(
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
     button(t('top.story'), () => story.open(), { cls: 'btn--top', icon: '✦', title: t('top.storyTip') }),
     learnBtn,
+    presentBtn,
     button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
     button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip') }),
     button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip') }),
@@ -198,6 +201,27 @@ const footer = h(
   h('p', { class: 'site-footer__club' }, h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗` })),
 );
 
+// ---------------------------------------------------------------- Chế độ trình chiếu (spec K6, K8)
+let presenting = false;
+function setPresent(on: boolean) {
+  if (on === presenting) return;
+  presenting = on;
+  document.body.classList.toggle('present', on);
+  presentBtn.setAttribute('aria-pressed', String(on));
+  presentBtn.title = t(on ? 'top.exitPresent' : 'top.presentTip');
+  const root = document.documentElement;
+  try {
+    if (on && !document.fullscreenElement && root.requestFullscreen) void root.requestFullscreen().catch(() => {});
+    else if (!on && document.fullscreenElement && document.exitFullscreen) void document.exitFullscreen().catch(() => {});
+  } catch {
+    /* trình duyệt không cho toàn màn hình: vẫn giữ bố cục trình chiếu */
+  }
+  window.dispatchEvent(new Event('resize'));
+}
+// Người dùng thoát toàn màn hình bằng Esc (trình duyệt tự xử lý) → tắt luôn chế độ trình chiếu.
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && presenting) setPresent(false);
+});
 // Khung nhìn đổi kích thước (đổi bố cục điện thoại ↔ máy tính, trình chiếu): ghi bù số liệu.
 window.addEventListener('resize', () => loop.markUiDirty());
 app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer);
@@ -376,4 +400,5 @@ window.addEventListener('keydown', (e) => {
     horizon?.resetCamera();
   } else if (k === 'h' || e.key === '?') dialogs.help();
   else if (k === 'l') learn.toggle();
+  else if (k === 'f') setPresent(!presenting);
 });
