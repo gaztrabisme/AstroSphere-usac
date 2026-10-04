@@ -183,7 +183,7 @@ export class SkyLayer {
     );
     glow.scale.setScalar(R * 0.3);
     this.sun.add(glow);
-    const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5] });
+    const sunLabel = makeLabel(t('scene.sun'), 'stars', { color: COLORS.sun, anchor: [-0.25, 0.5], rank: 38, sel: { kind: 'sun' } });
     this.sun.add(sunLabel);
     this.rot.add(this.sun);
     // Đường đi trong ngày của Mặt Trời: hình học cấp phát một lần, ghi lại khi đổi ngày.
@@ -335,7 +335,13 @@ export class SkyLayer {
         const idx = st.hip ? catalogIndexByHip(st.hip) : undefined;
         if (idx !== undefined) this.catalogHidden.add(idx);
         if (st.labelled) {
-          const lbl = makeLabel(st.short || st.name.split(' (')[0], 'stars', { color: st.color, cls: 'lbl--star', anchor: [-0.12, 0.5] });
+          const lbl = makeLabel(st.short || st.name.split(' (')[0], 'stars', {
+            color: st.color,
+            cls: 'lbl--star',
+            anchor: [-0.12, 0.5],
+            mag: st.mag,
+            sel: { kind: 'user', id: st.id },
+          });
           lbl.position.copy(v);
           this.user.add(lbl);
         }
@@ -371,7 +377,7 @@ export class SkyLayer {
           for (let k = before; k < seg.length; k += 3) colors.push(c.r, c.g, c.b);
         }
         if (count) {
-          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation' });
+          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation', rank: 30 });
           lbl.position.copy(centroid.normalize().multiplyScalar(R * 1.06));
           this.user.add(lbl);
         }
@@ -395,7 +401,7 @@ export class SkyLayer {
       if (this.catalogHidden.has(i)) continue;
       const st = getCatalogStar(i);
       if (!st.shortName) continue;
-      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5] });
+      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5], mag: cat.mag[i], sel: { kind: 'catalog', index: i } });
       lbl.position.copy(this.catalogVecs[i]);
       this.catalogLabels.add(lbl);
     }

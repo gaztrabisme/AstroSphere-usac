@@ -10,7 +10,8 @@ import { lstOf, type AppState, type Selection, type Store } from '../state';
 import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
 import { HorizonLayer } from './horizonLayer';
-import type { Label } from './labels';
+import { declutter, LabelBoxes } from './declutter';
+import type { Label, LabelData } from './labels';
 import { SkyLayer } from './skyLayer';
 import { TrailLayer } from './trails';
 
@@ -54,6 +55,10 @@ export abstract class View implements QualityTarget {
   /** Danh sách nhãn CSS2D giữ sẵn; dựng lại khi structureVersion() đổi. */
   private labelList: Label[] = [];
   private labelKey = -1;
+  /** Hộp màn hình của các nhãn đang hiện (gỡ chồng chéo) và nhãn tương ứng với từng hộp — cấp phát sẵn. */
+  private boxes = new LabelBoxes();
+  private boxLabel: Label[] = [];
+  private needMeasure = true;
   private hoverList: THREE.Object3D[] = [];
   private hoverKey = -1;
   /** Khóa của lần tính nhóm tô sáng gần nhất (chỉ tính lại khi khóa, đối tượng chọn, vĩ độ hoặc danh sách sao đổi). */
@@ -248,6 +253,7 @@ export abstract class View implements QualityTarget {
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     this.dirty = false;
+    this.measureLabels();
     return true;
   }
 
@@ -259,6 +265,11 @@ export abstract class View implements QualityTarget {
     return this.sky.structureVersion + this.horizon.structureVersion;
   }
 
+  /**
+   * Hiện/ẩn nhãn theo hộp kiểm, chân trời và Trái Đất che khuất, rồi gỡ chồng chéo trong không gian màn hình
+   * (review-1 D2): nhãn của đối tượng đang chọn trước, sau đó theo hạng ưu tiên tĩnh (labels.ts). Không cấp phát:
+   * danh sách nhãn được sắp một lần khi cấu trúc cảnh đổi; hộp nằm trong mảng cấp phát sẵn (declutter.ts).
+   */
   private updateLabels(s: AppState): void {
     const version = this.structureVersion();
     if (version !== this.labelKey) {
@@ -268,23 +279,98 @@ export abstract class View implements QualityTarget {
       this.scene.traverse((o) => {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
+      list.sort((a, b) => a.userData.rank - b.userData.rank);
+      this.boxLabel.length = list.length;
+      this.boxes.ensure(list.length);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
     const list = this.labelList;
+    const W = this.width;
+    const H = this.height;
+    const cam = this.camera;
+    cam.updateMatrixWorld();
+    const boxes = this.boxes;
+    boxes.reset();
+    let sel: Label | null = null;
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
+      const ud = lbl.userData;
+      lbl.center.set(ud.cx0, ud.cy0);
       // Nhóm cha bị ẩn: CSS2DRenderer tự ẩn cả nhánh, không cần tính vị trí/che khuất.
       if (!ancestorsVisible(lbl)) continue;
-      let vis = lt.all && lt[lbl.userData.group];
+      let vis = lt.all && lt[ud.group];
       if (vis) {
         // matrixWorld đã cập nhật trong frame() (scene.updateMatrixWorld) — không gọi getWorldPosition.
         _v.setFromMatrixPosition(lbl.matrixWorld);
-        if (clip && lbl.userData.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
+        if (clip && ud.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
         else if (this.isOccluded(_v)) vis = false;
       }
       lbl.visible = vis;
+      if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
+    // Đối tượng đang chọn được giữ chỗ đầu tiên, rồi tới các nhãn khác theo hạng.
+    if (sel) this.pushBox(sel, W, H, true);
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      if (lbl === sel || !lbl.visible || !ancestorsVisible(lbl)) continue;
+      this.pushBox(lbl, W, H, lbl.userData.rank < 20);
+    }
+    declutter(boxes, W, H);
+    for (let k = 0; k < boxes.n; k++) {
+      const lbl = this.boxLabel[k];
+      if (!boxes.keep[k]) {
+        lbl.visible = false;
+        continue;
+      }
+      const ud = lbl.userData;
+      const w = ud.w || estimateWidth(lbl);
+      const h = ud.h || EST_H;
+      if (boxes.dx[k] !== 0) lbl.center.x = ud.cx0 - boxes.dx[k] / w;
+      if (boxes.dy[k] !== 0) lbl.center.y = ud.cy0 - boxes.dy[k] / h;
+    }
+  }
+
+  /** Chiếu nhãn ra hộp màn hình và đưa vào danh sách gỡ chồng chéo (bỏ qua nhãn nằm sau camera). */
+  private pushBox(lbl: Label, W: number, H: number, canNudge: boolean): void {
+    _p.setFromMatrixPosition(lbl.matrixWorld).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const ud = lbl.userData;
+    if (ud.w === 0) this.needMeasure = true;
+    const w = ud.w || estimateWidth(lbl);
+    const h = ud.h || EST_H;
+    const sx = ((_p.x + 1) / 2) * W;
+    const sy = ((1 - _p.y) / 2) * H;
+    // Chỉ đẩy vào trong khi điểm neo còn nằm trong khung; điểm ở ngoài khung thì nhãn bị ẩn.
+    const inside = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
+    this.boxLabel[this.boxes.n] = lbl;
+    this.boxes.push(sx - ud.cx0 * w, sy - ud.cy0 * h, w, h, canNudge && inside);
+  }
+
+  /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
+  private measureLabels(): void {
+    if (!this.needMeasure) return;
+    this.needMeasure = false;
+    const list = this.labelList;
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      const ud = lbl.userData;
+      if (ud.w !== 0 || !lbl.visible || lbl.element.style.display === 'none' || !lbl.element.isConnected) continue;
+      const w = lbl.element.offsetWidth;
+      if (w > 0) {
+        ud.w = w;
+        ud.h = lbl.element.offsetHeight;
+        // Gỡ chồng chéo lại ở khung hình sau với kích thước thật.
+        this.dirty = true;
+      }
+    }
+  }
+
+  /** Cỡ chữ nhãn đổi (chế độ trình chiếu): đo lại mọi nhãn ở lần vẽ tới. */
+  invalidateLabelSizes(): void {
+    for (const lbl of this.labelList) lbl.userData.w = 0;
+    this.needMeasure = true;
+    this.dirty = true;
   }
 
   resetCamera(): void {
@@ -353,6 +439,21 @@ export abstract class View implements QualityTarget {
   protected hoverTargets(): THREE.Object3D[] {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
+}
+
+/** Chiều cao ước lượng của nhãn chưa đo (px). */
+const EST_H = 16;
+
+/** Bề rộng ước lượng của nhãn chưa đo (px) — chỉ dùng cho khung hình đầu tiên trước khi đo. */
+function estimateWidth(lbl: Label): number {
+  return (lbl.element.textContent?.length ?? 0) * 7 + 6;
+}
+
+function isSelectedLabel(ud: LabelData, sel: Selection): boolean {
+  if (!sel || ud.selKind !== sel.kind) return false;
+  if (sel.kind === 'user') return ud.selId === sel.id;
+  if (sel.kind === 'catalog') return ud.selIdx === sel.index;
+  return true;
 }
 
 function ancestorsVisible(o: THREE.Object3D): boolean {
