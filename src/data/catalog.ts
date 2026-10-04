@@ -14,7 +14,10 @@ export interface CatalogData {
 
 const data = raw as unknown as CatalogData;
 
-/** Tên tiếng Việt của một số sao nổi tiếng (theo tên quốc tế). */
+/**
+ * Tên tiếng Việt (dân gian / Hán Việt) của một số sao nổi tiếng, theo tên quốc tế. Chỉ hiện như dòng phụ nhỏ trong
+ * thẻ thông tin; nhãn, danh sách và tiêu đề dùng tên quốc tế (ux-brief §7, quyết định 2026-10-04).
+ */
 export const VI_STAR_NAMES: Record<string, string> = {
   Sirius: 'Thiên Lang',
   Canopus: 'Lão Nhân',
@@ -44,28 +47,30 @@ export interface CatalogStar {
   mag: number;
   bv: number;
   hip: number;
-  /** Tên hiển thị tiếng Việt (có kèm tên quốc tế nếu có). */
+  /** Tên hiển thị quốc tế: tên riêng (Polaris), nếu không có thì ký hiệu (α UMi), nếu không có thì "HIP n". */
   label: string;
-  /** Tên ngắn dùng làm nhãn trên khung nhìn (rỗng nếu sao không có tên riêng). */
+  /** Tên riêng quốc tế dùng làm nhãn trên khung nhìn (rỗng nếu sao không có tên riêng). */
   shortName: string;
+  /** Ký hiệu Bayer/Flamsteed (α UMi), rỗng nếu không có. */
+  designation: string;
+  /** Tên tiếng Việt, nếu có (chỉ dùng cho dòng phụ của thẻ thông tin). */
+  viName?: string;
 }
 
 export const catalogCount = data.ra.length;
 export const catalogMagLimit = data.magLimit;
 
-function nameOf(hip: number): { label: string; short: string } {
+export function nameOf(hip: number): { label: string; short: string; designation: string; viName?: string } {
   const n = data.names[String(hip)];
-  if (!n) return { label: `HIP ${hip}`, short: '' };
+  if (!n) return { label: `HIP ${hip}`, short: '', designation: '' };
   const [proper, desig] = n;
-  const vi = proper ? VI_STAR_NAMES[proper] : undefined;
-  if (vi) return { label: `${vi} (${proper}${desig ? `, ${desig}` : ''})`, short: vi };
-  if (proper) return { label: desig ? `${proper} (${desig})` : proper, short: proper };
-  return { label: desig || `HIP ${hip}`, short: '' };
+  const viName = proper ? VI_STAR_NAMES[proper] : undefined;
+  return { label: proper || desig || `HIP ${hip}`, short: proper, designation: desig, viName };
 }
 
 export function getCatalogStar(index: number): CatalogStar {
   const hip = data.hip[index];
-  const { label, short } = nameOf(hip);
+  const { label, short, designation, viName } = nameOf(hip);
   return {
     index,
     ra: data.ra[index],
@@ -75,6 +80,8 @@ export function getCatalogStar(index: number): CatalogStar {
     hip,
     label,
     shortName: short,
+    designation,
+    viName,
   };
 }
 

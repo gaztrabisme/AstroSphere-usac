@@ -561,7 +561,19 @@ body.learn-open .layout {
 }
 
 .infocard.is-collapsed .infocard__body,
+.infocard.is-collapsed .infocard__vi,
 .infocard.is-collapsed .infocard__kind {
+  display: none;
+}
+
+.infocard__vi {
+  margin: 0 0 0 20px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.infocard__vi[hidden],
+.infocard.is-empty .infocard__vi {
   display: none;
 }
 
@@ -1865,4 +1877,28 @@ body.present .firsthint {
 body.present .data__n,
 body.present .kv__note {
   font-size: 14px;
+}
+
+/* ------------------------------------------------------------------ Tô sáng liên kết (ux-brief §6)
+ * Ô số đang liên kết với hình 3D: chữ đậm + gạch chân cam. Không dựa vào màu đơn thuần (color-theory ›
+ * functional-color): độ đậm và nét gạch vẫn đọc được khi không phân biệt màu. Cam là màu nhấn giao diện,
+ * không phải màu của cảnh (vàng = xích đạo trời, cam đứt nét = hoàng đạo). */
+.is-linkable {
+  border-radius: var(--radius-sm);
+}
+
+.is-linked .data__v,
+.is-linked .kv__v,
+.is-linked .status,
+.pole-line.is-linked {
+  font-weight: 700;
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.is-linked .data__k,
+.is-linked > dt {
+  color: var(--text);
 }

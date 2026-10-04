@@ -5,6 +5,7 @@ import { SPECIAL_PLACES, VN_PLACES, type Place } from '../data/places';
 import { t } from '../i18n';
 import type { Actions, Store } from '../state';
 import { button, fieldset, h } from './dom';
+import { bindEmphasis } from './emphasis';
 import { WorldMap } from './worldMap';
 
 export function locationPanel(store: Store, actions: Actions): HTMLElement {
@@ -49,6 +50,7 @@ export function locationPanel(store: Store, actions: Actions): HTMLElement {
   // Dòng "đặt cạnh nhau": vĩ độ vừa chọn và độ cao thiên cực — hai số luôn bằng nhau.
   const poleLine = h('p', { class: 'pole-line', id: 'pole-line', 'aria-live': 'polite', 'data-emphasis': 'pole' });
   latSlider.setAttribute('aria-describedby', 'pole-line');
+  bindEmphasis(poleLine, store, actions);
 
   const map = new WorldMap((lat, lon) => actions.setLocation(lat, lon));
 

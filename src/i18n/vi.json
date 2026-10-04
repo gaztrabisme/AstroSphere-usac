@@ -98,7 +98,8 @@
     "kindRandom": "Sao ngẫu nhiên",
     "kindManual": "Sao do bạn nhập",
     "kindCatalog": "Sao trong danh mục sao sáng",
-    "kindSun": "Mặt Trời ngày {date}",
+    "kindSun": "Vị trí theo ngày {date}",
+    "sunViName": "Mặt Trời",
     "mag": "cấp sao {m}",
     "equatorial": "Hệ tọa độ xích đạo",
     "horizontal": "Hệ tọa độ chân trời",
@@ -136,6 +137,9 @@
     "circumpolar": "Cận cực (không bao giờ lặn)",
     "riseSet": "Mọc và lặn",
     "neverRise": "Không bao giờ mọc"
+  },
+  "emphasis": {
+    "hint": "Rê chuột hoặc dùng phím Tab tới ô này để tô đậm hình tương ứng trong hai khung nhìn 3D."
   },
   "compass": {
     "N": "Bắc",
@@ -293,7 +297,7 @@
     "catalog": "Khoảng 1300 sao sáng nhất bầu trời theo vị trí thật (dữ liệu HYG).",
     "constellationLines": "Đường nối các sao theo hình 88 chòm sao.",
     "ecliptic": "Đường đi biểu kiến của Mặt Trời trong năm, nghiêng 23,44° so với xích đạo trời.",
-    "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Nhân Mã).",
+    "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Sagittarius).",
     "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm."
   },
   "toggleHint": {
@@ -360,8 +364,8 @@
     "autumnEquinox": "Thu phân",
     "winterSolstice": "Đông chí",
     "galactic": "Xích đạo thiên hà",
-    "galacticCenter": "Tâm Ngân Hà",
-    "sun": "Mặt Trời",
+    "galacticCenter": "Galactic Center",
+    "sun": "Sun",
     "dirN": "B",
     "dirE": "Đ",
     "dirS": "N",
@@ -378,7 +382,7 @@
     "equator": "Xích đạo trời|Các điểm có xích vĩ δ = 0°. Nghiêng 90° − |φ| so với chân trời; cắt chân trời tại đúng Đông và Tây.",
     "equatorPlane": "Mặt phẳng xích đạo trời|Vuông góc với trục thiên cực, đi qua tâm thiên cầu.",
     "axis": "Trục thiên cực|Bầu trời quay biểu kiến quanh trục này mỗi ngày thiên văn (23h 56m 04s).",
-    "ncp": "Thiên cực Bắc|δ = +90°. Độ cao trên chân trời bằng vĩ độ người quan sát. Sao Bắc Cực ở rất gần điểm này.",
+    "ncp": "Thiên cực Bắc|δ = +90°. Độ cao trên chân trời bằng vĩ độ người quan sát. Sao Polaris ở rất gần điểm này.",
     "scp": "Thiên cực Nam|δ = −90°. Người ở Nam bán cầu thấy điểm này cao |φ| trên chân trời phía Nam.",
     "zone_circumpolar": "Vùng cận cực|Sao ở đây không bao giờ lặn: luôn ở trên chân trời.",
     "zone_riseSet": "Vùng mọc – lặn|Sao ở đây mọc ở phía Đông và lặn ở phía Tây mỗi ngày.",
@@ -388,10 +392,10 @@
     "eqGrid": "Lưới xích đạo|Vòng xích vĩ mỗi 30° và vòng giờ mỗi 2h.",
     "ecliptic": "Hoàng đạo|Đường đi biểu kiến của Mặt Trời trong năm, nghiêng ε = 23,44° so với xích đạo trời.",
     "galactic": "Xích đạo thiên hà|Mặt phẳng của dải Ngân Hà.",
-    "galacticCenter": "Tâm Ngân Hà|Hướng về tâm thiên hà, trong chòm Nhân Mã (l = 0°, b = 0°).",
+    "galacticCenter": "Galactic Center|Hướng về tâm thiên hà, trong chòm Sagittarius (l = 0°, b = 0°).",
     "constellationLines": "Đường nối chòm sao|Hình vẽ quy ước của 88 chòm sao.",
     "figure": "Chòm sao|Hình chòm sao bạn đã thêm. Các sao trong chòm quay cùng nhau.",
-    "sun": "Mặt Trời|Vị trí Mặt Trời trên hoàng đạo vào ngày đã chọn.",
+    "sun": "Sun|Vị trí của Mặt Trời trên hoàng đạo vào ngày đã chọn.",
     "sunPath": "Đường đi của Mặt Trời trong ngày|Vòng xích vĩ của Mặt Trời vào ngày đã chọn.",
     "horizon": "Đường chân trời|Giao tuyến của mặt phẳng chân trời với thiên cầu; độ cao h = 0°.",
     "meridian": "Kinh tuyến thiên cầu|Đi qua Bắc, thiên đỉnh, Nam và các thiên cực. Sao qua kinh tuyến trên khi H = 0.",
@@ -525,7 +529,7 @@
     "title": "Giới thiệu",
     "body": [
       "Hệ thống mô phỏng được phát triển bởi **Câu lạc bộ Thiên văn USAC**, với định hướng xây dựng một công cụ trực quan hỗ trợ giảng dạy và tự học thiên văn học cơ bản.",
-      "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Bắc Cực gần như không bao giờ lặn.",
+      "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Polaris gần như không bao giờ lặn.",
       "## Phương pháp & độ chính xác",
       "- Thời gian thiên văn được tính theo các quy ước của IAU 1982; phép chuyển đổi tọa độ được kiểm chứng tự động với thư viện astronomy-engine, với sai số dưới \\(0{,}1^\\circ\\).",
       "- Tọa độ thiên thể được quy chiếu theo kỷ nguyên J2000.0; phiên bản hiện tại chưa hiệu chỉnh các hiệu ứng chuyển động riêng, tuế sai, chương động và khúc xạ khí quyển.",
@@ -538,7 +542,5 @@
       "- **Tham khảo học thuật & thiết kế:** hệ thống có tham khảo cách tiếp cận trực quan của các công cụ mô phỏng thiên văn giáo dục như Rotating Sky Explorer của NAAP, Đại học Nebraska–Lincoln. Toàn bộ mã nguồn, giao diện và tài nguyên của hệ thống được phát triển độc lập bởi USAC.",
       "Hệ thống được thiết kế theo hướng offline-first, có thể vận hành hoàn toàn trên trình duyệt mà không yêu cầu kết nối mạng sau khi các tài nguyên cần thiết đã được tải xuống."
     ]
-  },
-  "hero": {},
-  "story": {}
+  }
 }

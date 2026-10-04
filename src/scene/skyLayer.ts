@@ -24,6 +24,7 @@ import {
   translucent,
   writeFatLine,
 } from './geom';
+import type { EmphasisFx } from './emphasis';
 import { makeLabel } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
 
@@ -43,6 +44,8 @@ export class SkyLayer {
   private equator = new THREE.Group();
   private equatorPlane: THREE.Mesh;
   private axis = new THREE.Group();
+  private axisLine: Line2;
+  private hourCircleLine: Line2;
   private hourCircle = new THREE.Group();
   private zones: Record<ZoneKey, THREE.Mesh>;
   private zoneKey = '';
@@ -99,6 +102,7 @@ export class SkyLayer {
     const axisLen = R * 1.15;
     const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 2.4 });
     axisLine.userData.tip = 'axis';
+    this.axisLine = axisLine;
     this.axis.add(axisLine);
     for (const sign of [1, -1]) {
       const dot = new THREE.Mesh(new THREE.SphereGeometry(R * 0.022, 16, 12), new THREE.MeshBasicMaterial({ color: COLORS.axis }));
@@ -128,6 +132,7 @@ export class SkyLayer {
     for (let d = 90; d >= -90; d -= 2) hc.push(eqVec(0, d, R));
     const hcLine = fatLine(hc, COLORS.hourCircle, { width: 2 });
     hcLine.userData.tip = 'hourCircle';
+    this.hourCircleLine = hcLine;
     this.hourCircle.add(hcLine);
     const hcLabel = makeLabel(t('scene.hourCircle0'), 'circles', { color: '#d4d4d4' });
     hcLabel.position.copy(eqVec(0, 38, R * 1.03));
@@ -423,8 +428,18 @@ export class SkyLayer {
     writeFatLine(this.sunPath, a, 181);
   }
 
-  /** Cập nhật theo trạng thái (chỉ dựng lại phần thay đổi). */
-  update(s: AppState): void {
+  /** Đăng ký các đối tượng của lớp này cho tô sáng liên kết (xem emphasis.ts). */
+  registerEmphasis(fx: EmphasisFx): void {
+    fx.add('pole', this.axisLine);
+    fx.add('meridian', this.hourCircleLine);
+    for (const k of Object.keys(this.zones) as ZoneKey[]) fx.add(`zone_${k}`, this.zones[k]);
+  }
+
+  /**
+   * Cập nhật theo trạng thái (chỉ dựng lại phần thay đổi). `emphasis` là nhóm đang tô sáng: các đối tượng của
+   * nhóm hiện ra kể cả khi hộp kiểm của chúng tắt (xem trước).
+   */
+  update(s: AppState, emphasis: string | null = null): void {
     const tg = s.toggles;
     const zk = `${s.lat}`;
     if (zk !== this.zoneKey) {
@@ -438,11 +453,11 @@ export class SkyLayer {
     }
     this.equator.visible = tg.equator;
     this.equatorPlane.visible = tg.equatorPlane;
-    this.axis.visible = tg.poleAxis;
-    this.hourCircle.visible = tg.hourCircle0;
-    this.zones.circumpolar.visible = tg.zoneCircumpolar && !this.zones.circumpolar.userData.empty;
-    this.zones.riseSet.visible = tg.zoneRiseSet && !this.zones.riseSet.userData.empty;
-    this.zones.neverRise.visible = tg.zoneNeverRise && !this.zones.neverRise.userData.empty;
+    this.axis.visible = tg.poleAxis || emphasis === 'pole';
+    this.hourCircle.visible = tg.hourCircle0 || emphasis === 'meridian';
+    this.zones.circumpolar.visible = (tg.zoneCircumpolar || emphasis === 'zone_circumpolar') && !this.zones.circumpolar.userData.empty;
+    this.zones.riseSet.visible = (tg.zoneRiseSet || emphasis === 'zone_riseSet') && !this.zones.riseSet.userData.empty;
+    this.zones.neverRise.visible = (tg.zoneNeverRise || emphasis === 'zone_neverRise') && !this.zones.neverRise.userData.empty;
     this.eqGrid.visible = tg.eqGrid;
     this.ecliptic.visible = tg.ecliptic;
     this.galactic.visible = tg.galactic;
