@@ -52,6 +52,7 @@ export abstract class View implements QualityTarget {
   private dprQuery: MediaQueryList | null = null;
   protected raycaster = new THREE.Raycaster();
   private defaultCamera: THREE.Vector3;
+  private defaultTarget: THREE.Vector3;
   private width = 0;
   private height = 0;
   /** Danh sách nhãn CSS2D giữ sẵn; dựng lại khi structureVersion() đổi. */
@@ -79,11 +80,12 @@ export abstract class View implements QualityTarget {
   readonly kind: ViewKind;
   protected store: Store;
 
-  constructor(container: HTMLElement, kind: ViewKind, store: Store, defaultCamera: THREE.Vector3) {
+  constructor(container: HTMLElement, kind: ViewKind, store: Store, defaultCamera: THREE.Vector3, defaultTarget = new THREE.Vector3()) {
     this.container = container;
     this.kind = kind;
     this.store = store;
     this.defaultCamera = defaultCamera.clone();
+    this.defaultTarget = defaultTarget.clone();
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(this.targetPixelRatio());
@@ -99,6 +101,7 @@ export abstract class View implements QualityTarget {
     this.camera.position.copy(defaultCamera);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.target.copy(this.defaultTarget);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.enablePan = false;
@@ -415,7 +418,7 @@ export abstract class View implements QualityTarget {
 
   resetCamera(): void {
     this.camera.position.copy(this.defaultCamera);
-    this.controls.target.set(0, 0, 0);
+    this.controls.target.copy(this.defaultTarget);
     this.controls.update();
     this.dirty = true;
   }
