@@ -5,14 +5,19 @@
     "logoAlt": "Logo CLB Thiên văn USAC",
     "footer": "HỆ THỐNG ĐƯỢC PHÁT TRIỂN BỞI CLB THIÊN VĂN USAC",
     "contact": "Mọi sự góp ý và liên hệ xin gửi về email:",
-    "email": "clb.usac@gmail.com"
+    "email": "clb.usac@gmail.com",
+    "signature": "CLB Thiên văn USAC",
+    "slogan": "khoa học cho mọi người",
+    "clubUrl": "https://web-usac.vercel.app/",
+    "clubLink": "Trang web CLB Thiên văn USAC",
+    "clubLinkTip": "Mở trang web của CLB trong thẻ mới"
   },
   "top": {
     "navAria": "Thanh công cụ chính",
     "story": "Câu chuyện",
     "storyTip": "Hành trình có hướng dẫn: ba chương ngắn về bầu trời quay và hai hệ tọa độ",
-    "learn": "Học tập",
-    "learnTip": "Mở các nhiệm vụ học tập có chấm điểm (phím L)",
+    "learn": "Ôn tập",
+    "learnTip": "Ôn tập: 12 nhiệm vụ ngắn có chấm điểm (phím L)",
     "reset": "Đặt lại",
     "resetTip": "Đưa mô phỏng về trạng thái ban đầu",
     "help": "Trợ giúp",
@@ -351,8 +356,8 @@
     "dismiss": "Đóng thông báo"
   },
   "learn": {
-    "title": "Chế độ học tập",
-    "close": "Đóng chế độ học tập",
+    "title": "Ôn tập",
+    "close": "Đóng Ôn tập",
     "intro": "Mỗi nhiệm vụ có nút \"Thiết lập mô phỏng\" để chuẩn bị bầu trời phù hợp. Đúng ngay lần đầu và không xem gợi ý được 2 điểm, đúng sau đó được 1 điểm.",
     "score": "Điểm: {p}/{max} · Hoàn thành {done}/{n} nhiệm vụ",
     "setup": "⚙ Thiết lập mô phỏng",

@@ -189,12 +189,17 @@ for (const p of panelDefs) {
 }
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
+// Chữ ký CLB và liên kết DUY NHẤT về trang CLB (AGENTS.md › Brand).
 const footer = h(
   'footer',
   { class: 'site-footer' },
-  h('p', { class: 'site-footer__credit', text: t('app.footer') }),
+  h('p', { class: 'site-footer__sig' }, h('strong', { text: t('app.signature') }), ` · ${t('app.slogan')}`),
   h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
+  h('p', { class: 'site-footer__club' }, h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗` })),
 );
+
+// Khung nhìn đổi kích thước (đổi bố cục điện thoại ↔ máy tính, trình chiếu): ghi bù số liệu.
+window.addEventListener('resize', () => loop.markUiDirty());
 app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer);
 
 // ---------------------------------------------------------------- Chú giải màu
