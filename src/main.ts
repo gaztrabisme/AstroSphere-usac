@@ -52,7 +52,11 @@ const learn = {
   isOpen: () => !!learnDrawer && !learnDrawer.el.hidden,
   open(v: boolean) {
     if (!v && !learnDrawer) return;
-    if (v && !learn.isOpen()) learnOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (v && !learn.isOpen()) {
+      // Mở bằng phím L khi không có gì được chọn tiêu điểm → trả tiêu điểm về nút "Ôn tập".
+      const a = document.activeElement;
+      learnOpener = a instanceof HTMLElement && a !== document.body ? a : null;
+    }
     void loadLearn().then((d) => d.open(v));
   },
   toggle: () => learn.open(!learn.isOpen()),
