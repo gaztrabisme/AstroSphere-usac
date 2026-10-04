@@ -561,7 +561,19 @@ body.learn-open .layout {
 }
 
 .infocard.is-collapsed .infocard__body,
+.infocard.is-collapsed .infocard__vi,
 .infocard.is-collapsed .infocard__kind {
+  display: none;
+}
+
+.infocard__vi {
+  margin: 0 0 0 20px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.infocard__vi[hidden],
+.infocard.is-empty .infocard__vi {
   display: none;
 }
 

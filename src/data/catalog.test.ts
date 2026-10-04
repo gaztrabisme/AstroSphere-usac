@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalogArrays, catalogCount } from './catalog';
+import { catalogArrays, catalogCount, nameOf, VI_STAR_NAMES } from './catalog';
 
 describe('star catalogue', () => {
   it('is sorted by magnitude (brightest first), so a magnitude limit is a prefix', () => {
@@ -19,5 +19,23 @@ describe('star catalogue', () => {
     const n = mag.filter((m) => m <= 4.0).length;
     expect(n).toBeGreaterThan(300);
     expect(n).toBeLessThan(mag.length);
+  });
+});
+
+describe('star names (ux-brief §7: international name first, Vietnamese only as a secondary line)', () => {
+  it('Polaris: label and short name in English, Vietnamese name kept separately', () => {
+    expect(nameOf(11767)).toEqual({ label: 'Polaris', short: 'Polaris', designation: 'α UMi', viName: 'Sao Bắc Cực' });
+    expect(nameOf(32349).label).toBe('Sirius');
+    expect(nameOf(32349).viName).toBe('Thiên Lang');
+  });
+
+  it('falls back to the designation, then to "HIP n"', () => {
+    expect(nameOf(122)).toEqual({ label: 'θ Oct', short: '', designation: 'θ Oct', viName: undefined });
+    expect(nameOf(999999999).label).toBe('HIP 999999999');
+  });
+
+  it('no label carries a Vietnamese folk name', () => {
+    const vi = new Set(Object.values(VI_STAR_NAMES));
+    for (const hip of catalogArrays().hip) expect(vi.has(nameOf(hip).label), String(hip)).toBe(false);
   });
 });

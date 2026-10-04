@@ -59,6 +59,8 @@ function setRow(r: Row, value: string, extra = ''): void {
 export function infoCard(store: Store, actions: Actions) {
   const title = h('h3', { class: 'infocard__title', text: t('info.emptyTitle') });
   const dot = h('span', { class: 'infocard__dot', 'aria-hidden': 'true' });
+  // Dòng phụ: tên tiếng Việt (nếu có) ngay dưới tên quốc tế (ux-brief §7).
+  const viName = h('p', { class: 'infocard__vi', lang: 'vi', hidden: true });
   const kind = h('p', { class: 'infocard__kind' });
   const collapseBtn = h('button', {
     type: 'button',
@@ -130,6 +132,7 @@ export function infoCard(store: Store, actions: Actions) {
       collapseBtn,
       h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
     ),
+    viName,
     kind,
     empty,
     body,
@@ -185,13 +188,16 @@ export function infoCard(store: Store, actions: Actions) {
     const { alt, az, ha } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
 
     // Phần phụ thuộc vào đối tượng và vĩ độ (không đổi khi bầu trời quay)
-    const key = `${obj.name}|${obj.ra}|${obj.dec}|${s.lat}`;
+    const key = `${obj.name}|${obj.viName ?? ''}|${obj.kind}|${obj.ra}|${obj.dec}|${s.lat}`;
     if (key !== staticKey) {
       staticKey = key;
       const rs = riseSet(obj.ra, obj.dec, s.lat);
       setText(title, obj.name);
+      setText(viName, obj.viName ?? '');
+      setHidden(viName, !obj.viName);
       dot.style.background = obj.color;
-      setText(kind, obj.mag !== undefined ? `${obj.kind} · ${t('info.mag', { m: fmtNum(obj.mag, 2) })}` : obj.kind);
+      const kindParts = [obj.designation, obj.kind, obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : undefined];
+      setText(kind, kindParts.filter(Boolean).join(' · '));
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);
       setRow(r.dec, fmtDMS(obj.dec), `(${fmtDegSigned(obj.dec)})`);
       status.className = `status status--${rs.visibility}`;
