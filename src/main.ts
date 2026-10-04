@@ -122,9 +122,10 @@ function selectView(key: ViewKey) {
 
 // ---------------------------------------------------------------- Bảng số liệu và bảng điều khiển
 const data = dataBar(store);
+const animation = animationPanel(store, actions);
 const panelDefs = [
   { key: 'location', el: locationPanel(store, actions) },
-  { key: 'animation', el: animationPanel(store, actions) },
+  { key: 'animation', el: animation.el },
   { key: 'display', el: displayPanel(store, actions) },
   { key: 'stars', el: starPanel(store, actions) },
 ];
@@ -143,6 +144,7 @@ for (const p of panelDefs) {
       panels.dataset.active = p.key;
       panels.classList.toggle('collapsed', same);
       panelTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tab)));
+      loop.markUiDirty(); // bảng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
     },
   });
   panelTabs.append(tab);
@@ -251,6 +253,7 @@ const loop = startFrameLoop({
     data.update();
     card.update();
     updateLegend(store.state);
+    animation.tick();
   },
   isPlaying: () => store.state.playing,
   quality,

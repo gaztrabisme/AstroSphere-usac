@@ -29,6 +29,16 @@ export function append(el: Element, children: Child[]): void {
   }
 }
 
+/** Chỉ ghi chữ khi nội dung thay đổi (tránh ghi DOM thừa khi đang chạy hoạt ảnh). */
+export function setText(el: HTMLElement, text: string): void {
+  if (el.textContent !== text) el.textContent = text;
+}
+
+/** Chỉ đổi thuộc tính `hidden` khi khác giá trị hiện tại. */
+export function setHidden(el: HTMLElement, hidden: boolean): void {
+  if (el.hidden !== hidden) el.hidden = hidden;
+}
+
 export function clear(el: Element): void {
   while (el.firstChild) el.removeChild(el.firstChild);
 }

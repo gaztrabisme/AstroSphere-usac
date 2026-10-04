@@ -18,7 +18,7 @@ import {
 import { t } from '../i18n';
 import { resolveSelection, sunEquatorial } from '../selection';
 import { lstOf, type Actions, type AppState, type Store } from '../state';
-import { h } from './dom';
+import { h, setHidden, setText } from './dom';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
@@ -43,10 +43,6 @@ function row(label: string, title?: string): Row {
   const v = h('span', { class: 'kv__v' });
   const x = h('span', { class: 'kv__x' });
   return { el: h('div', { class: 'kv', title }, h('dt', { text: label }), h('dd', null, v, x)), v, x };
-}
-
-function setText(el: HTMLElement, text: string): void {
-  if (el.textContent !== text) el.textContent = text;
 }
 
 function setRow(r: Row, value: string, extra = ''): void {
@@ -157,7 +153,7 @@ export function infoCard(store: Store, actions: Actions) {
   const update = () => {
     const s = store.state;
     const obj = resolveSelection(s);
-    el.hidden = !obj;
+    setHidden(el, !obj);
     if (!obj) return;
     const lst = lstOf(s);
     const { alt, az, ha } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
@@ -223,23 +219,23 @@ export function dataBar(store: Store) {
   const update = () => {
     const s: AppState = store.state;
     const lst = lstOf(s);
-    items.lat.textContent = `φ = ${fmtLat(s.lat)}`;
-    items.lon.textContent = `λ = ${fmtLon(s.lon)}`;
-    items.lst.textContent = fmtHMS(lst);
-    items.gst.textContent = fmtHMS(s.gst);
-    items.pole.textContent = fmtDeg(poleAltitude(s.lat));
-    items.incl.textContent = fmtDeg(equatorInclination(s.lat));
-    sunCell.hidden = !s.toggles.sun;
+    setText(items.lat, `φ = ${fmtLat(s.lat)}`);
+    setText(items.lon, `λ = ${fmtLon(s.lon)}`);
+    setText(items.lst, fmtHMS(lst));
+    setText(items.gst, fmtHMS(s.gst));
+    setText(items.pole, fmtDeg(poleAltitude(s.lat)));
+    setText(items.incl, fmtDeg(equatorInclination(s.lat)));
+    setHidden(sunCell, !s.toggles.sun);
     if (s.toggles.sun) {
       const p = sunEquatorial(s);
       const haSun = equatorialToHorizontal(p.ra, p.dec, s.lat, lst).ha;
-      items.solar.textContent = `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`;
+      setText(items.solar, `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`);
     }
     const obj = resolveSelection(s);
-    selCell.hidden = !obj;
+    setHidden(selCell, !obj);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
-      items.selected.textContent = `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`;
+      setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
     }
   };
   return { el, update };
