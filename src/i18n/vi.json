@@ -14,8 +14,6 @@
   },
   "top": {
     "navAria": "Thanh công cụ chính",
-    "story": "Câu chuyện",
-    "storyTip": "Hành trình có hướng dẫn: ba chương ngắn về bầu trời quay và hai hệ tọa độ",
     "learn": "Ôn tập",
     "learnTip": "Ôn tập: 12 nhiệm vụ ngắn có chấm điểm (phím L)",
     "present": "Trình chiếu",
@@ -384,11 +382,9 @@
     "title": "Hướng dẫn sử dụng",
     "body": [
       "Hệ thống mô phỏng gồm hai khung quan sát được liên kết và đồng bộ theo thời gian: **Thiên cầu** ở bên trái và **Giản đồ chân trời** ở bên phải, cùng bốn nhóm điều khiển chuyên biệt ở phía dưới.",
-      "## Câu chuyện, Ôn tập và Trình chiếu",
-      "- **Câu chuyện:** hành trình có hướng dẫn gồm ba chương ngắn, mỗi bước tự thiết lập mô phỏng và chỉ ra điều cần quan sát. Dùng bút trình chiếu (clicker) hoặc phím **PageDown**, **→**, **Enter** để sang bước sau và **PageUp**, **←** để quay lại; **Space** vẫn chạy / tạm dừng.",
+      "## Ôn tập và Trình chiếu",
       "- **Ôn tập:** 12 nhiệm vụ ngắn có chấm điểm, gợi ý và lời giải thích (phím **L**).",
       "- **Trình chiếu:** toàn màn hình, chữ lớn, ẩn các bảng điều khiển để chiếu lên màn lớn trong buổi sinh hoạt (phím **F**; nhấn **F** hoặc **Esc** để thoát).",
-      "- Nút **Xem màn hình mở đầu** trong hộp thoại Giới thiệu mở lại màn hình chào.",
       "## Hai khung quan sát",
       "### Thiên cầu",
       "Mô hình lấy Trái Đất làm tâm quy chiếu, với chấm trắng biểu thị vị trí người quan sát.",
@@ -452,7 +448,7 @@
       "## Phím tắt",
       "|| Phím | Chức năng",
       "| Space | Bắt đầu / tạm dừng mô phỏng",
-      "| ← → | Lùi / tiến 1 giờ thiên văn (khi không mở Câu chuyện)",
+      "| ← → | Lùi / tiến 1 giờ thiên văn",
       "| + − | Tăng / giảm tốc độ mô phỏng",
       "| N | Đưa thời gian về giờ hiện tại",
       "| V | Đặt lại vết sao",
@@ -460,17 +456,11 @@
       "| L | Mở / đóng Ôn tập",
       "| F | Bật / tắt chế độ Trình chiếu (toàn màn hình)",
       "| H | Mở hướng dẫn sử dụng",
-      "| Esc | Đóng hộp thoại, Ôn tập hoặc Câu chuyện; nếu không thì bỏ chọn thiên thể",
-      "### Trong Câu chuyện",
-      "|| Phím | Chức năng",
-      "| PageDown → Enter | Sang bước tiếp theo",
-      "| PageUp ← | Quay lại bước trước",
-      "| Space | Chạy / tạm dừng hoạt ảnh của bước"
+      "| Esc | Đóng hộp thoại hoặc Ôn tập; nếu không thì bỏ chọn thiên thể"
     ]
   },
   "about": {
     "title": "Giới thiệu",
-    "showHero": "Xem màn hình mở đầu",
     "body": [
       "Hệ thống mô phỏng được phát triển bởi **Câu lạc bộ Thiên văn USAC**, với định hướng xây dựng một công cụ trực quan hỗ trợ giảng dạy và tự học thiên văn học cơ bản.",
       "Ứng dụng giúp học sinh, sinh viên trực quan hóa cơ chế vận động biểu kiến của bầu trời và hình thành trực giác về hệ tọa độ thiên văn. Từ mối quan hệ giữa độ cao thiên cực và vĩ độ địa lý, đến sự chuyển đổi giữa hệ tọa độ xích đạo \\((\\alpha, \\delta, H)\\) và hệ tọa độ chân trời \\((A, h)\\), hệ thống giúp giải thích vì sao các thiên thể mọc – lặn, vì sao có những sao luôn ở trên bầu trời và vì sao sao Bắc Cực gần như không bao giờ lặn.",

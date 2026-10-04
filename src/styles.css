@@ -37,11 +37,9 @@
   --space-6: 32px;
   --tap: 44px;
   --topbar-h: 56px;
-  --sheet-h: 0px;
   --z-topbar: 30;
   --z-sheet: 35;
   --z-drawer: 40;
-  --z-hero: 50;
   --z-toast: 60;
   --shadow-sheet: 0 -8px 24px #00000080;
 
@@ -1378,7 +1376,7 @@ body.present .kv__x {
 .qnotice {
   position: fixed;
   left: var(--space-3);
-  bottom: calc(var(--space-3) + var(--sheet-h));
+  bottom: var(--space-3);
   z-index: var(--z-toast);
   max-width: calc(100vw - 2 * var(--space-3));
   pointer-events: none;

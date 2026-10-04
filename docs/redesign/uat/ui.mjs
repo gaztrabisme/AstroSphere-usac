@@ -4,7 +4,7 @@
 import { mkdirSync } from 'node:fs';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 
-const URL = process.env.UAT_URL ?? 'http://localhost:4174/?explore=1&quality=fixed';
+const URL = process.env.UAT_URL ?? 'http://localhost:4174/?quality=fixed';
 const SHOTS = new globalThis.URL('../shots/', import.meta.url).pathname;
 mkdirSync(SHOTS, { recursive: true });
 
@@ -72,7 +72,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   check('exactly one club link (rel=noopener, target=_blank)', clubLinks.length === 1 && clubLinks[0].rel.includes('noopener') && clubLinks[0].target === '_blank', JSON.stringify(clubLinks));
 
   const order = await page.locator('.topbar__actions .btn .btn__text').allTextContents();
-  check('top bar order', order.join('|') === 'Câu chuyện|Ôn tập|Trình chiếu|Đặt lại|Trợ giúp|Giới thiệu', order.join(' | '));
+  check('top bar order', order.join('|') === 'Ôn tập|Trình chiếu|Đặt lại|Trợ giúp|Giới thiệu', order.join(' | '));
 
   const brand = await page.evaluate(() => {
     const cs = (sel, p) => getComputedStyle(document.querySelector(sel))[p];
@@ -109,7 +109,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
 
   await page.keyboard.press('f');
   await page.waitForTimeout(300);
-  const on = await page.evaluate(() => ({ present: document.body.classList.contains('present'), pressed: document.querySelector('.topbar__actions .btn:nth-child(3)').getAttribute('aria-pressed'), panels: getComputedStyle(document.querySelector('.panels')).display, legend: getComputedStyle(document.querySelector('.legend')).display }));
+  const on = await page.evaluate(() => ({ present: document.body.classList.contains('present'), pressed: document.querySelector('.topbar__actions .btn:nth-child(2)').getAttribute('aria-pressed'), panels: getComputedStyle(document.querySelector('.panels')).display, legend: getComputedStyle(document.querySelector('.legend')).display }));
   check('F turns presentation mode on (panels hidden, legend kept, aria-pressed)', on.present && on.pressed === 'true' && on.panels === 'none' && on.legend !== 'none', JSON.stringify(on));
   await page.keyboard.press('f');
   await page.waitForTimeout(300);
@@ -132,11 +132,10 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   const focusBack = await page.evaluate(() => ({ hidden: document.getElementById('learn').hidden, focus: document.activeElement?.textContent?.trim() }));
   check('Esc closes Ôn tập and returns focus', focusBack.hidden && /Ôn tập/.test(focusBack.focus ?? ''), JSON.stringify(focusBack));
 
-  // Giới thiệu có nút "Xem màn hình mở đầu".
+  // Giới thiệu (tải lười) mở được.
   await page.getByRole('button', { name: 'Giới thiệu' }).click();
   await page.waitForSelector('#dlg-about[open]');
-  const heroBtn = await page.locator('#dlg-about').getByRole('button', { name: 'Xem màn hình mở đầu' }).count();
-  check('Giới thiệu dialog (lazy) opens with "Xem màn hình mở đầu"', heroBtn === 1);
+  check('Giới thiệu dialog (lazy) opens', await page.locator('#dlg-about[open]').count() === 1);
   await page.keyboard.press('Escape');
   const dlgClosed = await page.evaluate(() => !document.getElementById('dlg-about').open && !document.querySelector('.infocard').hidden);
   check('Esc closes the native dialog first and keeps the selection', dlgClosed);

@@ -6,12 +6,9 @@ import { Animator } from './animator';
 import { t } from './i18n';
 import { startFrameLoop, type FrameView } from './runtime/frameLoop';
 import { createQuality } from './runtime/quality';
-import type { SceneViews } from './scene/boot';
 import { COLORS } from './scene/colors';
 import type { CelestialSphereView } from './scene/celestialSphere';
 import type { HorizonDiagramView } from './scene/horizonDiagram';
-import { mountStory } from './story/entry';
-import type { ViewKey } from './story/types';
 import { Actions, createInitialState, Store, type AppState, type Toggles } from './state';
 import { animationPanel } from './ui/animationPanel';
 import { displayPanel } from './ui/displayPanel';
@@ -65,7 +62,7 @@ const learn = {
 let dialogsMod: Dialogs | null = null;
 let dialogsLoading: Promise<Dialogs> | null = null;
 function loadDialogs(): Promise<Dialogs> {
-  dialogsLoading ??= import('./ui/dialogs').then((m) => (dialogsMod = m.createDialogs({ onShowHero: () => story.showHero() })));
+  dialogsLoading ??= import('./ui/dialogs').then((m) => (dialogsMod = m.createDialogs()));
   return dialogsLoading;
 }
 const dialogs = {
@@ -93,7 +90,6 @@ const topbar = h(
   h(
     'nav',
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
-    button(t('top.story'), () => story.open(), { cls: 'btn--top', icon: '✦', title: t('top.storyTip') }),
     learnBtn,
     presentBtn,
     button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
@@ -160,6 +156,7 @@ const viewTab = (key: 'sphere' | 'horizon') =>
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
 const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+type ViewKey = 'sphere' | 'horizon';
 const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {
   views.dataset.active = key;
@@ -284,7 +281,7 @@ function showSceneError(key: 'view.webglError' | 'view.loadError') {
   }
 }
 
-const sceneReady: Promise<SceneViews | null> = scenePromise.then(
+scenePromise.then(
   (m) => {
     for (const host of [sphereHost, horizonHost]) clear(host);
     try {
@@ -340,29 +337,6 @@ const loop = startFrameLoop({
 });
 mountQualityNotice(quality, app);
 
-// ---------------------------------------------------------------- Câu chuyện
-const story = mountStory({
-  store,
-  actions,
-  appRoot: app,
-  reducedMotion: () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
-  showView: selectView,
-  setFirstPerson: (on) => {
-    void sceneReady.then(() => {
-      if (horizon && horizon.isFirstPerson() !== on) fpBtn.click();
-    });
-  },
-  resetCameras: () => {
-    void sceneReady.then(() => {
-      sphere?.resetCamera();
-      horizon?.resetCamera();
-    });
-  },
-  openLearning: () => learn.open(true),
-  suspendRender: (reason, on) => loop.suspend(reason, on),
-});
-story.maybeShowHero();
-
 // Hook gỡ lỗi/đo hiệu năng — chỉ có ở chế độ phát triển.
 if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__app = {
@@ -373,7 +347,6 @@ if (import.meta.env.DEV) {
     animator,
     loop,
     quality,
-    story,
     get sphere() {
       return sphere;
     },
@@ -389,7 +362,7 @@ const SPACE_OWNERS = 'button,a,summary,label,[role=tab],input,select,textarea,[c
 const ARROW_OWNERS = '[role=tablist],[role=slider],[role=radiogroup]';
 
 window.addEventListener('keydown', (e) => {
-  // Ưu tiên Esc: 1) hộp thoại gốc (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) câu chuyện → 4) bỏ chọn.
+  // Ưu tiên Esc: 1) hộp thoại gốc (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) bỏ chọn.
   if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen()) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   // Tính "đang gõ" TRƯỚC khi xử lý Esc: Esc trong ô nhập không được bỏ chọn hay đóng ngăn.
@@ -397,12 +370,9 @@ window.addEventListener('keydown', (e) => {
   if (typing) return;
   if (e.key === 'Escape') {
     if (learn.isOpen()) learn.open(false);
-    else if (story.isOpen()) story.onKey(e);
     else actions.select(null);
     return;
   }
-  // Câu chuyện đang mở được xét phím trước (PageDown/PageUp/←/→/Enter để chuyển bước).
-  if (story.isOpen() && story.onKey(e)) return;
   const k = e.key.toLowerCase();
   if (e.key === ' ') {
     if (target?.closest(SPACE_OWNERS)) return;

@@ -123,25 +123,9 @@ function makeDialog(id: string, title: string, lines: string[], extra: HTMLEleme
   return dlg;
 }
 
-export interface DialogOptions {
-  /** Hiện lại màn hình mở đầu (nút trong hộp thoại Giới thiệu, spec K10). */
-  onShowHero?: () => void;
-}
-
-export function createDialogs(opts: DialogOptions = {}) {
+export function createDialogs() {
   const help = makeDialog('dlg-help', t('help.title'), tList('help.body'));
-  const heroBtn = opts.onShowHero
-    ? h('button', {
-        type: 'button',
-        class: 'btn',
-        text: t('about.showHero'),
-        onclick: () => {
-          about.close();
-          opts.onShowHero?.();
-        },
-      })
-    : null;
-  const about = makeDialog('dlg-about', t('about.title'), tList('about.body'), heroBtn ? [heroBtn] : []);
+  const about = makeDialog('dlg-about', t('about.title'), tList('about.body'));
   const open = (dlg: HTMLDialogElement) => {
     dlg.showModal();
     renderMath(dlg);

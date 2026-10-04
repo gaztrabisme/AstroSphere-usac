@@ -30,21 +30,19 @@ The browser acceptance checks:
 
 - **`src/astro/`** holds pure maths: no DOM, no three.js, unit tested against `astronomy-engine`. Do not change the maths without adding tests that prove it.
 - **`src/scene/`** is the only code that imports three.js at runtime, and only through the lazy `scene/boot.ts` chunk.
-  - UI code (`src/ui/`, `src/story/`) may use `import type` from scene files, and gets colours from `scene/colors.ts`.
+  - UI code (`src/ui/`) may use `import type` from scene files, and gets colours from `scene/colors.ts`.
   - A runtime import of three from UI code puts three back into the entry chunk.
 - **One `Store`** (`src/state.ts`).
   - Change state only through `Actions`.
   - State updates are immutable, because layers detect changes by reference.
   - Both 3D views render only from the store, which is what keeps them in sync.
-- **Shared scripting helpers** live in `src/scenario.ts`: `ensureConstellation`, `selectHip`, `zones`, `PLACES`. The learning tasks and the story both use them.
+- **Shared scripting helpers** live in `src/scenario.ts`: `ensureConstellation`, `selectHip`, `zones`, `PLACES`. The Ôn tập learning tasks use them.
 - **Render loop:** `src/runtime/frameLoop.ts`. Adaptive quality: `src/runtime/quality.ts`.
 - **Browser storage** goes only through `src/ui/storage.ts` (`readJson` with a type guard, and `writeJson`). Wrap every access in try/catch. Keys in use:
 
 | Key | Storage | Content |
 |---|---|---|
 | `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
-| `astrosphere.seen.v1` | localStorage | The hero screen has been seen |
-| `astrosphere.story.v1` | localStorage | Story progress |
 | `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
 
 ## Interface text (i18n)
@@ -54,7 +52,7 @@ The browser acceptance checks:
   - Every literal key exists.
   - No common English words appear in any string. The banned words are: the, and, reset, help, about, start, pause, stop, speed, show, hide, star(s), trail, north, south, east, west, settings, loading, error.
   - The formulas in `help.body` and `about.body` compile in KaTeX.
-- Keys built at runtime, such as `story.<chapter>.<step>.title`, are invisible to that test. Any new dynamic key family needs its own test, following the pattern in `src/story/chapters.test.ts`.
+- Keys built at runtime (template strings) are invisible to that test. Any new dynamic key family needs its own unit test that checks every generated key exists.
 - Number formatting uses a comma as the decimal separator; see `astro/format.ts`. Use B/N for north/south and Đ/T for east/west.
 
 ## Brand
@@ -82,7 +80,7 @@ The brand comes from the club site https://web-usac.vercel.app/.
 
 - Respect `prefers-reduced-motion`: no autoplay, and draw trails statically.
 - Return focus to the opener when a drawer or sheet closes.
-- **Esc priority:** dialog → learning drawer → story sheet → clear the selection. Esc never fires while the user is typing.
+- **Esc priority:** dialog → learning drawer → clear the selection. Esc never fires while the user is typing.
 - Global shortcuts must not hijack interactive elements:
   - Space is ignored on buttons, links, `summary`, and inputs.
   - Arrow keys are ignored inside `role=tablist`, `slider` and `radiogroup`.
@@ -91,6 +89,6 @@ The brand comes from the club site https://web-usac.vercel.app/.
 ## Git
 
 - Work branches are named `claude/<topic>`; parallel stream branches are `redesign/<stream>`. Merge them with `--no-ff`.
-- Commit subjects are descriptive and start with a scope: `ui:`, `story:`, `scene:`, `perf:`, `data:`, `docs:`, `build:`, or `test:`. No one-letter messages.
+- Commit subjects are descriptive and start with a scope: `ui:`, `scene:`, `perf:`, `data:`, `docs:`, `build:`, or `test:`. No one-letter messages.
 - Each commit should pass `npm test` and `npm run build`.
 - When fixing a `TODO.md` item, mark it `[x]` and cite the commit hash.

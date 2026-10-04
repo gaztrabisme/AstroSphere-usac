@@ -1,4 +1,4 @@
-// Tiện ích dựng tình huống trên mô phỏng — dùng chung cho nhiệm vụ học tập và câu chuyện có hướng dẫn.
+// Tiện ích dựng tình huống trên mô phỏng — dùng cho các nhiệm vụ Ôn tập.
 
 import type { Actions, Store } from './state';
 
@@ -10,9 +10,7 @@ export interface ScenarioContext {
 /** Một số địa điểm hay dùng trong bài học. */
 export const PLACES = {
   hanoi: { lat: 21.03, lon: 105.85 },
-  hue: { lat: 16.46, lon: 107.59 },
   hcm: { lat: 10.82, lon: 106.63 },
-  sydney: { lat: -33.87, lon: 151.21 },
 } as const;
 
 export type PlaceKey = keyof typeof PLACES;
