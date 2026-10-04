@@ -73,7 +73,8 @@
     "inclTip": "Góc giữa mặt phẳng xích đạo trời và mặt phẳng chân trời = 90° − |φ|.",
     "solar": "Giờ Mặt Trời (biểu kiến)",
     "solarTip": "Giờ Mặt Trời địa phương ≈ góc giờ của Mặt Trời + 12h.",
-    "selected": "Đối tượng đang chọn"
+    "selected": "Đối tượng đang chọn",
+    "selectedNone": "—"
   },
   "info": {
     "aria": "Thông tin đối tượng đang chọn",
@@ -246,7 +247,7 @@
     "zenithNadir": "Thiên đỉnh / Thiên để",
     "meridian": "Kinh tuyến thiên cầu",
     "verticalCircle": "Đường thẳng đứng qua sao đang chọn",
-    "horizonOnSphere": "Chân trời trên thiên cầu (khung trái)",
+    "horizonOnSphere": "Chân trời trên thiên cầu",
     "altAzGrid": "Lưới chân trời (A, h)",
     "eqGrid": "Lưới xích đạo (α, δ)",
     "catalog": "Sao sáng thật",
@@ -269,7 +270,7 @@
     "zenithNadir": "Thiên đỉnh: điểm ngay trên đầu. Thiên để: điểm ngay dưới chân.",
     "meridian": "Vòng tròn lớn đi qua Bắc, thiên đỉnh, Nam và hai thiên cực. Sao lên cao nhất khi qua kinh tuyến.",
     "verticalCircle": "Vòng tròn lớn đi qua thiên đỉnh và đối tượng đang chọn; trên đó đo độ cao h.",
-    "horizonOnSphere": "Vòng chân trời của người quan sát vẽ trên thiên cầu ở khung bên trái.",
+    "horizonOnSphere": "Vòng chân trời của người quan sát, vẽ trong khung Thiên cầu.",
     "altAzGrid": "Các vòng độ cao 30°, 60° và đường phương vị mỗi 30°.",
     "eqGrid": "Các vòng xích vĩ mỗi 30° và vòng giờ mỗi 2h; quay cùng bầu trời.",
     "catalog": "Khoảng 1300 sao sáng nhất bầu trời theo vị trí thật (dữ liệu HYG).",
@@ -381,7 +382,7 @@
   "help": {
     "title": "Hướng dẫn sử dụng",
     "body": [
-      "Hệ thống mô phỏng gồm hai khung quan sát được liên kết và đồng bộ theo thời gian: **Thiên cầu** ở bên trái và **Giản đồ chân trời** ở bên phải, cùng bốn nhóm điều khiển chuyên biệt ở phía dưới.",
+      "Hệ thống mô phỏng gồm hai khung quan sát được liên kết và đồng bộ theo thời gian: **Giản đồ chân trời** (điều bạn nhìn thấy) và **Thiên cầu** (vì sao bầu trời chuyển động như vậy), cùng bốn nhóm điều khiển chuyên biệt ở phía dưới.",
       "## Ôn tập và Trình chiếu",
       "- **Ôn tập:** 12 nhiệm vụ ngắn có chấm điểm, gợi ý và lời giải thích (phím **L**).",
       "- **Trình chiếu:** toàn màn hình, chữ lớn, ẩn các bảng điều khiển để chiếu lên màn lớn trong buổi sinh hoạt (phím **F**; nhấn **F** hoặc **Esc** để thoát).",

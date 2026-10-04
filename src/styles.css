@@ -278,8 +278,8 @@ select {
 .layout {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 16px 24px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-5);
   max-width: 1800px;
   margin: 0 auto;
   transition: margin-right 0.2s;
@@ -289,11 +289,12 @@ body.learn-open .layout {
   margin-right: 420px;
 }
 
+/* Giản đồ chân trời (điều bạn thấy) là "số một": cột trái, rộng hơn. Thiên cầu (vì sao) đứng phụ bên phải. */
 .views {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-3);
   height: clamp(380px, 60vh, 760px);
 }
 
@@ -305,7 +306,6 @@ body.learn-open .layout {
   min-width: 0;
   min-height: 0;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -315,9 +315,7 @@ body.learn-open .layout {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
+  padding: 8px 12px 4px;
 }
 
 .view__head h2 {
@@ -478,20 +476,26 @@ body.learn-open .layout {
 }
 
 /* ------------------------------------------------------------------ Bảng số liệu */
+/* Một dải số liệu duy nhất; khoảng trống (không phải đường viền) tách ba cụm: vị trí · thời gian · đối tượng. */
 .databar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius);
 }
 
 .data__item {
   display: flex;
   flex-direction: column;
-  padding: 5px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  min-width: 112px;
+  flex: 1 1 120px;
+  min-width: 0;
+  max-width: 210px;
+}
+
+.data__item--end {
+  margin-right: var(--space-4);
 }
 
 .data__k {
@@ -506,7 +510,8 @@ body.learn-open .layout {
 }
 
 .data__item:last-child {
-  flex: 1 1 320px;
+  flex: 2 1 260px;
+  max-width: none;
 }
 
 .data__item:last-child .data__v {
@@ -519,7 +524,7 @@ body.learn-open .layout {
   top: 48px;
   right: 10px;
   z-index: 5;
-  width: min(300px, calc(50% - 20px));
+  width: min(290px, calc(40% - 20px));
   min-width: 250px;
   max-height: calc(100% - 60px);
   font-size: 13px;
@@ -634,6 +639,28 @@ body.learn-open .layout {
   border: 1px solid var(--zone-neverrise);
 }
 
+/* Màn hình rộng: thẻ thông tin thành cột thứ ba, không che khung nhìn nào. Đường đọc: điều bạn thấy → vì sao → số đo. */
+@media (min-width: 1200px) {
+  .views {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) 270px;
+  }
+
+  .infocard {
+    position: static;
+    width: auto;
+    min-width: 0;
+    max-height: none;
+    background: var(--surface);
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .infocard__head {
+    cursor: default;
+  }
+}
+
 /* ------------------------------------------------------------------ Bảng điều khiển */
 .panels {
   display: grid;
@@ -643,9 +670,8 @@ body.learn-open .layout {
 }
 
 .panel {
-  padding: 10px 12px 12px;
+  padding: var(--space-3) var(--space-4) var(--space-4);
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   min-width: 0;
 }
@@ -666,16 +692,16 @@ body.learn-open .layout {
   background: var(--accent);
 }
 
+/* Nhóm trong bảng: tách bằng khoảng trống và tiêu đề nhỏ, không đóng khung. */
 .group {
   min-width: 0; /* fieldset mặc định rộng theo nội dung (min-content) → tràn khỏi bảng */
-  margin: 10px 0 0;
-  padding: 8px 10px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border: 0;
 }
 
 .group legend {
-  padding: 0 6px;
+  padding: 0 0 var(--space-1);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--muted);
@@ -906,11 +932,11 @@ input[aria-invalid='true'] {
   flex-direction: column;
 }
 
+/* Nhóm mở/đóng: chỉ một đường phân cách mảnh phía trên, không đóng khung. */
 details.sub {
-  margin-top: 6px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 4px 8px 8px;
+  margin-top: var(--space-1);
+  border-top: 1px solid var(--border);
+  padding: var(--space-1) 0 var(--space-2);
 }
 
 details.sub > summary {
@@ -923,7 +949,6 @@ details.sub > summary {
 
 .worldmap {
   margin-top: 6px;
-  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   line-height: 0;
@@ -1581,14 +1606,23 @@ body.present .kv__x {
     gap: 4px 10px;
   }
 
+  .databar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+  }
+
   .data__item {
-    min-width: 0;
-    flex: 1 1 30%;
-    padding: 4px 8px;
+    max-width: none;
+  }
+
+  .data__item--end {
+    margin-right: 0;
   }
 
   .data__item:last-child {
-    flex-basis: 100%;
+    grid-column: 1 / -1;
   }
 
   .panels {

@@ -141,7 +141,8 @@ const horizonBox = viewBox('view-horizon', t('view.horizon'), t('view.horizonSub
 
 const card = infoCard(store, actions);
 const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
-const views = h('section', { class: 'views', 'data-active': 'horizon' }, sphereBox, horizonBox, card.el);
+// Thứ tự đọc = thứ tự khái niệm: giản đồ chân trời (điều bạn thấy) trước, thiên cầu (vì sao như vậy) sau.
+const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el);
 
 const viewTab = (key: 'sphere' | 'horizon') =>
   h('button', {
@@ -155,7 +156,7 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
-const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.horizon, tabEls.sphere);
 type ViewKey = 'sphere' | 'horizon';
 const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {

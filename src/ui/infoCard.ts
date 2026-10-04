@@ -124,10 +124,14 @@ export function infoCard(store: Store, actions: Actions) {
 
   // Kéo thẻ bằng thanh tiêu đề để không che phần đang quan sát (chỉ trên màn hình rộng).
   const head = el.querySelector('.infocard__head') as HTMLElement;
-  head.title = t('info.dragTip');
+  head.addEventListener('pointerenter', () => {
+    head.title = getComputedStyle(el).position === 'absolute' ? t('info.dragTip') : '';
+  });
   let drag: { dx: number; dy: number } | null = null;
   head.addEventListener('pointerdown', (e) => {
+    // Chỉ kéo được khi thẻ nổi trên khung nhìn (không kéo khi là cột cố định hoặc trên điện thoại).
     if ((e.target as HTMLElement).closest('button') || window.matchMedia?.('(max-width: 900px)').matches) return;
+    if (getComputedStyle(el).position !== 'absolute') return;
     const r = el.getBoundingClientRect();
     drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
     head.setPointerCapture(e.pointerId);
@@ -194,27 +198,39 @@ export function infoCard(store: Store, actions: Actions) {
   return { el, update };
 }
 
+/**
+ * Thứ tự ô = thứ tự khái niệm: vị trí (φ, độ cao thiên cực, góc xích đạo – chân trời) → thời gian (λ, LST, GST,
+ * giờ Mặt Trời) → đối tượng đang chọn. φ và độ cao thiên cực đứng cạnh nhau để thấy chúng bằng nhau.
+ * `group-end` đánh dấu ô cuối của một cụm (khoảng trống lớn hơn phía sau thay cho đường viền).
+ */
+export const DATA_CELLS = [
+  { key: 'lat', tip: false, end: false },
+  { key: 'pole', tip: true, end: false },
+  { key: 'incl', tip: true, end: true },
+  { key: 'lon', tip: false, end: false },
+  { key: 'lst', tip: true, end: false },
+  { key: 'gst', tip: true, end: false },
+  { key: 'solar', tip: true, end: true },
+  { key: 'selected', tip: false, end: false },
+] as const;
+export type DataKey = (typeof DATA_CELLS)[number]['key'];
+
 export function dataBar(store: Store) {
-  const items: Record<string, HTMLElement> = {};
-  const cell = (key: string, title?: string) => {
+  const items = {} as Record<DataKey, HTMLElement>;
+  const cells = {} as Record<DataKey, HTMLElement>;
+  for (const c of DATA_CELLS) {
     const v = h('span', { class: 'data__v' });
-    items[key] = v;
-    return h('div', { class: 'data__item', title }, h('span', { class: 'data__k', text: t(`data.${key}`) }), v);
-  };
-  const sunCell = cell('solar', t('data.solarTip'));
-  const selCell = cell('selected');
-  const el = h(
-    'section',
-    { class: 'databar', 'aria-label': t('data.aria') },
-    cell('lat'),
-    cell('lon'),
-    cell('lst', t('data.lstTip')),
-    cell('gst', t('data.gstTip')),
-    cell('pole', t('data.poleTip')),
-    cell('incl', t('data.inclTip')),
-    sunCell,
-    selCell,
-  );
+    items[c.key] = v;
+    // data-emphasis: móc ổn định cho giai đoạn "tô sáng liên kết" (số ↔ hình trong hai khung nhìn).
+    cells[c.key] = h(
+      'div',
+      { class: c.end ? 'data__item data__item--end' : 'data__item', title: c.tip ? t(`data.${c.key}Tip`) : undefined, 'data-emphasis': c.key },
+      h('span', { class: 'data__k', text: t(`data.${c.key}`) }),
+      v,
+    );
+  }
+  const sunCell = cells.solar;
+  const el = h('section', { class: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
 
   const update = () => {
     const s: AppState = store.state;
@@ -232,11 +248,10 @@ export function dataBar(store: Store) {
       setText(items.solar, `≈ ${fmtHMS(norm360(haSun + 180), { seconds: false })}`);
     }
     const obj = resolveSelection(s);
-    setHidden(selCell, !obj);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
       setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
-    }
+    } else setText(items.selected, t('data.selectedNone'));
   };
   return { el, update };
 }
