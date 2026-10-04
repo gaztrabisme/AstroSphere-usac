@@ -34,6 +34,11 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 - [ ] **devicePixelRatio read only once** — `src/scene/view.ts:51,73`. Moving to a 2× screen leaves the canvas blurry and star sizes wrong.
 - [ ] **Per-frame allocations in label occlusion** — `src/scene/celestialSphere.ts:109,112` (`clone()` / `new Vector3`); also `hoverAt` rebuilding targets, `src/scene/horizonDiagram.ts:203,216,219`.
 
+## Phản biện thiết kế (deferred) / Design objections deferred
+
+- [ ] **Offline use for club sessions** (spec K3). Add a service worker that precaches the hashed assets, star data and constellation data; test with the network off; plan cache invalidation for GitHub Pages deploys.
+- [ ] **Thicker lines in presentation mode** (spec K7). Add `View.setLineScale(k)` that scales `LineMaterial.linewidth` and label size when `body.present` is on.
+
 ## Kho mã / Repository
 
 - [ ] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped).

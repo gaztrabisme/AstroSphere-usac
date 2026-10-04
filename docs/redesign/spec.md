@@ -104,3 +104,23 @@ Each step sets up the simulator, says what to notice, and shows live readouts. S
 
 | # | Persona | Objection | Severity | Disposition |
 |---|---|---|---|---|
+| K1 | Presenter | The clicker's PageDown/PageUp keys and the arrow keys don't move between steps | blocker | **Fixed (U1/U2):** while the story is open, PageDown, →, Enter go to the next step and PageUp, ← go back. Space still plays/pauses |
+| K2 | Presenter | The right-hand drawer halves the 3D view on the projector | blocker | **Fixed (U2):** on desktop the story becomes a compact card docked at the bottom of the views (collapsible). Views keep their full width; there is no side drawer |
+| K3 | Presenter | Nothing works offline when the venue Wi-Fi is down | blocker | **Deferred → TODO:** a service worker with precaching is a separate feature, and stale caches are a real risk on GitHub Pages. Mitigation now: after one visit the browser's HTTP cache covers the hashed assets |
+| K4 | Presenter | No deep link to a chapter or step | major | **Fixed (U2):** `?story=2.4` plus a chapter/step switcher in the card |
+| K5 | Presenter | After leaving the story there is no way back to the same step | major | **Fixed (U2):** progress is saved; reopening resumes, and a "Tiếp tục…" chip appears (see L1) |
+| K6 | Presenter | 15 px text and `--subtle` fade on a projector | major | **Fixed (U1):** presentation mode raises base text to 20 px and uses `--muted` instead of `--subtle` for text |
+| K7 | Presenter | 1 px lines and grids disappear on the projector | major | **Deferred → TODO:** line widths live in `scene/` (P1's stream). Do it after the merge via `View.setLineScale` |
+| K8 | Presenter | No fullscreen or presentation mode | major | **Fixed (U1):** "Trình chiếu" button plus the F key. `body.present` hides the panels, data bar and footer, and requests fullscreen |
+| K9 | Presenter | Steps animate too fast to narrate | minor | **Fixed (U2):** the story's default speed is 40 s per sidereal day; Space pauses |
+| K10 | Presenter | The hero is unreachable on a club laptop; the quality notice is intrusive | minor | **Fixed:** "Xem màn hình mở đầu" is added to the Giới thiệu dialog (U1 calls `story.showHero()`), and the quality notice is a quiet corner chip (U1) |
+| L1 | Student | Coming back from the Zalo link loses her progress | blocker | **Fixed within the requester's decision (U2):** returning visitors still skip the hero (decided 2026-10-04), but if the story is unfinished a "Tiếp tục chương X · bước Y" chip appears in exploration |
+| L2 | Student | `H = LST − α` arrives without explaining LST | blocker | **Fixed (U2):** a new step, "Giờ thiên văn LST", comes before the step about H |
+| L3 | Student | The Chương 2 quiz expects δ when both α and δ are fixed | major | **Fixed (U2):** the options become [A, h, cả α và δ, H] and the correct answer is "cả α và δ" |
+| L4 | Student | Too many symbols too fast; H appears before it is explained | major | **Fixed (U2):** each symbol gets a one-line everyday meaning, and H only appears in readouts from the H step onwards |
+| L5 | Student | The bottom sheet hides Polaris, which sits low in the sky | major | **Fixed (U2):** on a phone the views take the remaining height above `--sheet-h` (no overlap), the sheet opens compact (≤ 38dvh) and collapses while the animation runs |
+| L6 | Student | No sense of how heavy it is on 4G; a blank canvas while it loads | major | **Fixed:** three.js starts loading as soon as the page opens, during the hero (wave 0), and a loading message replaces the blank canvas. The hero shows no byte count (it would go stale) |
+| L7 | Student | 18 steps with no progress shown | major | **Fixed (U2):** "Chương 2 · 3/6" with dots. Chương 2's "same star, different place" step folds into a chip on the "while the sky turns" step |
+| L8 | Student | The rule 90° − φ is never stated | major | **Fixed (U2 copy):** step 3.1 states the limit 90° − φ, and steps 3.3 and 3.4 reuse it |
+| L9 | Student | "23h 56m 04s" and "underside" have no explanation | minor | **Fixed (U2 copy):** a one-line reason for the shorter sidereal day; the underside view is called "nhìn xuyên xuống dưới chân trời" |
+| L10 | Student | Foreign star names, HIP numbers, chips labelled "0°"/"90°" | minor | **Fixed (U2):** Vietnamese names first (Sao Bắc Cực, Tham Tú/Betelgeuse, Nam Thập Tự), no HIP numbers in the UI, chips "Xích đạo" / "Bắc Cực" |
