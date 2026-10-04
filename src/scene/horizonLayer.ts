@@ -21,6 +21,7 @@ import {
   translucent,
   writeFatLine,
 } from './geom';
+import type { EmphasisFx } from './emphasis';
 import { makeLabel, setLabelText, type Label } from './labels';
 
 /** Số điểm tối đa của các cung động (cung phương vị: 0…360° mỗi 3° → 121 điểm). */
@@ -38,6 +39,7 @@ export class HorizonLayer {
   readonly structureVersion = 0;
   private ring = new THREE.Group();
   private meridian = new THREE.Group();
+  private meridianLine: Line2;
   private zenith = new THREE.Group();
   private grid = new THREE.Group();
   private vertical = new THREE.Group();
@@ -97,6 +99,7 @@ export class HorizonLayer {
     for (let a = 0; a <= 360; a += 2) mer.push(new THREE.Vector3(0, Math.sin((a * Math.PI) / 180) * R, Math.cos((a * Math.PI) / 180) * R));
     const merLine = fatLine(mer, COLORS.meridian, { width: 1.6, opacity: 0.8 });
     merLine.userData.tip = 'meridian';
+    this.meridianLine = merLine;
     this.meridian.add(merLine);
     const merLbl = makeLabel(t('scene.meridian'), 'circles', { color: COLORS.meridian });
     merLbl.position.copy(horVec(62, 180, R * 1.03));
@@ -207,7 +210,18 @@ export class HorizonLayer {
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
 
-  update(s: AppState): void {
+  /** Đăng ký các đối tượng của lớp này cho tô sáng liên kết (xem emphasis.ts). */
+  registerEmphasis(fx: EmphasisFx): void {
+    fx.add('pole', this.poleArc, this.poleSector);
+    fx.add('incl', this.angleArc, this.angleSector);
+    fx.add('az', this.azArc, this.verticalLine);
+    fx.add('alt', this.altArc, this.verticalLine);
+    fx.add('altaz', this.azArc, this.altArc, this.verticalLine);
+    fx.add('meridian', this.meridianLine);
+  }
+
+  /** `emphasis`: nhóm đang tô sáng — các đối tượng của nhóm hiện ra kể cả khi hộp kiểm tắt (xem trước). */
+  update(s: AppState, emphasis: string | null = null): void {
     const tg = s.toggles;
     const isHorizon = this.view === 'horizon';
     if (s.lat !== this.latKey) {
@@ -217,12 +231,12 @@ export class HorizonLayer {
       this.rebuildAngles(s.lat);
     }
     this.ring.visible = isHorizon || tg.horizonOnSphere;
-    this.meridian.visible = tg.meridian;
+    this.meridian.visible = tg.meridian || emphasis === 'meridian';
     this.zenith.visible = tg.zenithNadir;
     this.grid.visible = tg.altAzGrid;
-    this.angle.visible = isHorizon && tg.angle;
-    this.poleAlt.visible = isHorizon && tg.poleAltitude;
-    this.updateVertical(s);
+    this.angle.visible = isHorizon && (tg.angle || emphasis === 'incl');
+    this.poleAlt.visible = isHorizon && (tg.poleAltitude || emphasis === 'pole');
+    this.updateVertical(s, emphasis === 'az' || emphasis === 'alt' || emphasis === 'altaz');
   }
 
   /**
@@ -263,8 +277,8 @@ export class HorizonLayer {
   }
 
   /** Cập nhật đường thẳng đứng theo vị trí hiện tại của đối tượng đang chọn. */
-  updateVertical(s: AppState): void {
-    const on = s.toggles.verticalCircle;
+  updateVertical(s: AppState, preview = false): void {
+    const on = s.toggles.verticalCircle || preview;
     const obj = on ? this.selectedRaDec(s) : null;
     this.vertical.visible = !!obj;
     if (!obj) {

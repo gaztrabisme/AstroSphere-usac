@@ -4,8 +4,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { Line2 } from 'three/addons/lines/Line2.js';
+import { emphasisGroup } from '../emphasis';
 import type { QualitySettings, QualityTarget } from '../runtime/quality';
 import { lstOf, type AppState, type Selection, type Store } from '../state';
+import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
 import { HorizonLayer } from './horizonLayer';
 import type { Label } from './labels';
@@ -35,6 +37,8 @@ export abstract class View implements QualityTarget {
   readonly horizon: HorizonLayer;
   readonly trails: TrailLayer;
   readonly R = SKY_RADIUS;
+  /** Tô sáng liên kết (độ dày/độ mờ của các đường và mặt được đăng ký bởi hai lớp). */
+  readonly emphasis = new EmphasisFx();
   dirty = true;
   /** Khung nhìn nằm trong vùng hiển thị của trang (IntersectionObserver). */
   onScreen = true;
@@ -52,6 +56,15 @@ export abstract class View implements QualityTarget {
   private labelKey = -1;
   private hoverList: THREE.Object3D[] = [];
   private hoverKey = -1;
+  /** Khóa của lần tính nhóm tô sáng gần nhất (chỉ tính lại khi khóa, đối tượng chọn, vĩ độ hoặc danh sách sao đổi). */
+  private emKey: AppState['emphasis'] | undefined = undefined;
+  private emSel: AppState['selected'] | undefined = undefined;
+  private emLat = NaN;
+  private emStars: AppState['stars'] | null = null;
+  private emSun = false;
+  private emSunDate = '';
+  private emGroup: string | null = null;
+  private reducedMotion: MediaQueryList | null = null;
   readonly container: HTMLElement;
   readonly kind: ViewKind;
   protected store: Store;
@@ -91,6 +104,13 @@ export abstract class View implements QualityTarget {
     this.sky.onAsyncChange = () => (this.dirty = true);
     this.horizon = new HorizonLayer(kind, this.R);
     this.trails = new TrailLayer(this.R);
+    this.sky.registerEmphasis(this.emphasis);
+    this.horizon.registerEmphasis(this.emphasis);
+    try {
+      this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null;
+    } catch {
+      this.reducedMotion = null;
+    }
     // Vết sao nằm trong nhóm quay cùng bầu trời (xem trails.ts)
     this.sky.rot.add(this.trails.object);
     this.scene.add(this.sky.fixed, this.sky.rot, this.horizon.group);
@@ -170,15 +190,38 @@ export abstract class View implements QualityTarget {
 
   /** Đồng bộ toàn bộ khung nhìn với trạng thái. */
   update(s: AppState): void {
-    this.sky.update(s);
+    const group = this.resolveEmphasis(s);
+    this.sky.update(s, group);
     this.sky.setTime(s.lat, lstOf(s));
-    this.horizon.update(s);
+    this.horizon.update(s, group);
     this.trails.update(s);
     this.onUpdate(s);
     this.dirty = true;
   }
 
   protected abstract onUpdate(s: AppState): void;
+
+  /**
+   * Nhóm đối tượng cần tô sáng. Chỉ tính lại khi khóa tô sáng, đối tượng chọn, vĩ độ, danh sách sao hoặc
+   * Mặt Trời (bật/tắt, ngày) đổi — không làm gì mỗi khung hình khi bầu trời đang quay.
+   */
+  private resolveEmphasis(s: AppState): string | null {
+    if (s.emphasis === this.emKey && s.selected === this.emSel && s.lat === this.emLat && s.stars === this.emStars && s.toggles.sun === this.emSun && s.sunDate === this.emSunDate) {
+      return this.emGroup;
+    }
+    this.emKey = s.emphasis;
+    this.emSel = s.selected;
+    this.emLat = s.lat;
+    this.emStars = s.stars;
+    this.emSun = s.toggles.sun;
+    this.emSunDate = s.sunDate;
+    const group = emphasisGroup(s);
+    if (group !== this.emGroup) {
+      this.emGroup = group;
+      this.emphasis.setTarget(group, performance.now(), this.reducedMotion?.matches ?? false);
+    }
+    return group;
+  }
 
   /** Có cắt bỏ phần dưới chân trời không. */
   protected clipBelow(_s: AppState): boolean {
@@ -193,6 +236,11 @@ export abstract class View implements QualityTarget {
   /** Gọi mỗi khung hình từ vòng lặp chính. Trả về true nếu đã vẽ. */
   frame(): boolean {
     this.controls.update();
+    // Chuyển tô sáng: chỉ vẽ lại liên tục trong ~150 ms của lần chuyển.
+    if (this.emphasis.running) {
+      this.emphasis.step(performance.now());
+      this.dirty = true;
+    }
     if (!this.dirty || this.width === 0 || this.height === 0 || !this.onScreen || this.suspended) return false;
     const s = this.store.state;
     this.scene.updateMatrixWorld();
