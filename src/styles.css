@@ -1730,3 +1730,47 @@ body.present .kv__x {
   color: var(--muted);
   text-align: center;
 }
+
+/* ------------------------------------------------------------------ Gợi ý lần đầu trên khung giản đồ chân trời */
+.firsthint {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: calc(100% - 2 * var(--space-3));
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  transform: translateX(-50%);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.firsthint:not([data-ready]) {
+  opacity: 0;
+}
+
+.firsthint {
+  transition: opacity 0.3s ease-out;
+}
+
+.firsthint__x {
+  border-radius: var(--radius-pill);
+}
+
+@media (max-width: 900px) {
+  /* Trên điện thoại thẻ thông tin nằm ở đáy khung nhìn: đặt gợi ý ngay dưới thanh công cụ của khung. */
+  .firsthint {
+    top: 60px;
+    bottom: auto;
+  }
+}
+
+body.present .firsthint {
+  font-size: 17px;
+}

@@ -212,9 +212,10 @@ export function createInitialState(): AppState {
     lat: DEFAULT_PLACE.lat,
     lon,
     gst,
-    playing: false,
+    // Cảnh mở đầu: bầu trời quay chậm (1 ngày thiên văn trong 60 s). main.ts tạm dừng nếu người dùng giảm chuyển động.
+    playing: true,
     mode: 'continuous',
-    rate: 20,
+    rate: 60,
     runStartLst: gst + lon,
     toggles: { ...DEFAULT_TOGGLES },
     labels: { ...DEFAULT_LABELS },

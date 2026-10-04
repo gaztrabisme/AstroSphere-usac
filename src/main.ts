@@ -13,6 +13,7 @@ import { Actions, createInitialState, Store, type AppState, type Toggles } from 
 import { animationPanel } from './ui/animationPanel';
 import { displayPanel } from './ui/displayPanel';
 import { button, clear, h } from './ui/dom';
+import { mountFirstHint } from './ui/firstHint';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { mountQualityNotice } from './ui/qualityNotice';
@@ -25,6 +26,16 @@ const scenePromise = import('./scene/boot');
 
 const store = new Store(createInitialState());
 const actions = new Actions(store);
+
+// Cảnh mở đầu: bầu trời tự quay chậm — trừ khi người dùng yêu cầu giảm chuyển động (không tự chạy).
+const reducedMotion = (): boolean => {
+  try {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  } catch {
+    return false;
+  }
+};
+if (reducedMotion()) actions.pause();
 const app = document.getElementById('app')!;
 
 // ---------------------------------------------------------------- Ngăn Ôn tập và hộp thoại (tải động khi dùng lần đầu)
@@ -138,6 +149,9 @@ const horizonBox = viewBox('view-horizon', t('view.horizon'), t('view.horizonSub
   fpBtn,
   button(t('view.resetCamera'), () => horizon?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') }),
 ]);
+
+// Một gợi ý duy nhất, một lần, trên khung nhìn chính (không phải chuỗi hướng dẫn).
+mountFirstHint(horizonBox, [horizonHost, sphereHost], () => fpBtn);
 
 const card = infoCard(store, actions);
 const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
@@ -316,6 +330,7 @@ updateLegend(store.state);
 
 function resetAll() {
   actions.resetAll();
+  if (reducedMotion()) actions.pause();
   if (horizon?.isFirstPerson()) fpBtn.click();
   sphere?.resetCamera();
   horizon?.resetCamera();

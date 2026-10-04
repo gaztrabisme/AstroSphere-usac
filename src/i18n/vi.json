@@ -44,6 +44,10 @@
     "loading": "Đang tải mô phỏng 3D…",
     "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang."
   },
+  "firstHint": {
+    "text": "Kéo để xoay · bấm vào một ngôi sao",
+    "close": "Đóng gợi ý"
+  },
   "legend": {
     "aria": "Chú giải màu",
     "title": "Chú giải:",
