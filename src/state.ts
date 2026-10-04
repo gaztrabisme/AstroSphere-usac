@@ -2,7 +2,7 @@
 
 import { clamp, gmstDeg, julianDate, norm360 } from './astro';
 import { getCatalogStar, catalogIndexByHip } from './data/catalog';
-import { ALL_FIGURES, getTemplate } from './data/constellations';
+import { TEMPLATE_FIGURES, getTemplate } from './data/constellations';
 import { DEFAULT_PLACE } from './data/places';
 
 export type TrailMode = 'none' | 'short' | 'long';
@@ -173,7 +173,7 @@ const nextId = (p: string) => `${p}${++idCounter}`;
 
 function buildConstellation(templateId: string): { stars: UserStar[]; figure: Figure } | null {
   const tpl = getTemplate(templateId);
-  const fig = ALL_FIGURES[templateId];
+  const fig = TEMPLATE_FIGURES[templateId];
   if (!tpl || !fig) return null;
   const figureId = nextId('f');
   const stars: UserStar[] = fig.stars.map(([ra, dec, mag, hip], i) => {

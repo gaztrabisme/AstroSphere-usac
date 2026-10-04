@@ -1,15 +1,34 @@
 // Trái Đất ở tâm thiên cầu: họa tiết vẽ từ dữ liệu lục địa nội bộ (không cần mạng).
+// Vẽ đại dương và lưới ngay; lục địa được vẽ lại khi dữ liệu (tải động) tới — gọi `onRepaint`.
 
 import * as THREE from 'three';
-import { drawLand } from '../data/land';
+import { drawLand, landRings, loadLand } from '../data/land';
 
-export function createEarthTexture(): THREE.CanvasTexture {
+export function createEarthTexture(onRepaint?: () => void): THREE.CanvasTexture {
   const w = 2048;
   const h = 1024;
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d')!;
+  paintEarth(ctx, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  if (!landRings()) {
+    loadLand().then(
+      () => {
+        paintEarth(ctx, w, h);
+        tex.needsUpdate = true;
+        onRepaint?.();
+      },
+      (err) => console.error(err),
+    );
+  }
+  return tex;
+}
+
+function paintEarth(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   const ocean = ctx.createLinearGradient(0, 0, 0, h);
   ocean.addColorStop(0, '#1d4f7a');
   ocean.addColorStop(0.5, '#1a5d8f');
@@ -45,8 +64,4 @@ export function createEarthTexture(): THREE.CanvasTexture {
   ctx.moveTo(0, h / 2);
   ctx.lineTo(w, h / 2);
   ctx.stroke();
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
 }

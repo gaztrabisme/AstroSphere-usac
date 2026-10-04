@@ -44,7 +44,7 @@ export class CelestialSphereView extends View {
 
     this.earth = new THREE.Mesh(
       new THREE.SphereGeometry(this.earthR, 96, 64),
-      new THREE.MeshLambertMaterial({ map: createEarthTexture() }),
+      new THREE.MeshLambertMaterial({ map: createEarthTexture(() => (this.dirty = true)) }),
     );
     this.earth.userData.tip = 'earth';
     this.scene.add(this.earth);

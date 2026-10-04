@@ -88,6 +88,7 @@ export abstract class View implements QualityTarget {
 
     this.sky = new SkyLayer(kind, this.R);
     this.sky.setPixelRatio(this.renderer.getPixelRatio());
+    this.sky.onAsyncChange = () => (this.dirty = true);
     this.horizon = new HorizonLayer(kind, this.R);
     this.trails = new TrailLayer(this.R);
     // Vết sao nằm trong nhóm quay cùng bầu trời (xem trails.ts)

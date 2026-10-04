@@ -15,6 +15,10 @@ const outDir = join(root, 'src/data/generated');
 mkdirSync(outDir, { recursive: true });
 
 const MAG_LIMIT = 4.8;
+// Các mẫu chòm sao có thể thêm vào bầu trời (phải khớp TEMPLATES trong src/data/constellations.ts;
+// src/data/constellations.test.ts kiểm tra điều này). Chỉ các hình này nằm trong gói khởi động;
+// đủ 88 chòm sao được tải động khi bật "Đường nối 88 chòm sao".
+const TEMPLATE_IDS = ['UMa', 'UMi', 'Cas', 'Ori', 'Cru', 'Sco', 'Cyg', 'Lyr', 'Aql', 'Leo', 'Gem', 'CMa', 'Tau', 'Sgr', 'Cen', 'Peg'];
 const round = (x, d) => Math.round(x * 10 ** d) / 10 ** d;
 const toRa = (lon) => round(((lon % 360) + 360) % 360, 4);
 
@@ -109,5 +113,6 @@ const write = (name, data) => {
 };
 write('stars.json', { magLimit: MAG_LIMIT, ...stars, names });
 write('constellations.json', constellations);
+write('constellation-templates.json', Object.fromEntries(TEMPLATE_IDS.map((id) => [id, constellations[id]])));
 write('land.json', rings);
 console.log(`Sao: ${stars.ra.length}, chòm sao: ${Object.keys(constellations).length}, vòng lục địa: ${rings.length}`);

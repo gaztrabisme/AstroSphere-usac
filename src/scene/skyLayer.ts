@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
 import { cosD, eclipticToEquatorial, galacticToEquatorial, sinD, zoneLimits } from '../astro';
 import { bvToRgb, catalogArrays, catalogIndexByHip, getCatalogStar } from '../data/catalog';
-import { ALL_FIGURES } from '../data/constellations';
+import { loadAllFigures, type FigureMap } from '../data/constellations';
 import { t } from '../i18n';
 import { sunEquatorial } from '../selection';
 import type { AppState, Selection, UserStar } from '../state';
@@ -51,7 +51,12 @@ export class SkyLayer {
   private galactic = new THREE.Group();
   private catalog: THREE.Points;
   private catalogLabels = new THREE.Group();
-  private allLines: THREE.LineSegments;
+  /** Đường nối 88 chòm sao — dựng khi bật lần đầu (dữ liệu tải động). */
+  private allLines: THREE.LineSegments | null = null;
+  private allLinesRequested = false;
+  private lastLinesOn = false;
+  /** Gọi khi một phần cảnh thay đổi bất đồng bộ (dữ liệu tải động tới) để khung nhìn vẽ lại. */
+  onAsyncChange: (() => void) | null = null;
   private user = new THREE.Group();
   private sun = new THREE.Group();
   private sunPath: Line2;
@@ -161,18 +166,6 @@ export class SkyLayer {
     this.rot.add(this.catalog);
     this.rot.add(this.catalogLabels);
 
-    // Đường nối 88 chòm sao
-    const seg: number[] = [];
-    for (const fig of Object.values(ALL_FIGURES)) {
-      for (const [a, b] of fig.segs) {
-        const sa = fig.stars[a];
-        const sb = fig.stars[b];
-        polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
-      }
-    }
-    this.allLines = thinSegments(seg, '#6b8cc7', 0.32);
-    this.allLines.userData.tip = 'constellationLines';
-    this.rot.add(this.allLines);
 
     this.rot.add(this.user);
 
@@ -197,6 +190,23 @@ export class SkyLayer {
     this.selRing.scale.setScalar(0.06);
     this.selRing.renderOrder = 10;
     this.rot.add(this.selRing);
+  }
+
+  private buildAllLines(figs: FigureMap): void {
+    const R = this.R;
+    const seg: number[] = [];
+    for (const fig of Object.values(figs)) {
+      for (const [a, b] of fig.segs) {
+        const sa = fig.stars[a];
+        const sb = fig.stars[b];
+        polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
+      }
+    }
+    const lines = thinSegments(seg, '#6b8cc7', 0.32);
+    lines.userData.tip = 'constellationLines';
+    this.allLines = lines;
+    this.rot.add(lines);
+    this.structureVersion++;
   }
 
   private buildEqGrid(): void {
@@ -438,7 +448,22 @@ export class SkyLayer {
     this.galactic.visible = tg.galactic;
     this.catalog.visible = tg.catalog;
     this.catalogLabels.visible = tg.catalog;
-    this.allLines.visible = tg.constellationLines;
+    if (tg.constellationLines && !this.allLinesRequested) {
+      this.allLinesRequested = true;
+      loadAllFigures().then(
+        (figs) => {
+          this.buildAllLines(figs);
+          this.allLines!.visible = this.lastLinesOn;
+          this.onAsyncChange?.();
+        },
+        (err) => {
+          console.error(err);
+          this.allLinesRequested = false;
+        },
+      );
+    }
+    this.lastLinesOn = tg.constellationLines;
+    if (this.allLines) this.allLines.visible = tg.constellationLines;
     this.sun.visible = tg.sun;
     if (tg.sun) this.updateSun(s);
     this.sunPath.visible = tg.sun;
