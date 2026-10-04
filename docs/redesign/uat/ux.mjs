@@ -165,7 +165,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     const id = el.getAttribute('aria-describedby');
     return id ? document.getElementById(id)?.textContent : null;
   });
-  check('(f) checking meridian reveals its hint line (aria-describedby)', !before && afterOn && /Để ý/.test(desc ?? ''), `before=${before} after=${afterOn} desc=${JSON.stringify(desc)}`);
+  check('(f) checking meridian reveals its one-line hint (aria-describedby)', !before && afterOn && /lên cao nhất/.test(desc ?? ''), `before=${before} after=${afterOn} desc=${JSON.stringify(desc)}`);
   await meridian.uncheck();
   const afterOff = await item.locator('.check__hint').isVisible();
   check('(f) unchecking hides the hint again', !afterOff, `visible=${afterOff}`);

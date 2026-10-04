@@ -27,13 +27,16 @@ const missing = (keys: string[]) => keys.filter((k) => str(k) === null);
 const STAR_PANEL_TOGGLES: (keyof Toggles)[] = ['catalog', 'constellationLines'];
 
 describe('Chữ theo ngữ cảnh (họ khóa động)', () => {
-  it('mọi hộp kiểm khái niệm có dòng toggleHint, ngắn và nói điều cần để ý', () => {
+  // review-1 E2: dòng giải thích là MỘT câu ngắn nói nghĩa, không giảng giải ("Để ý: …", câu thứ hai).
+  it('mọi hộp kiểm khái niệm có dòng toggleHint: một câu ngắn, không có "Để ý:"', () => {
     const keys = HINTED_TOGGLES.map((k) => `toggleHint.${k}`);
     expect(missing(keys)).toEqual([]);
     for (const k of keys) {
       const s = str(k)!;
-      expect(s.length, k).toBeLessThanOrEqual(140);
-      expect(s, k).toMatch(/Để ý:/);
+      expect(s.length, k).toBeLessThanOrEqual(70);
+      expect(s, k).not.toMatch(/Để ý/);
+      // Một câu: chỉ một dấu chấm, ở cuối.
+      expect(s.replace(/\.$/, ''), k).not.toMatch(/\.\s/);
     }
     // Đủ các khóa brief yêu cầu (16 hộp kiểm khái niệm).
     expect(HINTED_TOGGLES.length).toBe(16);
