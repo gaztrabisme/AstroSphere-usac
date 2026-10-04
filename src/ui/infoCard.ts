@@ -22,9 +22,15 @@ import { h } from './dom';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
-/** Tên hướng (8 hướng) cho phương vị. */
+/** Tên hướng (8 hướng) cho phương vị; chuỗi rỗng nếu phương vị không xác định (vd. ở hai cực). */
 export function compassName(az: number): string {
+  if (!Number.isFinite(az)) return '';
   return t(`compass.${DIRS[Math.round(norm360(az) / 45) % 8]}`);
+}
+
+/** "A = 63,4° (ĐB)", hoặc "A = —" khi phương vị không xác định (|φ| = 90°). */
+export function azimuthText(az: number): string {
+  return Number.isFinite(az) ? `A = ${fmtDeg(az, 1)} (${compassName(az)})` : 'A = —';
 }
 
 interface Row {
@@ -175,9 +181,9 @@ export function infoCard(store: Store, actions: Actions) {
       r.transit.el.hidden = rs.visibility === 'neverRise';
       r.lowest.el.hidden = rs.visibility !== 'circumpolar';
       r.highest.el.hidden = rs.visibility !== 'neverRise';
-      setRow(r.rise, `LST ${fmtHMS(rs.riseLst, { seconds: false })}`, `A = ${fmtDeg(rs.riseAz, 1)} (${compassName(rs.riseAz)})`);
+      setRow(r.rise, `LST ${fmtHMS(rs.riseLst, { seconds: false })}`, azimuthText(rs.riseAz));
       setRow(r.transit, `LST ${fmtHMS(rs.transitLst, { seconds: false })}`, `h = ${fmtDegSigned(rs.upperAlt, 1)}`);
-      setRow(r.set, `LST ${fmtHMS(rs.setLst, { seconds: false })}`, `A = ${fmtDeg(rs.setAz, 1)} (${compassName(rs.setAz)})`);
+      setRow(r.set, `LST ${fmtHMS(rs.setLst, { seconds: false })}`, azimuthText(rs.setAz));
       setRow(r.above, fmtDuration(rs.hoursAbove), t('info.siderealHours'));
       setRow(r.lowest, `h = ${fmtDegSigned(rs.lowerAlt, 1)}`, t('info.lowestNote'));
       setRow(r.highest, `h = ${fmtDegSigned(rs.upperAlt, 1)}`, t('info.highestNote'));
@@ -185,7 +191,7 @@ export function infoCard(store: Store, actions: Actions) {
 
     // Phần thay đổi theo thời gian
     setRow(r.ha, fmtHMS(ha, { signed: true }), ha >= 0 ? t('info.haWest') : t('info.haEast'));
-    setRow(r.az, fmtDeg(az, 2), compassName(az));
+    setRow(r.az, Number.isFinite(az) ? fmtDeg(az, 2) : '—', compassName(az));
     setRow(r.alt, fmtDegSigned(alt, 2), alt >= 0 ? t('info.above') : t('info.below'));
   };
 
