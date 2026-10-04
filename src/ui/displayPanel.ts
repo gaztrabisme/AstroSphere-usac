@@ -2,7 +2,7 @@
 
 import { fmtDegSigned, fmtDuration, riseSet } from '../astro';
 import { t } from '../i18n';
-import { COLORS } from '../scene/geom';
+import { COLORS } from '../scene/colors';
 import { sunEquatorial } from '../selection';
 import type { Actions, LabelToggles, Store, Toggles } from '../state';
 import { button, checkbox, h } from './dom';
@@ -27,7 +27,7 @@ const LINES: [ToggleKey, string?][] = [
   ['verticalCircle', COLORS.vertical],
   ['poleAltitude', COLORS.latitude],
   ['horizonOnSphere', COLORS.horizon],
-  ['altAzGrid', '#7dd3a8'],
+  ['altAzGrid', COLORS.altAzGrid],
   ['eqGrid', COLORS.grid],
 ];
 

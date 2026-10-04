@@ -9,6 +9,8 @@
   },
   "top": {
     "navAria": "Thanh công cụ chính",
+    "story": "Câu chuyện",
+    "storyTip": "Hành trình có hướng dẫn: ba chương ngắn về bầu trời quay và hai hệ tọa độ",
     "learn": "Học tập",
     "learnTip": "Mở các nhiệm vụ học tập có chấm điểm (phím L)",
     "reset": "Đặt lại",
@@ -32,7 +34,9 @@
     "firstPersonTip": "Đứng ở tâm mặt phẳng chân trời và nhìn quanh bầu trời",
     "outside": "↩ Nhìn từ bên ngoài",
     "dragHint": "Kéo để xoay · cuộn/chụm để phóng to · bấm vào sao để xem thông tin",
-    "webglError": "Trình duyệt không hỗ trợ WebGL nên không thể hiển thị mô phỏng 3D. Hãy thử trình duyệt khác hoặc bật tăng tốc phần cứng."
+    "webglError": "Trình duyệt không hỗ trợ WebGL nên không thể hiển thị mô phỏng 3D. Hãy thử trình duyệt khác hoặc bật tăng tốc phần cứng.",
+    "loading": "Đang tải mô phỏng 3D…",
+    "loadError": "Không tải được phần mô phỏng 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang."
   },
   "legend": {
     "aria": "Chú giải màu",
@@ -456,5 +460,7 @@
       "- **Tham khảo học thuật & thiết kế:** hệ thống có tham khảo cách tiếp cận trực quan của các công cụ mô phỏng thiên văn giáo dục như Rotating Sky Explorer của NAAP, Đại học Nebraska–Lincoln. Toàn bộ mã nguồn, giao diện và tài nguyên của hệ thống được phát triển độc lập bởi USAC.",
       "Hệ thống được thiết kế theo hướng offline-first, có thể vận hành hoàn toàn trên trình duyệt mà không yêu cầu kết nối mạng sau khi các tài nguyên cần thiết đã được tải xuống."
     ]
-  }
+  },
+  "hero": {},
+  "story": {}
 }

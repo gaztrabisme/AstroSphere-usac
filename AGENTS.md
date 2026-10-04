@@ -1,0 +1,96 @@
+# AGENTS.md: how to work in this repository
+
+AstroSphere is the USAC astronomy club's celestial-coordinate simulator (CLB Thiên văn USAC, Trường ĐH KHTN – ĐHQG TP.HCM).
+
+- It is a static web app, and the whole interface is in Vietnamese.
+- Stack: Vite 8, TypeScript, and Three.js 0.186.
+- There is no UI framework, no web font, and no network access at runtime.
+- It deploys to GitHub Pages (`astrosphere.clbtvusac.com`) on every push to `main`; see `.github/workflows/deploy.yml`.
+
+Read this file before changing code. The product brief is `brief_mo_phong_he_toa_do_thien_cau.md`. Open review findings are in `TODO.md`. Redesign records are in `docs/redesign/`.
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `npm ci` | Install exact dependencies |
+| `npm run dev` | Vite dev server. In dev, `window.__app` and `window.__perf` expose internals |
+| `npm test` | Vitest unit tests. These must pass before every commit |
+| `npm run build` | `tsc --noEmit` followed by `vite build` into `dist/`. Must pass before every commit |
+| `npm run preview` | Serve `dist/` |
+| `npm run data` | Regenerate `src/data/generated/*.json` from npm packages. **Never hand-edit the generated JSON.** |
+| `node docs/redesign/uat/<name>.mjs` | Browser acceptance checks |
+
+The browser acceptance checks:
+- use the global Playwright at `/opt/node-tools/node_modules/playwright` with Chromium in `/opt/pw-browsers`;
+- run against `npx vite preview --port 4173 --strictPort`;
+- need the launch flags `--use-angle=swiftshader --enable-unsafe-swiftshader`.
+
+## Architecture rules
+
+- **`src/astro/`** holds pure maths: no DOM, no three.js, unit tested against `astronomy-engine`. Do not change the maths without adding tests that prove it.
+- **`src/scene/`** is the only code that imports three.js at runtime, and only through the lazy `scene/boot.ts` chunk.
+  - UI code (`src/ui/`, `src/story/`) may use `import type` from scene files, and gets colours from `scene/colors.ts`.
+  - A runtime import of three from UI code puts three back into the entry chunk.
+- **One `Store`** (`src/state.ts`).
+  - Change state only through `Actions`.
+  - State updates are immutable, because layers detect changes by reference.
+  - Both 3D views render only from the store, which is what keeps them in sync.
+- **Shared scripting helpers** live in `src/scenario.ts`: `ensureConstellation`, `selectHip`, `zones`, `PLACES`. The learning tasks and the story both use them.
+- **Render loop:** `src/runtime/frameLoop.ts`. Adaptive quality: `src/runtime/quality.ts`.
+- **Browser storage** goes only through `src/ui/storage.ts` (`readJson` with a type guard, and `writeJson`). Wrap every access in try/catch. Keys in use:
+
+| Key | Storage | Content |
+|---|---|---|
+| `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
+| `astrosphere.seen.v1` | localStorage | The hero screen has been seen |
+| `astrosphere.story.v1` | localStorage | Story progress |
+| `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
+
+## Interface text (i18n)
+
+- Every user-visible string lives in `src/i18n/vi.json`. Read it with `t('literal.key')` or `tList('literal.key')`.
+- `src/i18n/i18n.test.ts` enforces three rules:
+  - Every literal key exists.
+  - No common English words appear in any string. The banned words are: the, and, reset, help, about, start, pause, stop, speed, show, hide, star(s), trail, north, south, east, west, settings, loading, error.
+  - The formulas in `help.body` and `about.body` compile in KaTeX.
+- Keys built at runtime, such as `story.<chapter>.<step>.title`, are invisible to that test. Any new dynamic key family needs its own test, following the pattern in `src/story/chapters.test.ts`.
+- Number formatting uses a comma as the decimal separator; see `astro/format.ts`. Use B/N for north/south and Đ/T for east/west.
+
+## Brand
+
+The brand comes from the club site https://web-usac.vercel.app/.
+
+- **Accent:** `--accent #F26522` on near-black `--bg #0a0a0a`, with white text. Font: `Arial, Helvetica, sans-serif`.
+- **Colours:**
+  - Raw colour values are allowed only inside `:root` in `src/styles.css`. Everywhere else, use tokens.
+  - Text on orange must be `--on-accent #0a0a0a`. White on orange has a 3.15:1 contrast ratio, which fails.
+  - The focus ring is orange, not yellow, because yellow means the celestial equator in the scene.
+- **3D scene colours** (`scene/colors.ts`) carry meaning and are never rebranded. Examples: equator yellow, axis blue `#4f9dff`, zones purple/teal/red.
+- **Club link:** exactly one link to the club site, in the footer. The logo is `src/assets/usac-logo.png`.
+
+## Performance budgets
+
+- Entry JS must stay at or below 90 kB gzip. three.js loads only through `import('./scene/boot')`.
+- Nothing in `update()` or `frame()` may allocate: no `new`, `clone()`, or array literals there. Use scratch objects.
+- Playback must create no new `LineGeometry` and call no `createBuffer`. Update dynamic lines in place with `writeFatLine`.
+- DOM writes during playback are capped at about 15 Hz (the frame loop's `onUiTick`). Write a cell only when its value changed.
+- No drawing when a view is hidden, scrolled off screen, or the tab is in the background.
+- Target at least 50 FPS with about 1000 stars on a mid-range laptop. Adaptive quality steps down below about 36 FPS. `?quality=fixed` turns it off.
+
+## Accessibility
+
+- Respect `prefers-reduced-motion`: no autoplay, and draw trails statically.
+- Return focus to the opener when a drawer or sheet closes.
+- **Esc priority:** dialog → learning drawer → story sheet → clear the selection. Esc never fires while the user is typing.
+- Global shortcuts must not hijack interactive elements:
+  - Space is ignored on buttons, links, `summary`, and inputs.
+  - Arrow keys are ignored inside `role=tablist`, `slider` and `radiogroup`.
+- Touch targets are at least 44 px on phones. A 375 px wide viewport must have no horizontal scrolling.
+
+## Git
+
+- Work branches are named `claude/<topic>`; parallel stream branches are `redesign/<stream>`. Merge them with `--no-ff`.
+- Commit subjects are descriptive and start with a scope: `ui:`, `story:`, `scene:`, `perf:`, `data:`, `docs:`, `build:`, or `test:`. No one-letter messages.
+- Each commit should pass `npm test` and `npm run build`.
+- When fixing a `TODO.md` item, mark it `[x]` and cite the commit hash.

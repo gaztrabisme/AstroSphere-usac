@@ -1,21 +1,54 @@
 /* Mô phỏng hệ tọa độ thiên cầu — giao diện nền tối, tương phản cao. */
 
 :root {
-  --bg: #070b16;
-  --surface: #0d1427;
-  --surface-2: #131c34;
-  --surface-3: #1a2542;
-  --border: #253253;
-  --text: #e8edf7;
-  --muted: #a3b0cc;
-  --accent: #4f9dff;
-  --accent-strong: #2f7fe8;
-  --yellow: #ffd54f;
+  /* Thương hiệu CLB Thiên văn USAC (web-usac.vercel.app): một màu nhấn cam trên nền gần đen, chữ trắng, Arial. */
+  --accent: #f26522; /* 6,28:1 trên --bg */
+  --accent-hi: #ff8a4c; /* hover, liên kết trên nền tối */
+  --accent-a12: #f265221f;
+  --accent-a30: #f265224d;
+  --accent-a46: #f2652276; /* biến thể trong suốt của trang CLB */
+  --on-accent: #0a0a0a; /* chữ trên nền cam (trắng trên cam chỉ 3,15:1 — không đạt) */
+  --accent-on-light: #c94f12; /* chữ cam trên nền trắng (4,55:1) */
+
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1c1c1c;
+  --surface-3: #242424;
+  --border: #2e2e2e; /* chỉ để phân cách */
+  --border-control: #707070; /* viền ô nhập, hộp kiểm (≥ 3:1) */
+  --text: #f2f2f2;
+  --muted: #b3b3b3;
+  --subtle: #8c8c8c; /* cỡ chữ nhỏ nhất cho phép: 4,62:1 trên --surface-3 */
   --ok: #4ade80;
-  --err: #fb7185;
+  --err: #ff6b6b;
+
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-hi); /* không dùng vàng: vàng là màu xích đạo trời */
+  --font: Arial, Helvetica, sans-serif;
+
+  --radius-sm: 6px;
   --radius: 10px;
-  --focus: 0 0 0 3px rgba(255, 213, 79, 0.85);
-  --font: system-ui, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --tap: 44px;
+  --topbar-h: 56px;
+  --sheet-h: 0px;
+  --z-topbar: 30;
+  --z-sheet: 35;
+  --z-drawer: 40;
+  --z-hero: 50;
+  --z-toast: 60;
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Bí danh tạm thời cho tên cũ — luồng giao diện sẽ gỡ bỏ. */
+  --accent-strong: var(--accent);
+  --yellow: var(--accent-hi);
+
   color-scheme: dark;
 }
 
@@ -1451,4 +1484,12 @@ kbd {
   * {
     transition: none !important;
   }
+}
+
+/* Trạng thái chờ tải cảnh 3D */
+.view__loading {
+  margin: auto;
+  padding: var(--space-4);
+  color: var(--muted);
+  text-align: center;
 }

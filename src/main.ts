@@ -4,10 +4,14 @@ import './styles.css';
 import logoUrl from './assets/usac-logo.png';
 import { Animator } from './animator';
 import { t } from './i18n';
-import { CelestialSphereView } from './scene/celestialSphere';
-import { COLORS } from './scene/geom';
-import { HorizonDiagramView } from './scene/horizonDiagram';
-import type { View } from './scene/view';
+import { startFrameLoop, type FrameView } from './runtime/frameLoop';
+import { createQuality } from './runtime/quality';
+import type { SceneViews } from './scene/boot';
+import { COLORS } from './scene/colors';
+import type { CelestialSphereView } from './scene/celestialSphere';
+import type { HorizonDiagramView } from './scene/horizonDiagram';
+import { mountStory } from './story/entry';
+import type { ViewKey } from './story/types';
 import { Actions, createInitialState, Store, type AppState, type Toggles } from './state';
 import { animationPanel } from './ui/animationPanel';
 import { createDialogs } from './ui/dialogs';
@@ -18,6 +22,9 @@ import { learningDrawer } from './ui/learning';
 import { locationPanel } from './ui/locationPanel';
 import { starPanel } from './ui/starPanel';
 import { attachViewInteraction } from './ui/viewInteraction';
+
+// Tải cảnh 3D (three.js) song song với việc dựng giao diện.
+const scenePromise = import('./scene/boot');
 
 const store = new Store(createInitialState());
 const actions = new Actions(store);
@@ -42,6 +49,7 @@ const topbar = h(
   h(
     'nav',
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
+    button(t('top.story'), () => story.open(), { cls: 'btn--top', icon: '✦', title: t('top.storyTip') }),
     learnBtn,
     button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
     button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip') }),
@@ -102,14 +110,15 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     'aria-selected': String(key === 'horizon'),
     'aria-controls': `view-${key}`,
     text: t(`view.${key}`),
-    onclick: () => {
-      views.dataset.active = key;
-      viewTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tabEls[key])));
-      window.dispatchEvent(new Event('resize'));
-    },
+    onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
 const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.sphere, tabEls.horizon);
+function selectView(key: ViewKey) {
+  views.dataset.active = key;
+  viewTabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b === tabEls[key])));
+  window.dispatchEvent(new Event('resize'));
+}
 
 // ---------------------------------------------------------------- Bảng số liệu và bảng điều khiển
 const data = dataBar(store);
@@ -183,31 +192,47 @@ function updateLegend(s: AppState) {
   }
 }
 
-// ---------------------------------------------------------------- Khởi tạo 3D
-let uiDirty = true;
-try {
-  sphere = new CelestialSphereView(sphereHost, store);
-  horizon = new HorizonDiagramView(horizonHost, store);
-  for (const v of [sphere, horizon] as View[]) attachViewInteraction(v, store, actions);
-} catch (err) {
-  console.error(err);
+// ---------------------------------------------------------------- Khởi tạo 3D (tải động)
+for (const host of [sphereHost, horizonHost]) host.append(h('p', { class: 'view__loading', text: t('view.loading') }));
+
+function showSceneError(key: 'view.webglError' | 'view.loadError') {
   for (const host of [sphereHost, horizonHost]) {
     clear(host);
-    host.append(h('p', { class: 'webgl-error', text: t('view.webglError') }));
+    host.append(h('p', { class: 'webgl-error', text: t(key) }));
   }
 }
+
+const sceneReady: Promise<SceneViews | null> = scenePromise.then(
+  (m) => {
+    for (const host of [sphereHost, horizonHost]) clear(host);
+    try {
+      const v = m.bootScene(sphereHost, horizonHost, store);
+      sphere = v.sphere;
+      horizon = v.horizon;
+      for (const view of [sphere, horizon]) attachViewInteraction(view, store, actions);
+      sphere.update(store.state);
+      horizon.update(store.state);
+      loop.markUiDirty();
+      return v;
+    } catch (err) {
+      console.error(err);
+      showSceneError('view.webglError');
+      return null;
+    }
+  },
+  (err) => {
+    console.error(err);
+    showSceneError('view.loadError');
+    return null;
+  },
+);
 
 store.subscribe((s) => {
   sphere?.update(s);
   horizon?.update(s);
-  uiDirty = true;
+  loop.markUiDirty();
 });
 updateLegend(store.state);
-
-// Hook gỡ lỗi/đo hiệu năng — chỉ có ở chế độ phát triển.
-if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__app = { store, actions, sphere, horizon, data, card, get animator() { return animator; } };
-}
 
 function resetAll() {
   actions.resetAll();
@@ -218,22 +243,61 @@ function resetAll() {
 
 // ---------------------------------------------------------------- Vòng lặp
 const animator = new Animator(store, actions);
-let last = performance.now();
-function loop(now: number) {
-  const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
-  last = now;
-  animator.tick(dt);
-  sphere?.frame();
-  horizon?.frame();
-  if (uiDirty) {
-    uiDirty = false;
+const quality = createQuality();
+const loop = startFrameLoop({
+  animator,
+  getViews: (): readonly FrameView[] => (sphere && horizon ? [sphere, horizon] : []),
+  onUiTick: () => {
     data.update();
     card.update();
     updateLegend(store.state);
-  }
-  requestAnimationFrame(loop);
+  },
+  isPlaying: () => store.state.playing,
+  quality,
+});
+
+// ---------------------------------------------------------------- Câu chuyện
+const story = mountStory({
+  store,
+  actions,
+  appRoot: app,
+  reducedMotion: () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+  showView: selectView,
+  setFirstPerson: (on) => {
+    void sceneReady.then(() => {
+      if (horizon && horizon.isFirstPerson() !== on) fpBtn.click();
+    });
+  },
+  resetCameras: () => {
+    void sceneReady.then(() => {
+      sphere?.resetCamera();
+      horizon?.resetCamera();
+    });
+  },
+  openLearning: () => learn.open(true),
+  suspendRender: (reason, on) => loop.suspend(reason, on),
+});
+story.maybeShowHero();
+
+// Hook gỡ lỗi/đo hiệu năng — chỉ có ở chế độ phát triển.
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__app = {
+    store,
+    actions,
+    data,
+    card,
+    animator,
+    loop,
+    quality,
+    story,
+    get sphere() {
+      return sphere;
+    },
+    get horizon() {
+      return horizon;
+    },
+  };
 }
-requestAnimationFrame(loop);
 
 // ---------------------------------------------------------------- Phím tắt
 window.addEventListener('keydown', (e) => {

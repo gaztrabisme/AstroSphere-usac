@@ -6,25 +6,7 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { cosD, sinD } from '../astro';
 
-export const COLORS = {
-  equator: '#ffd54f',
-  axis: '#4f9dff',
-  horizon: '#4caf50',
-  ground: '#1f5e2a',
-  hourCircle: '#a3a3a3',
-  meridian: '#e2e8f0',
-  zenith: '#ffffff',
-  vertical: '#f472b6',
-  circumpolar: '#8b5cf6',
-  riseSet: '#14b8a6',
-  neverRise: '#ef4444',
-  ecliptic: '#fb923c',
-  galactic: '#e879f9',
-  sun: '#ffcc33',
-  grid: '#64748b',
-  angle: '#fde047',
-  latitude: '#38bdf8',
-} as const;
+export { COLORS } from './colors';
 
 export interface FatLineOpts {
   width?: number;

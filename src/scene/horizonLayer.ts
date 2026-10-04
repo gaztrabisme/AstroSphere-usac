@@ -105,7 +105,7 @@ export class HorizonLayer {
       for (let alt = -90; alt <= 90; alt += 3) pts.push(horVec(alt, az, R * 0.999));
       polylineToSegments(pts, seg);
     }
-    const grid = thinSegments(seg, '#7dd3a8', 0.35);
+    const grid = thinSegments(seg, COLORS.altAzGrid, 0.35);
     grid.userData.tip = 'altAzGrid';
     this.grid.add(grid);
     for (const alt of [30, 60]) {

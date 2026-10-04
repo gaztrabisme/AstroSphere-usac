@@ -1,0 +1,23 @@
+// Màu ngữ nghĩa của cảnh 3D (không phụ thuộc three.js để giao diện dùng được mà không kéo three vào gói khởi động).
+// Các màu này mang nghĩa (xích đạo vàng, trục xanh…) nên không đổi theo thương hiệu.
+
+export const COLORS = {
+  equator: '#ffd54f',
+  axis: '#4f9dff',
+  horizon: '#4caf50',
+  ground: '#1f5e2a',
+  hourCircle: '#a3a3a3',
+  meridian: '#e2e8f0',
+  zenith: '#ffffff',
+  vertical: '#f472b6',
+  circumpolar: '#8b5cf6',
+  riseSet: '#14b8a6',
+  neverRise: '#ef4444',
+  ecliptic: '#fb923c',
+  galactic: '#e879f9',
+  sun: '#ffcc33',
+  grid: '#64748b',
+  angle: '#fde047',
+  latitude: '#38bdf8',
+  altAzGrid: '#7dd3a8',
+} as const;
