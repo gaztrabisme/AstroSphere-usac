@@ -2,7 +2,7 @@
 
 import { fmtNum, parseDegrees, parseHours } from '../astro';
 import { catalogCount, catalogMagLimit } from '../data/catalog';
-import { templateDescription, TEMPLATES } from '../data/constellations';
+import { constellationName, templateDescription, TEMPLATES } from '../data/constellations';
 import { t } from '../i18n';
 import { MAX_USER_STARS, type Actions, type Store, type TrailMode } from '../state';
 import { button, checkbox, clear, fieldset, h, newId } from './dom';
@@ -29,10 +29,10 @@ export function starPanel(store: Store, actions: Actions): HTMLElement {
   updateNote();
   const addTpl = button(t('panel.stars.addTemplate'), () => {
     const id = tplSelect.value;
-    const tp = TEMPLATES.find((x) => x.id === id)!;
-    if (actions.hasConstellation(id)) return say(t('panel.stars.alreadyAdded', { name: tp.name }), 'err');
+    const name = constellationName(id);
+    if (actions.hasConstellation(id)) return say(t('panel.stars.alreadyAdded', { name }), 'err');
     if (!actions.addConstellation(id)) return say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err');
-    say(t('panel.stars.addedTemplate', { name: tp.name }));
+    say(t('panel.stars.addedTemplate', { name }));
   }, { cls: 'btn--primary' });
   const figureChips = h('div', { class: 'chips chips--figures' });
 

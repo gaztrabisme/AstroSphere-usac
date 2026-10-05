@@ -322,6 +322,8 @@ export abstract class View implements QualityTarget {
         // matrixWorld đã cập nhật trong frame() (scene.updateMatrixWorld) — không gọi getWorldPosition.
         _v.setFromMatrixPosition(lbl.matrixWorld);
         if (clip && ud.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
+        // Nhãn dày đặc (tên chòm sao) chỉ hiện ở nửa thiên cầu quay về phía người xem để đỡ rối.
+        else if (ud.hideFarSide && _v.dot(cam.position) < 0) vis = false;
         else if (this.isOccluded(_v)) vis = false;
       }
       lbl.visible = vis;
@@ -571,7 +573,7 @@ function estimateWidth(lbl: Label): number {
 function isSelectedLabel(ud: LabelData, sel: Selection): boolean {
   if (!sel || ud.selKind !== sel.kind) return false;
   if (sel.kind === 'user') return ud.selId === sel.id;
-  if (sel.kind === 'catalog') return ud.selIdx === sel.index;
+  if (sel.kind === 'catalog' || sel.kind === 'dso') return ud.selIdx === sel.index;
   return true;
 }
 

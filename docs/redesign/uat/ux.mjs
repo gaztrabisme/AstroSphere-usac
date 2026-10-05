@@ -213,7 +213,9 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');
   await page.locator('#panel-stars input[placeholder="−16,7"]').fill('-16,7');
   await page.getByRole('button', { name: 'Thêm sao (α, δ)' }).click();
-  await page.waitForTimeout(400);
+  // Thẻ cập nhật ở nhịp giao diện kế tiếp (onUiTick); chờ theo điều kiện, không theo thời gian cố định.
+  await page.waitForFunction(() => document.querySelector('.infocard__title')?.textContent !== 'Polaris', null, { timeout: 5000 }).catch(() => {});
+  await page.waitForTimeout(200);
   const opened = await state();
   check('(i) selecting another object opens the card as a third column', !opened.collapsed && opened.cols === 3 && opened.title !== 'Polaris', JSON.stringify(opened));
   await page.locator('.infocard__title').click();

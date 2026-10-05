@@ -11,7 +11,8 @@
     "slogan": "khoa học cho mọi người",
     "clubUrl": "https://web-usac.vercel.app/",
     "clubLink": "Trang web CLB Thiên văn USAC",
-    "clubLinkTip": "Mở trang web của CLB trong thẻ mới"
+    "clubLinkTip": "Mở trang web của CLB trong thẻ mới",
+    "catalogLink": "Danh mục thiên thể tham khảo (thiên hà, tinh vân, cụm sao, sao chổi)"
   },
   "top": {
     "navAria": "Thanh công cụ chính",
@@ -129,7 +130,17 @@
     "decNote": "giống vĩ độ, nhưng vẽ trên bầu trời",
     "haNote": "= LST − α, đo từ kinh tuyến về phía Tây",
     "azNote": "hướng nhìn, đo từ Bắc qua Đông",
-    "altNote": "góc từ chân trời lên tới sao"
+    "altNote": "góc từ chân trời lên tới sao",
+    "details": "Định danh & đặc trưng",
+    "designation": "Định danh",
+    "nameEn": "Tên quốc tế",
+    "apparentSize": "Kích thước biểu kiến",
+    "distance": "Khoảng cách",
+    "diameter": "Đường kính ước tính",
+    "ly": "{v} năm ánh sáng",
+    "lyMillion": "{v} triệu năm ánh sáng",
+    "nameVi": "Tên tiếng Việt",
+    "constellation": "Chòm sao"
   },
   "visibility": {
     "circumpolar": "Cận cực (không bao giờ lặn)",
@@ -215,7 +226,9 @@
       "sunOff": "Bật \"Mặt Trời theo ngày\" để xem đường đi của Mặt Trời và độ dài ngày.",
       "dayLength": "ban ngày dài khoảng {d} tại vĩ độ này",
       "polarDay": "Mặt Trời không lặn (ngày địa cực)",
-      "polarNight": "Mặt Trời không mọc (đêm địa cực)"
+      "polarNight": "Mặt Trời không mọc (đêm địa cực)",
+      "openCatalog": "📋 Bảng tra cứu thiên thể",
+      "openCatalogTip": "Mở bảng số liệu thiên hà, tinh vân, cụm sao và sao chổi tiêu biểu"
     },
     "stars": {
       "title": "Điều khiển sao",
@@ -249,7 +262,8 @@
       "trail_none": "Không",
       "trail_short": "Ngắn (3 giờ)",
       "trail_long": "Dài (cả vòng)",
-      "resetTrails": "Đặt lại vết sao"
+      "resetTrails": "Đặt lại vết sao",
+      "nameVi": "Tên tiếng Việt: {name}."
     }
   },
   "toggle": {
@@ -270,10 +284,11 @@
     "altAzGrid": "Lưới chân trời (A, h)",
     "eqGrid": "Lưới xích đạo (α, δ)",
     "catalog": "Sao sáng thật",
-    "constellationLines": "Đường nối 88 chòm sao",
+    "constellationLines": "Chòm sao (đường nối + tên quốc tế)",
     "ecliptic": "Hoàng đạo",
     "galactic": "Xích đạo thiên hà (Ngân Hà)",
-    "sun": "Mặt Trời theo ngày"
+    "sun": "Mặt Trời theo ngày",
+    "deepSky": "Thiên thể sâu (Messier, NGC)"
   },
   "toggleTip": {
     "hourCircle0": "Nửa vòng tròn lớn nối hai thiên cực đi qua điểm xuân phân (α = 0h). Quay cùng bầu trời nên dễ thấy chuyển động nhật động.",
@@ -292,11 +307,12 @@
     "horizonOnSphere": "Vòng chân trời của người quan sát, vẽ trong khung Thiên cầu.",
     "altAzGrid": "Các vòng độ cao 30°, 60° và đường phương vị mỗi 30°.",
     "eqGrid": "Các vòng xích vĩ mỗi 30° và vòng giờ mỗi 2h; quay cùng bầu trời.",
-    "catalog": "Khoảng 1300 sao sáng nhất bầu trời theo vị trí thật (dữ liệu HYG).",
-    "constellationLines": "Đường nối các sao theo hình 88 chòm sao.",
+    "catalog": "Khoảng 1300 sao sáng nhất bầu trời theo vị trí thật (dữ liệu HYG), sao sáng có ghi tên quốc tế.",
+    "constellationLines": "Đường nối và tên quốc tế (IAU) của 88 chòm sao. Tên tiếng Việt hiện khi bấm vào một ngôi sao.",
     "ecliptic": "Đường đi biểu kiến của Mặt Trời trong năm, nghiêng 23,44° so với xích đạo trời.",
     "galactic": "Mặt phẳng của dải Ngân Hà và tâm thiên hà (hướng chòm Sagittarius).",
-    "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm."
+    "sun": "Đặt Mặt Trời ở vị trí của ngày đã chọn; giản đồ chân trời đổi màu theo ngày/đêm.",
+    "deepSky": "Hiện 118 thiên hà, tinh vân và cụm sao (110 thiên thể Messier và một số thiên thể NGC sáng) bằng vòng tròn rỗng: hồng là thiên hà, xanh ngọc là tinh vân, vàng là cụm sao. Bấm vào để xem định danh chuẩn và số liệu."
   },
   "toggleHint": {
     "poleAxis": "Trục mà cả bầu trời quay quanh, chĩa vào thiên cực.",
@@ -391,7 +407,7 @@
     "ecliptic": "Hoàng đạo|Đường đi biểu kiến của Mặt Trời trong năm, nghiêng ε = 23,44° so với xích đạo trời.",
     "galactic": "Xích đạo thiên hà|Mặt phẳng của dải Ngân Hà.",
     "galacticCenter": "Galactic Center|Hướng về tâm thiên hà, trong chòm Sagittarius (l = 0°, b = 0°).",
-    "constellationLines": "Đường nối chòm sao|Hình vẽ quy ước của 88 chòm sao.",
+    "constellationLines": "Chòm sao|Hình vẽ quy ước của 88 chòm sao, ghi theo tên quốc tế (IAU).",
     "figure": "Chòm sao|Hình chòm sao bạn đã thêm. Các sao trong chòm quay cùng nhau.",
     "sun": "Sun|Vị trí của Mặt Trời trên hoàng đạo vào ngày đã chọn.",
     "sunPath": "Đường đi của Mặt Trời trong ngày|Vòng xích vĩ của Mặt Trời vào ngày đã chọn.",
@@ -535,10 +551,45 @@
       "## Cơ sở dữ liệu & nền tảng",
       "- **Danh mục sao và đường nối chòm sao:** d3-celestial của Olaf Frohn, phát hành theo giấy phép BSD-3; dữ liệu sao có nguồn gốc từ cơ sở dữ liệu HYG.",
       "- **Bản đồ địa lý:** Natural Earth (phạm vi công cộng) thông qua gói world-atlas.",
+      "- **Tên chòm sao tiếng Việt:** Wikipedia tiếng Việt, bài \"Danh sách chòm sao\" (giấy phép CC BY-SA 4.0). Trên bầu trời, sao và chòm sao được ghi theo tên quốc tế (IAU); tên tiếng Việt hiện trong phần chi tiết.",
       "- **Đồ họa 3D:** Three.js, phát hành theo giấy phép MIT.",
       "- **Hiển thị công thức:** KaTeX, phát hành theo giấy phép MIT.",
       "- **Tham khảo học thuật & thiết kế:** hệ thống có tham khảo cách tiếp cận trực quan của các công cụ mô phỏng thiên văn giáo dục như Rotating Sky Explorer của NAAP, Đại học Nebraska–Lincoln. Toàn bộ mã nguồn, giao diện và tài nguyên của hệ thống được phát triển độc lập bởi USAC.",
       "Hệ thống được thiết kế theo hướng offline-first, có thể vận hành hoàn toàn trên trình duyệt mà không yêu cầu kết nối mạng sau khi các tài nguyên cần thiết đã được tải xuống."
+    ]
+  },
+  "catalog": {
+    "title": "Danh mục thiên thể tham khảo",
+    "intro": [
+      "Định danh dùng theo chuẩn quốc tế (danh mục **Messier**, **NGC/IC**, **PGC**; ký hiệu sao chổi theo **IAU/MPC**) để tra cứu thống nhất trên các cơ sở dữ liệu SIMBAD, NED và VizieR. Bấm vào định danh để mở trang SIMBAD tương ứng (cần kết nối mạng).",
+      "Tọa độ quy chiếu theo kỷ nguyên J2000.0. Khoảng cách là giá trị tham khảo đã làm tròn; với các thiên hà xa, sai số có thể tới 10–20 %."
+    ],
+    "dsoTitle": "Thiên hà, tinh vân và cụm sao tiêu biểu",
+    "dsoNote": "Bảng chỉ liệt kê các thiên thể tiêu biểu. Bật \"Thiên thể sâu\" trong mục Hiển thị → Mở rộng để thấy đủ {n} thiên thể trên bầu trời; bấm vào từng thiên thể để xem số liệu.",
+    "cometTitle": "Sao chổi tuần hoàn tiêu biểu",
+    "years": "{v} năm",
+    "col": {
+      "designation": "Định danh",
+      "nameEn": "Tên quốc tế",
+      "nameVi": "Tên tiếng Việt",
+      "type": "Loại",
+      "ra": "α (J2000)",
+      "dec": "δ (J2000)",
+      "mag": "Cấp sao V",
+      "size": "Kích thước",
+      "distance": "Khoảng cách",
+      "comet": "Sao chổi",
+      "period": "Chu kỳ",
+      "q": "q (AU)",
+      "e": "e",
+      "i": "i",
+      "last": "Cận điểm gần nhất",
+      "next": "Cận điểm kế tiếp",
+      "note": "Ghi chú"
+    },
+    "sources": [
+      "**Ký hiệu:** \\(q\\) là khoảng cách cận điểm (đơn vị thiên văn), \\(e\\) là tâm sai, \\(i\\) là độ nghiêng quỹ đạo so với mặt phẳng hoàng đạo. Sao chổi chuyển động nhanh trên nền sao nên không được vẽ lên bầu trời mô phỏng.",
+      "**Nguồn:** tọa độ, cấp sao, kích thước của thiên thể sâu từ d3-celestial (BSD-3); khoảng cách tham khảo từ SIMBAD/NED và NASA; quỹ đạo sao chổi từ JPL Small-Body Database và IAU Minor Planet Center (làm tròn)."
     ]
   }
 }

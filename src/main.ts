@@ -80,6 +80,7 @@ function loadDialogs(): Promise<Dialogs> {
 const dialogs = {
   help: () => void loadDialogs().then((d) => d.help()),
   about: () => void loadDialogs().then((d) => d.about()),
+  catalog: () => void loadDialogs().then((d) => d.catalog()),
   isOpen: () => dialogsMod?.isOpen() ?? false,
 };
 
@@ -253,6 +254,7 @@ for (const p of panelDefs) {
 const panelRoving = rovingTabs(panelTabs, (tab) => selectPanel(tab.dataset.panel!, false));
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
+window.addEventListener('open-catalog', () => dialogs.catalog());
 // Chữ ký CLB và liên kết DUY NHẤT về trang CLB (AGENTS.md › Brand).
 const footer = h(
   'footer',
@@ -260,6 +262,7 @@ const footer = h(
   h('p', { class: 'site-footer__sig' }, h('strong', { text: t('app.signature') }), ` · ${t('app.slogan')}`),
   h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
   h('p', { class: 'site-footer__club' }, h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗` })),
+  h('p', { class: 'site-footer__links' }, h('button', { type: 'button', class: 'link-btn', text: t('app.catalogLink'), onclick: () => dialogs.catalog() })),
 );
 
 // ---------------------------------------------------------------- Chế độ trình chiếu (spec K6, K8)

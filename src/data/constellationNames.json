@@ -1,0 +1,442 @@
+{
+  "And": {
+    "iau": "Andromeda",
+    "hanViet": "Tiên Nữ",
+    "thuanViet": "Tiên Nữ"
+  },
+  "Ant": {
+    "iau": "Antlia",
+    "hanViet": "Tức Đồng",
+    "thuanViet": "Máy Bơm"
+  },
+  "Aps": {
+    "iau": "Apus",
+    "hanViet": "Thiên Yến",
+    "thuanViet": "Chim Trời"
+  },
+  "Aqr": {
+    "iau": "Aquarius",
+    "hanViet": "Bảo Bình",
+    "thuanViet": "Cái Bình"
+  },
+  "Aql": {
+    "iau": "Aquila",
+    "hanViet": "Thiên Ưng",
+    "thuanViet": "Đại Bàng"
+  },
+  "Ara": {
+    "iau": "Ara",
+    "hanViet": "Thiên Đàn",
+    "thuanViet": "Đàn Tế"
+  },
+  "Ari": {
+    "iau": "Aries",
+    "hanViet": "Bạch Dương",
+    "thuanViet": "Con Cừu"
+  },
+  "Aur": {
+    "iau": "Auriga",
+    "hanViet": "Ngự Phu",
+    "thuanViet": "Người Đánh Xe"
+  },
+  "Boo": {
+    "iau": "Boötes",
+    "hanViet": "Mục Phu",
+    "thuanViet": "Người Chăn Bò"
+  },
+  "Cae": {
+    "iau": "Caelum",
+    "hanViet": "Điêu Cụ",
+    "thuanViet": "Dao Khắc"
+  },
+  "Cam": {
+    "iau": "Camelopardalis",
+    "hanViet": "Lộc Báo",
+    "thuanViet": "Hươu Cao Cổ"
+  },
+  "Cnc": {
+    "iau": "Cancer",
+    "hanViet": "Cự Giải",
+    "thuanViet": "Con Cua"
+  },
+  "CVn": {
+    "iau": "Canes Venatici",
+    "hanViet": "Lạp Khuyển",
+    "thuanViet": "Chó Săn"
+  },
+  "CMa": {
+    "iau": "Canis Major",
+    "hanViet": "Đại Khuyển",
+    "thuanViet": "Chó Lớn"
+  },
+  "CMi": {
+    "iau": "Canis Minor",
+    "hanViet": "Tiểu Khuyển",
+    "thuanViet": "Chó Nhỏ"
+  },
+  "Cap": {
+    "iau": "Capricornus",
+    "hanViet": "Ma Kết",
+    "thuanViet": "Dê Biển"
+  },
+  "Car": {
+    "iau": "Carina",
+    "hanViet": "Thuyền Để",
+    "thuanViet": "Sống Thuyền"
+  },
+  "Cas": {
+    "iau": "Cassiopeia",
+    "hanViet": "Tiên Hậu",
+    "thuanViet": "Tiên Hậu, Thiên Hậu"
+  },
+  "Cen": {
+    "iau": "Centaurus",
+    "hanViet": "Bán Nhân Mã",
+    "thuanViet": "Nhân Mã"
+  },
+  "Cep": {
+    "iau": "Cepheus",
+    "hanViet": "Tiên Vương",
+    "thuanViet": "Tiên Vương"
+  },
+  "Cet": {
+    "iau": "Cetus",
+    "hanViet": "Kình Ngư",
+    "thuanViet": "Cá Voi"
+  },
+  "Cha": {
+    "iau": "Chamaeleon",
+    "hanViet": "Yển Diên, Yển Đình",
+    "thuanViet": "Tắc kè hoa"
+  },
+  "Cir": {
+    "iau": "Circinus",
+    "hanViet": "Viên Quy",
+    "thuanViet": "Com-pa"
+  },
+  "Col": {
+    "iau": "Columba",
+    "hanViet": "Thiên Cáp",
+    "thuanViet": "Bồ Câu"
+  },
+  "Com": {
+    "iau": "Coma Berenices",
+    "hanViet": "Hậu Phát",
+    "thuanViet": "Tóc Tiên"
+  },
+  "CrA": {
+    "iau": "Corona Australis",
+    "hanViet": "Nam Miện",
+    "thuanViet": "Nam Miện"
+  },
+  "CrB": {
+    "iau": "Corona Borealis",
+    "hanViet": "Bắc Miện",
+    "thuanViet": "Bắc Miện"
+  },
+  "Crv": {
+    "iau": "Corvus",
+    "hanViet": "Ô Nha",
+    "thuanViet": "Con Quạ"
+  },
+  "Crt": {
+    "iau": "Crater",
+    "hanViet": "Cự Tước",
+    "thuanViet": "Chén Rượu"
+  },
+  "Cru": {
+    "iau": "Crux",
+    "hanViet": "Nam Thập Tự, Nam Thập",
+    "thuanViet": "Nam Tào"
+  },
+  "Cyg": {
+    "iau": "Cygnus",
+    "hanViet": "Thiên Nga",
+    "thuanViet": "Thiên Nga"
+  },
+  "Del": {
+    "iau": "Delphinus",
+    "hanViet": "Hải Đồn",
+    "thuanViet": "Cá Heo"
+  },
+  "Dor": {
+    "iau": "Dorado",
+    "hanViet": "Kiếm Ngư",
+    "thuanViet": "Cá Kiếm"
+  },
+  "Dra": {
+    "iau": "Draco",
+    "hanViet": "Thiên Long",
+    "thuanViet": "Con Rồng"
+  },
+  "Equ": {
+    "iau": "Equuleus",
+    "hanViet": "Tiểu Mã",
+    "thuanViet": "Ngựa Nhỏ"
+  },
+  "Eri": {
+    "iau": "Eridanus",
+    "hanViet": "Ba Giang",
+    "thuanViet": "Sông Cái"
+  },
+  "For": {
+    "iau": "Fornax",
+    "hanViet": "Thiên Lô",
+    "thuanViet": "Lò Luyện"
+  },
+  "Gem": {
+    "iau": "Gemini",
+    "hanViet": "Song Tử",
+    "thuanViet": "Song Sinh"
+  },
+  "Gru": {
+    "iau": "Grus",
+    "hanViet": "Thiên Hạc",
+    "thuanViet": "Thiên Hạc"
+  },
+  "Her": {
+    "iau": "Hercules",
+    "hanViet": "Vũ Tiên",
+    "thuanViet": "Vũ Tiên"
+  },
+  "Hor": {
+    "iau": "Horologium",
+    "hanViet": "Thời Chung",
+    "thuanViet": "Đồng Hồ"
+  },
+  "Hya": {
+    "iau": "Hydra",
+    "hanViet": "Trường Xà",
+    "thuanViet": "Trường Xà"
+  },
+  "Hyi": {
+    "iau": "Hydrus",
+    "hanViet": "Thủy Xà",
+    "thuanViet": "Thủy Xà"
+  },
+  "Ind": {
+    "iau": "Indus",
+    "hanViet": "Ấn Đệ An",
+    "thuanViet": "Người Ấn"
+  },
+  "Lac": {
+    "iau": "Lacerta",
+    "hanViet": "Hiết Hổ",
+    "thuanViet": "Thằn Lằn"
+  },
+  "Leo": {
+    "iau": "Leo",
+    "hanViet": "Sư Tử",
+    "thuanViet": "Sư Tử"
+  },
+  "LMi": {
+    "iau": "Leo Minor",
+    "hanViet": "Tiểu Sư",
+    "thuanViet": "Sư Tử Nhỏ"
+  },
+  "Lep": {
+    "iau": "Lepus",
+    "hanViet": "Thiên Thố",
+    "thuanViet": "Con Thỏ"
+  },
+  "Lib": {
+    "iau": "Libra",
+    "hanViet": "Thiên Xứng",
+    "thuanViet": "Cái Cân"
+  },
+  "Lup": {
+    "iau": "Lupus",
+    "hanViet": "Sài Lang",
+    "thuanViet": "Chó Sói"
+  },
+  "Lyn": {
+    "iau": "Lynx",
+    "hanViet": "Thiên Miêu",
+    "thuanViet": "Mèo Rừng"
+  },
+  "Lyr": {
+    "iau": "Lyra",
+    "hanViet": "Thiên Cầm",
+    "thuanViet": "Đàn Lia"
+  },
+  "Men": {
+    "iau": "Mensa",
+    "hanViet": "Sơn Án",
+    "thuanViet": "Cái Bàn"
+  },
+  "Mic": {
+    "iau": "Microscopium",
+    "hanViet": "Hiển Vi Kính",
+    "thuanViet": "Kính Hiển Vi"
+  },
+  "Mon": {
+    "iau": "Monoceros",
+    "hanViet": "β Monocerotis",
+    "thuanViet": "Kỳ Lân"
+  },
+  "Mus": {
+    "iau": "Musca",
+    "hanViet": "Thương Dăng",
+    "thuanViet": "Con Ruồi"
+  },
+  "Nor": {
+    "iau": "Norma",
+    "hanViet": "Củ Xích",
+    "thuanViet": "Thước Thợ"
+  },
+  "Oct": {
+    "iau": "Octans",
+    "hanViet": "Nam Cực, Bát Phân Nghi",
+    "thuanViet": "Thước Bát Phân"
+  },
+  "Oph": {
+    "iau": "Ophiuchus",
+    "hanViet": "Xà Phu",
+    "thuanViet": "Người Chăn Rắn"
+  },
+  "Ori": {
+    "iau": "Orion",
+    "hanViet": "Lạp Hộ",
+    "thuanViet": "Thợ Săn"
+  },
+  "Pav": {
+    "iau": "Pavo",
+    "hanViet": "Khổng Tước",
+    "thuanViet": "Chim Công"
+  },
+  "Peg": {
+    "iau": "Pegasus",
+    "hanViet": "Phi Mã",
+    "thuanViet": "Ngựa Có Cánh"
+  },
+  "Per": {
+    "iau": "Perseus",
+    "hanViet": "Anh Tiên",
+    "thuanViet": "Anh Tiên"
+  },
+  "Phe": {
+    "iau": "Phoenix",
+    "hanViet": "Phượng Hoàng",
+    "thuanViet": "Phượng Hoàng"
+  },
+  "Pic": {
+    "iau": "Pictor",
+    "hanViet": "Hội Giá",
+    "thuanViet": "Giá Vẽ"
+  },
+  "Psc": {
+    "iau": "Pisces",
+    "hanViet": "Song Ngư",
+    "thuanViet": "Song Ngư"
+  },
+  "PsA": {
+    "iau": "Piscis Austrinus",
+    "hanViet": "Nam Ngư",
+    "thuanViet": "Nam Ngư"
+  },
+  "Pup": {
+    "iau": "Puppis",
+    "hanViet": "Thuyền Vĩ",
+    "thuanViet": "Đuôi Thuyền"
+  },
+  "Pyx": {
+    "iau": "Pyxis",
+    "hanViet": "La Bàn",
+    "thuanViet": "La Bàn"
+  },
+  "Ret": {
+    "iau": "Reticulum",
+    "hanViet": "Võng Cổ",
+    "thuanViet": "Mắt Lưới"
+  },
+  "Sge": {
+    "iau": "Sagitta",
+    "hanViet": "Thiên Tiễn",
+    "thuanViet": "Mũi Tên"
+  },
+  "Sgr": {
+    "iau": "Sagittarius",
+    "hanViet": "Cung Thủ",
+    "thuanViet": "Cung Thủ"
+  },
+  "Sco": {
+    "iau": "Scorpius",
+    "hanViet": "Thiên Yết",
+    "thuanViet": "Bọ Cạp"
+  },
+  "Scl": {
+    "iau": "Sculptor",
+    "hanViet": "Ngọc Phu",
+    "thuanViet": "Nhà Điêu Khắc"
+  },
+  "Sct": {
+    "iau": "Scutum",
+    "hanViet": "Thuẫn Bài",
+    "thuanViet": "Cái Khiên"
+  },
+  "Ser": {
+    "iau": "Serpens",
+    "hanViet": "Cự Xà",
+    "thuanViet": "Con Rắn"
+  },
+  "Sex": {
+    "iau": "Sextans",
+    "hanViet": "Lục Phân Nghi",
+    "thuanViet": "Thước Lục Phân"
+  },
+  "Tau": {
+    "iau": "Taurus",
+    "hanViet": "Kim Ngưu",
+    "thuanViet": "Con Bò"
+  },
+  "Tel": {
+    "iau": "Telescopium",
+    "hanViet": "Viễn Vọng Kính",
+    "thuanViet": "Kính Viễn Vọng"
+  },
+  "Tri": {
+    "iau": "Triangulum",
+    "hanViet": "Tam Giác",
+    "thuanViet": "Tam Giác"
+  },
+  "TrA": {
+    "iau": "Triangulum Australe",
+    "hanViet": "Nam Tam Giác",
+    "thuanViet": "Tam Giác Phương Nam"
+  },
+  "Tuc": {
+    "iau": "Tucana",
+    "hanViet": "Đỗ Quyên",
+    "thuanViet": "Chim Mỏ Lớn"
+  },
+  "UMa": {
+    "iau": "Ursa Major",
+    "hanViet": "Đại Hùng",
+    "thuanViet": "Gấu Lớn"
+  },
+  "UMi": {
+    "iau": "Ursa Minor",
+    "hanViet": "Tiểu Hùng",
+    "thuanViet": "Gấu Nhỏ"
+  },
+  "Vel": {
+    "iau": "Vela",
+    "hanViet": "Thuyền Phàm",
+    "thuanViet": "Cánh Buồm"
+  },
+  "Vir": {
+    "iau": "Virgo",
+    "hanViet": "Xử Nữ",
+    "thuanViet": "Trinh Nữ"
+  },
+  "Vol": {
+    "iau": "Volans",
+    "hanViet": "Phi Ngư",
+    "thuanViet": "Cá Chuồn"
+  },
+  "Vul": {
+    "iau": "Vulpecula",
+    "hanViet": "Hồ Ly",
+    "thuanViet": "Con Cáo"
+  }
+}

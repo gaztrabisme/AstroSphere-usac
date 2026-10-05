@@ -106,6 +106,8 @@ export function infoCard(store: Store, actions: Actions) {
   const status = h('span', { class: 'status' });
   // Hàng trạng thái xếp dọc (nhãn trên, viên trạng thái dưới) để viên "Cận cực (không bao giờ lặn)" nằm trọn một dòng.
   const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
+  const detailsHead = h('h4', { text: t('info.details') });
+  const detailsDl = h('dl');
   const body = h(
     'div',
     { class: 'infocard__body' },
@@ -125,6 +127,9 @@ export function infoCard(store: Store, actions: Actions) {
       r.lowest.el,
       r.highest.el,
     ),
+    // Chi tiết định danh để cuối: thứ tự khái niệm đi từ tọa độ đến mọc – lặn (ux-brief §2).
+    detailsHead,
+    detailsDl,
   );
 
   for (const row of [r.ha.el, r.az.el, r.alt.el, statusRow]) bindEmphasis(row, store, actions);
@@ -241,6 +246,10 @@ export function infoCard(store: Store, actions: Actions) {
       setText(title, obj.name);
       setText(viName, obj.viName ?? '');
       setHidden(viName, !obj.viName);
+      detailsHead.hidden = detailsDl.hidden = !obj.details?.length;
+      detailsDl.replaceChildren(
+        ...(obj.details ?? []).map(([k, v]) => h('div', { class: 'kv' }, h('dt', { text: k }), h('dd', null, h('span', { class: 'kv__v', text: v })))),
+      );
       dot.style.background = obj.color;
       const kindHead = [obj.designation, obj.kind].filter(Boolean).join(' · ');
       const mag = obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : '';

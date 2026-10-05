@@ -25,4 +25,9 @@ export const COLORS = {
   angle: '#fde047',
   latitude: '#38bdf8',
   altAzGrid: '#7dd3a8',
+  // Thiên thể sâu theo nhóm (vòng tròn rỗng): hồng thiên hà, xanh ngọc tinh vân, vàng nhạt cụm sao.
+  deepSky: '#f9a8d4',
+  dsoNebula: '#5eead4',
+  dsoCluster: '#fde68a',
+  dsoOther: '#cbd5e1',
 } as const;

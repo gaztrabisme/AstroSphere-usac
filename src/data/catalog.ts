@@ -85,6 +85,24 @@ export function getCatalogStar(index: number): CatalogStar {
   };
 }
 
+/** Định danh chuẩn của sao theo HIP: "Sirius · α CMa · HIP 32349" (tên riêng theo IAU, Bayer/Flamsteed, Hipparcos). */
+export function starDesignations(hip: number): string {
+  const n = data.names[String(hip)];
+  return [n?.[0], n?.[1], `HIP ${hip}`].filter(Boolean).join(' · ');
+}
+
+/** Tên tiếng Việt của sao (nếu có) theo HIP. */
+export function starNameVi(hip: number): string {
+  const proper = data.names[String(hip)]?.[0];
+  return (proper && VI_STAR_NAMES[proper]) || '';
+}
+
+/** Mã chòm sao IAU của sao, lấy từ ký hiệu Bayer/Flamsteed ("α CMa" → "CMa"). */
+export function starConstellation(hip: number): string {
+  const desig = data.names[String(hip)]?.[1] ?? '';
+  return desig.split(' ').pop() ?? '';
+}
+
 export function catalogArrays() {
   return data;
 }

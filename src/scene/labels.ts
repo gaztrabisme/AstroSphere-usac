@@ -11,6 +11,8 @@ export type LabelGroup = Exclude<keyof LabelToggles, 'all'>;
 export interface LabelData {
   group: LabelGroup;
   hideBelowHorizon: boolean;
+  /** Nhãn dày đặc (tên chòm sao) chỉ hiện ở nửa thiên cầu quay về phía người xem để đỡ rối. */
+  hideFarSide: boolean;
   /**
    * Hạng ưu tiên tĩnh, nhỏ = quan trọng hơn: 0 số đo góc (tô sáng) · 10 hướng B/N/Đ/T · 11 thiên đỉnh, thiên cực ·
    * 20 tên vòng tròn · 25 nhãn phụ của vòng · 30 tên chòm sao · 40 + cấp sao: tên sao (sáng hơn trước).
@@ -24,7 +26,7 @@ export interface LabelData {
   cx0: number;
   cy0: number;
   /** Đối tượng mà nhãn này gọi tên (để nhãn của đối tượng đang chọn được ưu tiên). */
-  selKind: '' | 'user' | 'catalog' | 'sun';
+  selKind: '' | 'user' | 'catalog' | 'dso' | 'sun';
   selId: string;
   selIdx: number;
   /** Nhóm tô sáng liên kết mà nhãn này thuộc về ('' = không): khi nhóm đang tô sáng, nhãn được xét trước tiên. */
@@ -47,13 +49,14 @@ export interface LabelOpts {
   color?: string;
   cls?: string;
   hideBelowHorizon?: boolean;
+  hideFarSide?: boolean;
   anchor?: [number, number];
   /** Ghi đè hạng ưu tiên (mặc định theo nhóm, xem LabelData.rank). */
   rank?: number;
   /** Cấp sao (nhãn tên sao): sao sáng hơn được giữ khi chồng nhau. */
   mag?: number;
   /** Đối tượng mà nhãn gọi tên. */
-  sel?: { kind: 'user'; id: string } | { kind: 'catalog'; index: number } | { kind: 'sun' };
+  sel?: { kind: 'user'; id: string } | { kind: 'catalog'; index: number } | { kind: 'dso'; index: number } | { kind: 'sun' };
   /** Nhóm tô sáng liên kết của nhãn (vd. 'pole', 'incl'). */
   emph?: string;
   /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
@@ -82,6 +85,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
   obj.userData = {
     group,
     hideBelowHorizon: opts.hideBelowHorizon ?? true,
+    hideFarSide: opts.hideFarSide ?? false,
     rank: labelRank(group, opts),
     w: 0,
     h: 0,
@@ -89,7 +93,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     cy0: obj.center.y,
     selKind: sel ? sel.kind : '',
     selId: sel?.kind === 'user' ? sel.id : '',
-    selIdx: sel?.kind === 'catalog' ? sel.index : -1,
+    selIdx: sel?.kind === 'catalog' || sel?.kind === 'dso' ? sel.index : -1,
     emph: opts.emph ?? '',
     alts: null,
   };

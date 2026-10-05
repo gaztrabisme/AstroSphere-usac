@@ -2,8 +2,10 @@
 
 import * as THREE from 'three';
 
-export function createStarMaterial(): THREE.ShaderMaterial {
+/** ring = true: vẽ vòng tròn rỗng (dùng cho thiên thể sâu) thay vì chấm đặc. */
+export function createStarMaterial(ring = false): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
+    defines: ring ? { RING: 1 } : {},
     uniforms: {
       uPixelRatio: { value: 1 },
       // Hệ số làm mờ cho phần nằm dưới chân trời (y < 0 trong khung chân trời); 1 = không làm mờ.
@@ -36,7 +38,11 @@ export function createStarMaterial(): THREE.ShaderMaterial {
         #include <clipping_planes_fragment>
         float d = length(gl_PointCoord - 0.5) * 2.0;
         if (d > 1.0) discard;
-        float a = 1.0 - smoothstep(0.55, 1.0, d);
+        #ifdef RING
+          float a = smoothstep(0.5, 0.64, d) * (1.0 - smoothstep(0.84, 1.0, d));
+        #else
+          float a = 1.0 - smoothstep(0.55, 1.0, d);
+        #endif
         gl_FragColor = vec4(vColor, vAlpha * a);
       }
     `,

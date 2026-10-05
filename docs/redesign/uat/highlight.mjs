@@ -157,10 +157,12 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
     vi: document.querySelector('.infocard__vi')?.textContent,
     viHidden: document.querySelector('.infocard__vi')?.hidden,
     kind: document.querySelector('.infocard__kind')?.textContent,
+    details: [...document.querySelectorAll('.infocard__body dl:last-of-type .kv')].map((r) => r.textContent).join(' | '),
   }));
   check('(5) info-card title reads "Polaris"', names.title === 'Polaris', JSON.stringify(names));
   check('(5) secondary line reads "Sao Bắc Cực"', names.vi === 'Sao Bắc Cực' && !names.viHidden, JSON.stringify(names));
-  check('(5) kind line keeps the designation and IAU constellation name', /α UMi/.test(names.kind ?? '') && /Ursa Minor/.test(names.kind ?? ''), names.kind ?? '');
+  // Sau khi gộp main của CLB: ký hiệu Bayer ở dòng loại; chòm sao (tên IAU — tên Việt) ở phần "Định danh & đặc trưng".
+  check('(5) kind line keeps the designation; details give the IAU constellation name', /α UMi/.test(names.kind ?? '') && /Ursa Minor — Tiểu Hùng/.test(names.details ?? ''), `${names.kind} || ${names.details}`);
 
   // (6) Bảng Sao: ô chọn mẫu hiện "Ursa Major"
   // Máy tính: bốn bảng nằm cạnh nhau (thanh thẻ chỉ có trên điện thoại) — cuộn tới bảng Sao.
@@ -172,8 +174,11 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   });
   check('(6) template select shows "Ursa Major"', tpl.selected === 'Ursa Major' && tpl.options.includes('Crux') && tpl.options.includes('Orion'), JSON.stringify(tpl.options.slice(0, 5)));
   check('(6) description puts the Vietnamese name second', /^Ursa Major — Đại Hùng \(Gấu Lớn\)\./.test(tpl.note ?? ''), tpl.note ?? '');
-  const labels = await page.evaluate(() => [...document.querySelectorAll('.lbl--constellation, .lbl--star')].map((l) => l.textContent));
-  check('3D labels use IAU / international names', labels.includes('Ursa Major') && labels.includes('Orion') && labels.includes('Polaris') && !labels.some((l) => /Bắc Cực|Đại Hùng|Thợ Săn/.test(l)), labels.slice(0, 12).join(', '));
+  // Mặc định (main của CLB) không thêm sẵn chòm mẫu: thêm Ursa Major và Ursa Minor để kiểm tra thẻ chòm.
+  await page.evaluate(() => { window.__app.actions.addConstellation('UMa'); window.__app.actions.addConstellation('UMi'); });
+  await page.waitForTimeout(300);
+  const labels = await page.evaluate(() => [...document.querySelectorAll('.lbl--constellation, .lbl--star, .lbl--catalog')].map((l) => l.textContent));
+  check('3D labels use IAU / international names', labels.includes('Ursa Major') && labels.includes('Polaris') && !labels.some((l) => /Bắc Cực|Đại Hùng|Thợ Săn/.test(l)), labels.slice(0, 12).join(', '));
   const chips = await page.locator('.figure-chip').allTextContents();
   check('figure chips use IAU names', chips.some((c) => c.startsWith('Ursa Major')) && chips.some((c) => c.startsWith('Ursa Minor')), chips.join(' | '));
   await page.screenshot({ path: `${SHOTS}names-1440.png` });

@@ -56,6 +56,7 @@ export const DISPLAY_GROUPS: readonly { id: string; toggles: readonly [ToggleKey
       ['ecliptic', COLORS.ecliptic],
       ['galactic', COLORS.galactic],
       ['sun', COLORS.sun],
+      ['deepSky', COLORS.deepSky],
     ],
   },
   { id: 'labels', toggles: [] },
@@ -136,6 +137,7 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
       h('div', { class: 'field' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
       h('div', { class: 'chips' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
       sunInfo,
+      h('div', { class: 'row' }, button(t('panel.display.openCatalog'), () => window.dispatchEvent(new Event('open-catalog')), { cls: 'btn--small btn--ghost', title: t('panel.display.openCatalogTip') })),
     ],
     labels: [h('div', { class: 'checks' }, master.el, h('div', { class: 'checks checks--indent' }, ...labelItems))],
   };

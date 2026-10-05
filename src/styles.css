@@ -479,6 +479,16 @@ body.learn-open .layout {
   opacity: 0.95;
 }
 
+.lbl--allsky {
+  font-size: 11px;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #8fa7d6;
+  opacity: 0.8;
+}
+
 .lbl--angle {
   font-size: calc(12px * var(--lbl-k, 1));
   font-weight: 650;
@@ -2122,4 +2132,86 @@ body.present .kv__note {
 .is-linked .data__k,
 .is-linked > dt {
   color: var(--text);
+}
+
+/* ------------------------------------------------------------------ Thiên thể sâu & bảng tra cứu */
+.lbl--dso {
+  font-size: 10.5px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.dialog--wide {
+  width: min(1100px, calc(100vw - 24px));
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.data-table td.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.data-table a,
+.link-btn {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.data-table a {
+  white-space: nowrap;
+}
+
+.data-table a:hover,
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.site-footer__links {
+  margin-top: var(--space-1);
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  cursor: pointer;
 }

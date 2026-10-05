@@ -5,9 +5,10 @@ import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
 import { cosD, eclipticToEquatorial, galacticToEquatorial, sinD, zoneLimits } from '../astro';
 import { bvToRgb, catalogArrays, catalogIndexByHip, getCatalogStar } from '../data/catalog';
-import { loadAllFigures, type FigureMap } from '../data/constellations';
+import { constellationName, loadAllFigures, type FigureMap } from '../data/constellations';
+import { DSOS, dsoGroup } from '../data/deepSky';
 import { t } from '../i18n';
-import { sunEquatorial } from '../selection';
+import { DSO_COLORS, sunEquatorial } from '../selection';
 import type { AppState, Selection, UserStar } from '../state';
 import { eqVec, equatorialMatrix, hourFrameMatrix, type ViewKind } from './frames';
 import {
@@ -60,12 +61,15 @@ export class SkyLayer {
   private galactic = new THREE.Group();
   private catalog: THREE.Points;
   private catalogLabels = new THREE.Group();
-  /** Đường nối 88 chòm sao — dựng khi bật lần đầu (dữ liệu tải động). */
-  private allLines: THREE.LineSegments | null = null;
+  /** Đường nối và tên 88 chòm sao — dựng khi bật lần đầu (dữ liệu tải động), nằm trong nhóm allSky. */
+  private allSky = new THREE.Group();
+  /** Nhãn tên 88 chòm sao (mỗi nhãn trong một nhóm riêng để ẩn khi chòm đó đã được thêm làm mẫu màu). */
+  private allNames = new Map<string, THREE.Group>();
   private allLinesRequested = false;
-  private lastLinesOn = false;
   /** Gọi khi một phần cảnh thay đổi bất đồng bộ (dữ liệu tải động tới) để khung nhìn vẽ lại. */
   onAsyncChange: (() => void) | null = null;
+  private deepSky = new THREE.Group();
+  private dsoVecs: THREE.Vector3[] = [];
   private user = new THREE.Group();
   private sun = new THREE.Group();
   private sunPath: Line2;
@@ -73,6 +77,7 @@ export class SkyLayer {
   private sunKey = '';
   private selRing: THREE.Sprite;
   private starMaterial = createStarMaterial();
+  private dsoMaterial = createStarMaterial(true);
   private lastStars: UserStar[] | null = null;
   private lastFigures: AppState['figures'] | null = null;
   private userVecs: { id: string; v: THREE.Vector3; mag: number }[] = [];
@@ -183,7 +188,10 @@ export class SkyLayer {
     this.catalog.renderOrder = 1;
     this.rot.add(this.catalog);
     this.rot.add(this.catalogLabels);
+    this.buildDeepSky();
 
+    this.allSky.visible = false;
+    this.rot.add(this.allSky);
 
     this.rot.add(this.user);
 
@@ -222,8 +230,19 @@ export class SkyLayer {
     }
     const lines = thinSegments(seg, '#6b8cc7', 0.32);
     lines.userData.tip = 'constellationLines';
-    this.allLines = lines;
-    this.rot.add(lines);
+    this.allSky.add(lines);
+    const c = new THREE.Vector3();
+    for (const [abbr, fig] of Object.entries(figs)) {
+      c.set(0, 0, 0);
+      for (const [ra, dec] of fig.stars) c.add(eqVec(ra, dec));
+      const holder = new THREE.Group();
+      const lbl = makeLabel(constellationName(abbr), 'stars', { cls: 'lbl--constellation lbl--allsky', rank: 30, hideFarSide: true });
+      lbl.position.copy(c.normalize().multiplyScalar(R * 1.01));
+      holder.add(lbl);
+      holder.visible = !(this.lastFigures ?? []).some((f) => f.templateId === abbr);
+      this.allSky.add(holder);
+      this.allNames.set(abbr, holder);
+    }
     this.structureVersion++;
   }
 
@@ -299,6 +318,35 @@ export class SkyLayer {
     lbl2.position.copy(eqVec(p.ra, p.dec, R * 1.03));
     this.galactic.add(lbl2);
     this.rot.add(this.galactic);
+  }
+
+  /** Thiên thể sâu: vòng tròn rỗng theo màu loại (thiên hà / tinh vân / cụm sao); gắn nhãn định danh cho thiên thể tiêu biểu. */
+  private buildDeepSky(): void {
+    const n = DSOS.length;
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const size = new Float32Array(n);
+    const alpha = new Float32Array(n);
+    const c = new THREE.Color();
+    DSOS.forEach((o, i) => {
+      const v = eqVec(o.ra, o.dec, this.R * 0.998);
+      this.dsoVecs.push(v);
+      pos.set([v.x, v.y, v.z], i * 3);
+      c.set(DSO_COLORS[dsoGroup(o.type)]);
+      col.set([c.r, c.g, c.b], i * 3);
+      size[i] = o.featured ? 13 : 10;
+      alpha[i] = o.featured ? 0.95 : 0.7;
+      if (o.featured) {
+        const lbl = makeLabel(o.id, 'stars', { cls: 'lbl--dso', color: DSO_COLORS[dsoGroup(o.type)], anchor: [-0.25, 0.5], mag: o.mag, sel: { kind: 'dso', index: i } });
+        lbl.position.copy(v);
+        this.deepSky.add(lbl);
+      }
+    });
+    const pts = makeStarPoints({ positions: pos, colors: col, sizes: size, alphas: alpha }, this.dsoMaterial);
+    pts.renderOrder = 1;
+    this.deepSky.add(pts);
+    this.deepSky.visible = false;
+    this.rot.add(this.deepSky);
   }
 
   private rebuildZones(lat: number): void {
@@ -403,6 +451,7 @@ export class SkyLayer {
       lines.userData.tip = 'figure';
       this.user.add(lines);
     }
+    for (const [abbr, holder] of this.allNames) holder.visible = !s.figures.some((f) => f.templateId === abbr);
     this.rebuildCatalogLabels();
   }
 
@@ -410,11 +459,11 @@ export class SkyLayer {
     this.structureVersion++;
     for (const child of [...this.catalogLabels.children]) this.catalogLabels.remove(child);
     const cat = catalogArrays();
-    for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.0; i++) {
+    for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.6; i++) {
       if (this.catalogHidden.has(i)) continue;
       const st = getCatalogStar(i);
       if (!st.shortName) continue;
-      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5], mag: cat.mag[i], sel: { kind: 'catalog', index: i } });
+      const lbl = makeLabel(st.shortName, 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5], mag: cat.mag[i], sel: { kind: 'catalog', index: i }, hideFarSide: true });
       lbl.position.copy(this.catalogVecs[i]);
       this.catalogLabels.add(lbl);
     }
@@ -489,7 +538,6 @@ export class SkyLayer {
       loadAllFigures().then(
         (figs) => {
           this.buildAllLines(figs);
-          this.allLines!.visible = this.lastLinesOn;
           this.onAsyncChange?.();
         },
         (err) => {
@@ -498,8 +546,8 @@ export class SkyLayer {
         },
       );
     }
-    this.lastLinesOn = tg.constellationLines;
-    if (this.allLines) this.allLines.visible = tg.constellationLines;
+    this.allSky.visible = tg.constellationLines;
+    this.deepSky.visible = tg.deepSky;
     this.sun.visible = tg.sun;
     if (tg.sun) this.updateSun(s);
     this.sunPath.visible = tg.sun;
@@ -522,6 +570,7 @@ export class SkyLayer {
     const sel = s.selected;
     if (!sel) return null;
     if (sel.kind === 'user') return this.userVecs.find((u) => u.id === sel.id)?.v ?? null;
+    if (sel.kind === 'dso') return s.toggles.deepSky ? (this.dsoVecs[sel.index] ?? null) : null;
     if (sel.kind === 'catalog') return s.toggles.catalog ? (this.catalogVecs[sel.index] ?? null) : null;
     return s.toggles.sun ? this.sunVec : null;
   }
@@ -533,7 +582,7 @@ export class SkyLayer {
    */
   pickBest(s: AppState, score: (local: THREE.Vector3, tolerancePx: number, priority: number) => number): NonNullable<Selection> | null {
     let best = Infinity;
-    let kind: 'user' | 'sun' | 'catalog' | null = null;
+    let kind: 'user' | 'sun' | 'catalog' | 'dso' | null = null;
     let which = -1;
     for (let i = 0; i < this.userVecs.length; i++) {
       const sc = score(this.userVecs[i].v, 12, 2);
@@ -548,6 +597,16 @@ export class SkyLayer {
       if (sc < best) {
         best = sc;
         kind = 'sun';
+      }
+    }
+    if (s.toggles.deepSky) {
+      for (let i = 0; i < this.dsoVecs.length; i++) {
+        const sc = score(this.dsoVecs[i], 9, 1.5);
+        if (sc < best) {
+          best = sc;
+          kind = 'dso';
+          which = i;
+        }
       }
     }
     if (s.toggles.catalog) {
@@ -565,6 +624,7 @@ export class SkyLayer {
     if (kind === 'user') return { kind: 'user', id: this.userVecs[which].id };
     if (kind === 'sun') return { kind: 'sun' };
     if (kind === 'catalog') return { kind: 'catalog', index: which };
+    if (kind === 'dso') return { kind: 'dso', index: which };
     return null;
   }
 
@@ -586,11 +646,13 @@ export class SkyLayer {
 
   setPixelRatio(pr: number): void {
     this.starMaterial.uniforms.uPixelRatio.value = pr;
+    this.dsoMaterial.uniforms.uPixelRatio.value = pr;
   }
 
   /** Làm mờ sao nằm dưới chân trời (chỉ dùng ở khung chân trời). */
   setBelowDim(f: number): void {
     this.starMaterial.uniforms.uBelowDim.value = f;
+    this.dsoMaterial.uniforms.uBelowDim.value = f;
   }
 
   /** Các đối tượng hiển thị chú thích khi rê chuột. */

@@ -1,6 +1,7 @@
 // Khung nhìn phải: giản đồ chân trời — người quan sát đứng ở tâm mặt phẳng chân trời.
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { equatorialToHorizontal, sunPosition } from '../astro';
 import { sunJd } from '../selection';
 import { lstOf, type AppState, type Store } from '../state';
@@ -86,7 +87,64 @@ export class HorizonDiagramView extends View {
     this.dome.userData.tip = 'skyDome';
     this.scene.add(this.dome);
 
+    // Ánh sáng cho mô hình 3D người quan sát (các đối tượng khác dùng vật liệu không chịu sáng)
+    this.scene.add(new THREE.HemisphereLight('#dbe6ff', '#2f4a2f', 2.2));
+    // Đèn chính gắn theo camera: nhìn từ hướng nào mô hình cũng được chiếu sáng phía trước.
+    const key = new THREE.DirectionalLight('#ffffff', 2.4);
+    key.position.set(0.4, 0.8, 1);
+    this.camera.add(key);
+    this.scene.add(this.camera);
+    this.loadObserverModel();
+
     this.update(store.state);
+  }
+
+  /**
+   * Thay hình nhân mặc định bằng mô hình glTF (public/models/usui-chan.glb) nếu có.
+   * Mô hình được co giãn về chiều cao cố định, đặt chân lên mặt phẳng chân trời; hướng mặt do onUpdate đặt
+   * (luôn nhìn về thiên cực nằm trên chân trời).
+   */
+  private loadObserverModel(): void {
+    const url = `${import.meta.env.BASE_URL}models/usui-chan.glb`;
+    new GLTFLoader().load(
+      url,
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const height = this.R * 0.2;
+        const k = height / Math.max(size.y, 1e-6);
+        model.scale.setScalar(k);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.set(-center.x * k, -box.min.y * k, -center.z * k);
+        // Nâng nhẹ khỏi mặt đất để đáy bệ không trùng mặt phẳng chân trời (tránh nhấp nháy z-fighting).
+        model.position.y += this.R * 0.004;
+        model.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.userData.tip = 'observer';
+          // Lưới có xương (VRoid) có khối bao sai so với tư thế thật → bị loại khỏi khung nhìn ở vài góc. Tắt cắt xén.
+          mesh.frustumCulled = false;
+          // VRoid xuất mọi vật liệu ở chế độ BLEND (trong suốt, không ghi chiều sâu) nên khi xoay, các phần
+          // tóc/mặt/thân đè nhau sai thứ tự. Chuyển sang chế độ cắt alpha: vẽ như vật đặc, vẫn giữ viền tóc, mi mắt.
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) {
+            if (!m.transparent) continue;
+            m.transparent = false;
+            m.alphaTest = Math.max(m.alphaTest, 0.5);
+            m.depthWrite = true;
+            m.needsUpdate = true;
+          }
+        });
+        this.person.clear();
+        this.person.add(model);
+        this.dirty = true;
+      },
+      undefined,
+      () => {
+        /* Chưa có mô hình: giữ hình nhân đơn giản */
+      },
+    );
   }
 
   protected clipBelow(s: AppState): boolean {
@@ -94,6 +152,9 @@ export class HorizonDiagramView extends View {
   }
 
   protected onUpdate(s: AppState, _emphasis: string | null = null): void {
+    // Mô hình glTF mặc định nhìn về +Z (Nam). Quay 180° để nhìn về Bắc (−Z) — nơi có thiên cực Bắc — khi ở Bắc bán cầu;
+    // ở Nam bán cầu giữ hướng Nam để nhìn về thiên cực Nam.
+    this.person.rotation.y = s.lat >= 0 ? Math.PI : 0;
     const under = s.toggles.underside;
     const planes = under ? this.noPlanes : this.clipPlanes;
     if (this.renderer.clippingPlanes !== planes) this.renderer.clippingPlanes = planes;
@@ -135,6 +196,8 @@ export class HorizonDiagramView extends View {
   /** Góc nhìn của người quan sát: đứng ở tâm, nhìn quanh bầu trời. */
   setFirstPerson(on: boolean): void {
     this.firstPerson = on;
+    // Ở góc nhìn người quan sát, camera nằm đúng vị trí mắt nên ẩn mô hình đi.
+    this.person.visible = !on;
     const R = this.R;
     if (on) {
       const eye = new THREE.Vector3(0, R * 0.06, 0);
@@ -162,7 +225,15 @@ export class HorizonDiagramView extends View {
   }
 
   protected hoverTargets(): THREE.Object3D[] {
-    return [...super.hoverTargets(), this.ground, this.dome, ...this.person.children];
+    return [...super.hoverTargets(), this.ground, this.dome, ...this.personMeshes()];
+  }
+
+  private personMeshes(): THREE.Object3D[] {
+    const out: THREE.Object3D[] = [];
+    this.person.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) out.push(o);
+    });
+    return out;
   }
 
   resetCamera(): void {
