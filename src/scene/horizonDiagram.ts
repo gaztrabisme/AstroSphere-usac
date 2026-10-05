@@ -72,7 +72,7 @@ export class HorizonDiagramView extends View {
       for (let a = 0; a <= 360; a += 4) pts.push(horVec(0, a, rr).setY(0.01));
       polylineToSegments(pts, seg);
     }
-    const marks = thinSegments(seg, '#a7d7a9', 0.32);
+    const marks = thinSegments(seg, COLORS.groundMark, 0.32);
     this.scene.add(marks);
 
     // Người quan sát (hình nhân đơn giản)

@@ -5,9 +5,14 @@ export const COLORS = {
   equator: '#ffd54f',
   axis: '#4f9dff',
   horizon: '#4caf50',
-  // Mặt đất: cùng họ xanh lá của chân trời, nhưng độ bão hòa (OKLCH C 0,105 → 0,063) và độ đục (0,92 → 0,55) giảm
-  // ~40 % để đĩa không nặng hơn bài học — viền chân trời (horizon) vẫn sáng (review-3 B2).
-  ground: '#37593b',
+  // Mặt đất: xám lục tối (fix-1 #5). Vẽ ở độ đục 0,55 trên nền trời đêm, màu hiện trên màn hình là #1b241e —
+  // OKLCH L 0,25 · C 0,017 (trước: #213529, L 0,31 · C 0,034; bản thân mẫu #37593b có C 0,063). Màu lục mạnh chỉ
+  // còn ở viền chân trời (horizon): đĩa là nền, không phải tín hiệu. Mẫu tự thân: L 0,33 · C 0,039 (≤ 0,04, vẫn thấy
+  // ở góc nhìn người quan sát, độ đục 1).
+  ground: '#2d3b27',
+  // Vạch trên mặt đất (trục B–N, Đ–T, vạch phương vị, vòng đồng tâm): xám trung tính hơi lục (C 0,018), không còn
+  // lục nhạt #a7d7a9 (C 0,081) — lục chỉ có nghĩa "chân trời".
+  groundMark: '#9aa59c',
   hourCircle: '#a3a3a3',
   meridian: '#e2e8f0',
   zenith: '#ffffff',

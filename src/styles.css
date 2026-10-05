@@ -3642,3 +3642,10 @@ body.present .guide-tip {
     margin: -8px -8px 0 0;
   }
 }
+
+/* ===== Fix round 1: scene ===== */
+/* fix-1 #5: chữ hướng B/N/Đ/T trắng trung tính — màu lục chỉ còn nghĩa "đường chân trời" (viền đĩa). Áp cho cả hình
+   minh họa trong Codex (cùng biến). */
+:root {
+  --scene-dir: var(--text);
+}
