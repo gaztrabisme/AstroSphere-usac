@@ -9,6 +9,8 @@ import { atPlace, goToPlace, QUICK_PLACES, zones } from '../scenario';
 import { COLORS } from '../scene/colors';
 import type { Actions, AppState, Store } from '../state';
 import { checkbox, guide, h, setText } from './dom';
+import { HINT_KEY, hintSeen } from './firstHint';
+import { writeJson } from './storage';
 
 /** Hai mức tốc độ cho người mới (giây cho một ngày thiên văn). */
 export const SIMPLE_RATES = { slow: 60, fast: 15 } as const;
@@ -18,8 +20,27 @@ export const speedOf = (rate: number): SimpleSpeed => (rate >= (SIMPLE_RATES.slo
 
 const ZONE_KEYS = ['zoneCircumpolar', 'zoneRiseSet', 'zoneNeverRise'] as const;
 
-export function simpleControls(store: Store, actions: Actions): { el: HTMLElement } {
+/** Hai lựa chọn có trỏ tới cùng một thiên thể không (so theo giá trị, không theo tham chiếu). */
+export function sameSelection(a: AppState['selected'], b: AppState['selected']): boolean {
+  if (!a || !b || a.kind !== b.kind) return a === b;
+  if (a.kind === 'user' && b.kind === 'user') return a.id === b.id;
+  if ((a.kind === 'catalog' || a.kind === 'dso') && (b.kind === 'catalog' || b.kind === 'dso')) return a.index === b.index;
+  return true; // { kind: 'sun' }
+}
+
+/**
+ * `el`: dải điều khiển. `dock`: chỗ trống dưới nhóm 3, nơi main.ts đặt thẻ thông tin trên màn hình rộng (review-1 #1:
+ * thẻ không còn nổi đè lên nút công cụ của khung nhìn).
+ */
+export function simpleControls(store: Store, actions: Actions): { el: HTMLElement; dock: HTMLElement } {
   const ctx = { store, actions };
+
+  // ------------------------------------------------ 0. Lời mời hành động đầu tiên (review-1 #4)
+  // Cỡ chữ thân, màu chữ chính, ở đầu dải: "bấm vào một ngôi sao". Lời chào của Usui-chan THAY THẾ lời mời này
+  // (CSS ẩn nó khi body.guide-hello-open), không che nó. Ẩn hẳn sau lần đầu người dùng chọn một ngôi sao; lần sau
+  // vào trang không hiện nếu người dùng đã từng kéo hoặc bấm vào khung nhìn (cùng khóa với dòng gợi ý, firstHint.ts).
+  const cue = h('p', { class: 'simple__cue', id: 'simple-cue', text: t('simple.cue'), hidden: hintSeen() });
+  const startSel = store.state.selected;
 
   // ------------------------------------------------ 1. Bạn đứng ở đâu?
   const chips = QUICK_PLACES.map((p) => ({
@@ -105,6 +126,7 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
     h('li', null, h('span', { class: 'swatch swatch--zone', style: { background: COLORS.riseSet }, 'aria-hidden': 'true' }), t('visibility.riseSet')),
     h('li', null, h('span', { class: 'swatch swatch--zone', style: { background: COLORS.neverRise }, 'aria-hidden': 'true' }), t('visibility.neverRise')),
   );
+  const dock = h('div', { class: 'simple__dock' });
   const layers = h(
     'fieldset',
     { class: 'simple__group' },
@@ -117,11 +139,14 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
     'section',
     { class: 'simple', id: 'simple-controls', 'aria-labelledby': 'simple-title' },
     h('h2', { class: 'sr-only', id: 'simple-title', text: t('simple.title') }),
+    cue,
     where,
     time,
     layers,
-    // Bước tiếp theo rõ ràng (ux: viết cho cả nhiệm vụ): việc nên thử, và nơi tìm phần còn lại.
-    h('div', { class: 'simple__next' }, h('p', { text: t('simple.tryStar') }), h('p', { class: 'simple__more', text: t('simple.more') })),
+    dock,
+    // Bước tiếp theo (ux: viết cho cả nhiệm vụ): nơi tìm phần còn lại. Lời mời "bấm vào một ngôi sao" đã ở đầu dải,
+    // nên chân dải chỉ còn một dòng (một lời nhắc, không phải ba).
+    h('div', { class: 'simple__next' }, h('p', { class: 'simple__more', text: t('simple.more') })),
   );
 
   // ------------------------------------------------ Đồng bộ từ store (chỉ ghi khi nguồn đổi)
@@ -158,10 +183,15 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
     if (s.playing !== prev.playing) syncPlay(s.playing);
     if (s.rate !== prev.rate) syncRate(s.rate);
     if (s.toggles !== prev.toggles) syncLayers(s);
+    // Người dùng đã chọn một thiên thể khác lựa chọn mặc định: lời mời đã làm xong việc của nó.
+    if (!cue.hidden && s.selected !== prev.selected && s.selected && !sameSelection(s.selected, startSel)) {
+      cue.hidden = true;
+      writeJson(HINT_KEY, true);
+    }
   });
   syncPlace(store.state);
   syncPlay(store.state.playing);
   syncRate(store.state.rate);
   syncLayers(store.state);
-  return { el };
+  return { el, dock };
 }

@@ -204,9 +204,11 @@ const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
 // Thứ tự đọc = thứ tự khái niệm: giản đồ chân trời (điều bạn thấy) trước, thiên cầu (vì sao như vậy) sau.
 const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el, guideUi.el);
 
-// Điện thoại: thẻ thông tin nổi ở đáy khung nhìn phải nằm trên chân khung (dòng cốt lõi + gợi ý).
+// Điện thoại: thẻ thông tin nổi ở đáy khung nhìn phải nằm trên chân khung (dòng cốt lõi + gợi ý); lời chào dạng
+// dải mảnh của Usui-chan nằm trên thẻ (--card-h), không che dòng φ hay thẻ đang chọn (review-1 #3).
 if (typeof ResizeObserver !== 'undefined') {
   new ResizeObserver(() => views.style.setProperty('--foot-h', `${horizonFoot.offsetHeight}px`)).observe(horizonFoot);
+  new ResizeObserver(() => views.style.setProperty('--card-h', `${card.el.offsetHeight}px`)).observe(card.el);
 }
 
 const viewTab = (key: 'sphere' | 'horizon') =>
@@ -446,6 +448,24 @@ bindUiMode(store, (mode) => {
   loop.markUiDirty();
 });
 const isSimple = () => store.state.uiMode === 'simple';
+
+/**
+ * Cơ bản trên màn hình rộng (review-1 #1): thẻ thông tin vào chỗ trống dưới nhóm 3 của dải điều khiển, thay vì nổi
+ * trên giản đồ và đè lên nút "Nhìn từ người quan sát / Góc nhìn mặc định". Cùng MỘT phần tử, chỉ đổi chỗ trong DOM
+ * (không nhân đôi trạng thái). Đầy đủ và điện thoại: thẻ ở lại trong khung nhìn như trước.
+ */
+const wideQuery = window.matchMedia?.('(min-width: 901px)');
+function placeCard() {
+  const dock = isSimple() && (wideQuery?.matches ?? true);
+  card.el.classList.toggle('infocard--docked', dock);
+  if (dock && card.el.parentElement !== simple.dock) simple.dock.append(card.el);
+  else if (!dock && card.el.parentElement !== views) views.insertBefore(card.el, guideUi.el);
+}
+placeCard();
+store.subscribe((s, prev) => {
+  if (s.uiMode !== prev.uiMode) placeCard();
+});
+wideQuery?.addEventListener?.('change', placeCard);
 
 // Hook gỡ lỗi/đo hiệu năng — chỉ có ở chế độ phát triển.
 if (import.meta.env.DEV) {

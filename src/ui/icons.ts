@@ -1,0 +1,22 @@
+// Biểu tượng nét đơn giản vẽ bằng SVG nội tuyến (không phụ thuộc phông: Arial không có ký hiệu cuốn sách).
+// Màu theo `currentColor`, nên biểu tượng đổi màu cùng chữ của nút.
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Cuốn sách mở (nút Codex, fix-1 #8): hai trang và gáy sách, nét 1,6 px trên khung 16 × 16. */
+export function bookIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.6');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', 'M8 4.2C6.6 3 4.5 2.6 1.8 2.8v9.6c2.7-.2 4.8.2 6.2 1.4 1.4-1.2 3.5-1.6 6.2-1.4V2.8C11.5 2.6 9.4 3 8 4.2zM8 4.2v9.6');
+  svg.append(path);
+  return svg;
+}

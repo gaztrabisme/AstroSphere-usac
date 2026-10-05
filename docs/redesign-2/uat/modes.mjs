@@ -102,6 +102,29 @@ try {
   };
   check('kept: φ / pole caption, Đặt lại, Trợ giúp, Giới thiệu, simple controls', Object.values(kept).every(Boolean), JSON.stringify(kept));
 
+  // fix-1 #4: lời mời hành động đầu tiên ở đầu dải, trước bước 1 (khóa lời chào đặt sẵn: không có lời chào).
+  const cue = await page.evaluate(() => {
+    const c = document.querySelector('.simple__cue');
+    const cs = getComputedStyle(c);
+    const r = c.getBoundingClientRect();
+    const step1 = document.querySelector('.simple legend').getBoundingClientRect();
+    return { shown: !c.hidden && cs.display !== 'none', text: c.textContent, size: parseFloat(cs.fontSize), color: cs.color, before: r.bottom <= step1.top };
+  });
+  check('fix-1 #4: the first-action cue "Bấm vào một ngôi sao…" is the first thing in the panel, body size, white', cue.shown && cue.before && cue.size >= 15 && cue.color === 'rgb(242, 242, 242)' && /Bấm vào một ngôi sao/.test(cue.text), JSON.stringify(cue));
+
+  // fix-1 #8: nhãn "Chế độ" chỉ còn là tên truy cập; nút Codex có biểu tượng cuốn sách; huy hiệu không màu cam.
+  const head = await page.evaluate(() => {
+    const lbl = document.querySelector('.modeswitch__label');
+    const badge = document.querySelector('.codex-badge');
+    return {
+      labelW: lbl.getBoundingClientRect().width,
+      groupName: document.getElementById(document.querySelector('.modeswitch').getAttribute('aria-labelledby'))?.textContent,
+      svg: !!document.querySelector('.btn--codex .btn__icon svg'),
+      badgeBg: getComputedStyle(badge).backgroundColor,
+    };
+  });
+  check('fix-1 #8: no visible "Chế độ" prefix (still the group\'s accessible name); Codex shows a book icon; the badge is not orange', head.labelW <= 1 && head.groupName === 'Chế độ' && head.svg && head.badgeBg !== 'rgb(242, 101, 34)', JSON.stringify(head));
+
   await page.screenshot({ path: `${SHOTS}simple-1440.png` });
 
   // Khung bị ẩn không vẽ: thiên cầu 0 lần vẽ khi đang chạy, giản đồ chân trời có vẽ.
@@ -209,6 +232,27 @@ try {
     JSON.stringify({ target, ...cardInfo }),
   );
 
+  // fix-1 #1: ở Cơ bản trên màn hình rộng, thẻ nằm TRONG dải điều khiển (dưới nhóm 3), không nổi trên giản đồ.
+  const dock = await page.evaluate(() => {
+    const card = document.querySelector('.infocard');
+    const cr = card.getBoundingClientRect();
+    const hit = (r) => cr.left < r.right && r.left < cr.right && cr.top < r.bottom && r.top < cr.bottom;
+    const btns = [...card.querySelectorAll('.infocard__head .icon-btn')].map((b) => b.getBoundingClientRect());
+    const step3 = [...document.querySelectorAll('.simple__group')][2].getBoundingClientRect();
+    return {
+      docked: !!card.closest('#simple-controls .simple__dock'),
+      toolsHit: [...document.querySelectorAll('.view-tool')].filter((b) => hit(b.getBoundingClientRect())).length,
+      viewHit: hit(document.querySelector('#view-horizon').getBoundingClientRect()),
+      belowStep3: cr.top >= step3.bottom,
+      bg: getComputedStyle(card).backgroundColor,
+      gap: btns.length === 2 ? Math.round(btns[1].left - btns[0].right) : -1,
+      cue: document.querySelector('.simple__cue').hidden,
+    };
+  });
+  check('fix-1 #1: the selection card is docked in the panel under step 3 and overlaps no .view-tool button or the view', dock.docked && dock.toolsHit === 0 && !dock.viewHit && dock.belowStep3, JSON.stringify(dock));
+  check('fix-1 #1: the card is opaque and its — and × controls are ≥ 8 px apart', /^rgb\(/.test(dock.bg) && dock.gap >= 8, `${dock.bg}, gap ${dock.gap}px`);
+  check('fix-1 #4: the cue hides after the first star selection', dock.cue === true);
+
   // Phím F (trình chiếu) và L (Ôn tập) không làm gì ở Cơ bản.
   await page.locator('body').click({ position: { x: 5, y: 890 } });
   await page.keyboard.press('f');
@@ -244,6 +288,12 @@ try {
   await page.waitForTimeout(800);
   const reloaded = { body: await page.evaluate(() => document.body.className), sphere: await visible(page, '#view-sphere') };
   check('after reload the page is still Full', /mode-full/.test(reloaded.body) && reloaded.sphere, JSON.stringify(reloaded));
+  // fix-1 #1: in Full the card floats in the views again, with an opaque background.
+  const fullCard = await page.evaluate(() => {
+    const card = document.querySelector('.infocard');
+    return { inViews: card.parentElement?.classList.contains('views'), docked: card.classList.contains('infocard--docked'), bg: getComputedStyle(card).backgroundColor, blur: getComputedStyle(card).backdropFilter };
+  });
+  check('fix-1 #1: Full keeps the card in the views, opaque (no see-through)', fullCard.inViews && !fullCard.docked && /^rgb\(/.test(fullCard.bg) && (fullCard.blur === 'none' || !fullCard.blur), JSON.stringify(fullCard));
   await page.screenshot({ path: `${SHOTS}full-1440.png` });
   await page.close();
 
@@ -286,6 +336,11 @@ try {
   check('375: no view-tab strip, no sphere', m.tabs === null && m.sphere === null);
   check('375: dome big on the first screen (canvas ≥ 360 px tall, φ caption above the fold)', !!m.canvas && m.canvas.h >= 360 && !!m.key && m.key.bottom <= m.innerH, JSON.stringify({ canvas: m.canvas, key: m.key }));
   check('375: every control in top bar and simple strip is ≥ 44 px tall', m.small.length === 0, JSON.stringify(m.small));
+  const phoneCard = await page.evaluate(() => ({
+    inViews: document.querySelector('.infocard').parentElement?.classList.contains('views'),
+    names: [...document.querySelectorAll('.topbar__actions button')].filter((b) => b.getClientRects().length).map((b) => b.getAttribute('aria-label') || b.textContent.trim()),
+  }));
+  check('fix-1 #1/#8, 375: the card stays a chip in the view; every icon-only top-bar button has an accessible name', phoneCard.inViews && phoneCard.names.every((n) => n && n.length > 1), JSON.stringify(phoneCard));
   await page.screenshot({ path: `${SHOTS}simple-375.png`, fullPage: true });
   await page.close();
   await phone.close();

@@ -149,7 +149,7 @@ select {
 }
 
 .brand__org {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.3px;
   color: var(--muted);
@@ -241,6 +241,10 @@ select {
   background: var(--veil);
   font-size: 12px;
   font-weight: 700;
+}
+
+.btn__icon svg {
+  display: block;
 }
 
 .btn--play {
@@ -356,7 +360,7 @@ body.learn-open .layout {
 
 .view__sub {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -392,7 +396,7 @@ body.learn-open .layout {
   border-radius: 8px;
   background: var(--label-pill-strong);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -452,7 +456,7 @@ body.learn-open .layout {
    tác lần nào) chỉ quyết định việc hiện gợi ý trên điện thoại. */
 .view__hint {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--muted);
 }
@@ -687,11 +691,11 @@ body.learn-open .layout {
   font-size: 13px;
   overflow: auto;
   padding: 10px 12px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  /* Nền đặc (review-1 #1): chữ và nút của khung nhìn phía sau không còn lộ qua thẻ. */
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-pop);
-  backdrop-filter: blur(4px);
 }
 
 .infocard__head {
@@ -715,6 +719,11 @@ body.learn-open .layout {
   flex: 1;
   margin: 0;
   font-size: 15px;
+}
+
+/* Thu gọn (–) và đóng (×) cách nhau rõ (review-1 #1): 8 px khoảng cách đầu + 8 px lề = 16 px giữa hai vùng bấm. */
+.infocard__close {
+  margin-left: var(--space-2);
 }
 
 /* Dòng tóm tắt "A …, h …" chỉ dùng cho thẻ thu gọn trên điện thoại (xem @media max-width 900px). */
@@ -835,7 +844,7 @@ body.learn-open .layout {
     min-width: 0;
     max-width: min(320px, calc(40% - 20px));
     padding: 6px 6px 6px 12px;
-    background: color-mix(in srgb, var(--surface-quiet) 90%, transparent);
+    background: var(--surface);
     box-shadow: none;
   }
 
@@ -1279,19 +1288,25 @@ details.sub > summary:hover .sub__title {
 .site-footer__contact,
 .site-footer__club {
   margin-top: 6px !important;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted);
 }
 
-.site-footer a {
-  color: var(--accent-hi);
-  text-decoration: none;
-  border-bottom: 1px dotted var(--accent-a46);
+/* Liên kết chân trang (review-1 E1): kiểu liên kết thường — chữ sáng, gạch chân xám; cam chỉ khi rê chuột hoặc có
+   tiêu điểm, để một dòng dài không thành thêm một mảng cam trên màn hình điện thoại. */
+.site-footer a,
+.site-footer .link-btn {
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: underline;
+  text-decoration-color: var(--border-control);
+  text-underline-offset: 3px;
 }
 
-.site-footer a:hover {
-  color: var(--text);
-  border-bottom: 1px solid var(--accent);
+.site-footer a:is(:hover, :focus-visible),
+.site-footer .link-btn:is(:hover, :focus-visible) {
+  color: var(--accent-hi);
+  text-decoration-color: currentColor;
 }
 
 /* ------------------------------------------------------------------ Chú thích nổi */
@@ -1762,7 +1777,7 @@ body.present .swatch--line {
   }
 
   .brand__org {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .brand__name {
@@ -1775,7 +1790,7 @@ body.present .swatch--line {
   }
 
   .site-footer__sig {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .formula-grid {
@@ -2314,10 +2329,15 @@ body.present .kv__note {
   background: var(--surface);
 }
 
+/* Nhãn "Chế độ" chỉ còn là tên truy cập của nhóm (review-1 #8: công tắc phân đoạn tự giải thích; chữ xám 11 px
+   không thêm gì cho mắt). */
 .modeswitch__label {
-  padding: 0 var(--space-2) 0 var(--space-1);
-  font-size: 12.5px;
-  color: var(--muted);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .modeswitch__opt {
@@ -2483,12 +2503,12 @@ body.mode-simple .simple {
 }
 
 .simple__next p {
-  margin: 0 0 var(--space-2);
+  margin: 0;
 }
 
 .simple__more {
-  color: var(--subtle);
-  font-size: 12.5px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .simple__zones {
@@ -2509,7 +2529,7 @@ body.mode-simple .simple {
   margin: var(--space-2) 0 0 var(--space-6);
   padding: 0;
   list-style: none;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -2565,42 +2585,78 @@ body.mode-simple .infocard__body .kv:is(
     overflow: auto;
   }
 
-  /* Thẻ thu gọn nằm trên chân khung (dòng φ và gợi ý), không che chữ. */
-  body.mode-simple .infocard.is-collapsed {
-    bottom: calc(var(--foot-h, 0px) + 10px);
+  /* Chân dải chừa chỗ cho chân dung Usui-chan (góc dưới phải màn hình) và dải "chế độ giải thích" cạnh nó: dòng
+     cuối của dải không bao giờ nằm dưới hai lớp nổi này (review-1 #7). */
+  body.mode-simple .simple {
+    padding-bottom: calc(56px + var(--space-4));
   }
 
-  /* Thẻ mở vẫn nổi trên khung (không thành cột thứ ba như ở Đầy đủ): nó nhỏ, giản đồ giữ trọn bề ngang. */
-  body.mode-simple .views:has(> .infocard:not(.is-collapsed)) {
-    grid-template-columns: minmax(0, 1fr);
+  /* Lời chào (bong bóng phía trên chân dung) THAY cho thẻ và dòng chân dải trong lúc mở, không đè lên chữ của chúng
+     (review-1 #7). visibility, không phải display: không có gì nhảy chỗ khi lời chào đóng. Dải lời chào mảnh (màn
+     hình thấp) nằm dưới chân dải nên không cần. */
+  body.mode-simple:has(.guide-hello--pose) .simple__dock,
+  body.mode-simple:has(.guide-hello--pose) .simple__next {
+    visibility: hidden;
   }
+}
 
-  body.mode-simple .infocard:not(.is-collapsed) {
-    position: absolute;
-    width: 270px;
-    min-width: 0;
-    max-height: calc(100% - 60px);
-    background: color-mix(in srgb, var(--surface) 94%, transparent);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-pop);
-  }
+/* ---- Thẻ thông tin nằm trong dải điều khiển (Cơ bản, màn hình rộng; main.ts › placeCard, review-1 #1): một khối
+   trong luồng, ngay dưới nhóm 3 — kết quả của "bấm vào một ngôi sao" nằm cạnh các điều khiển, không nổi trên cảnh. */
+.simple__dock:empty {
+  display: none;
+}
+
+.infocard.infocard--docked {
+  position: static;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  mask-image: none;
+}
+
+.infocard.infocard--docked.is-collapsed {
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+}
+
+.infocard--docked .infocard__head,
+.infocard--docked.is-collapsed .infocard__head {
+  align-items: center;
+  cursor: pointer;
+}
+
+.infocard--docked .infocard__dot {
+  margin-top: 0;
+}
+
+/* ---- Lời mời hành động đầu tiên (review-1 #4): cỡ chữ thân, chữ trắng, đầu dải — trước bước 1. */
+.simple__cue {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Lời chào của Usui-chan đang mở: nó THAY cho lời mời (mỗi lúc một lời nhắn); lời mời hiện ra khi lời chào đóng.
+   display (không phải visibility): không để lại một khoảng trống ở đầu dải, và nhóm 3 không bị đẩy xuống dưới bong
+   bóng lời chào trên máy tính. */
+body.guide-hello-open .simple__cue {
+  display: none;
 }
 
 @media (min-width: 1600px) {
   body.mode-simple .layout {
     grid-template-columns: minmax(0, 1fr) 360px;
-  }
-}
-
-/* Nhãn "Chế độ" chỉ hiện khi đủ chỗ; trên màn hình nhỏ nhóm vẫn có tên truy cập và chú thích (title). */
-@media (max-width: 1100px) {
-  .modeswitch__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
   }
 }
 
@@ -2643,15 +2699,6 @@ body.mode-simple .infocard__body .kv:is(
     border: 0;
     background: transparent;
   }
-
-  body.mode-full .modeswitch__label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip: auto;
-    margin-right: auto;
-  }
 }
 
 /* Cơ bản trên điện thoại rất hẹp: logo đại diện thương hiệu (tên đầy đủ vẫn có cho trình đọc màn hình), nhường
@@ -2691,8 +2738,9 @@ body.mode-simple .lbl--allsky {
   height: 18px;
   padding: 0 5px;
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  /* Trung tính (review-1 #8): huy hiệu không bấm được, nên không dùng cam — cam chỉ dành cho hành động. */
+  background: var(--text);
+  color: var(--bg);
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
@@ -3364,8 +3412,67 @@ body.mode-simple .lbl--allsky {
   border-width: 1px 1px 0 0;
 }
 
+/* Cơ bản, màn hình rộng nhưng thấp: lời chào là một dải mảnh bên trái chân dung, đuôi chỉ sang phải; nó nằm dưới
+   chân dải điều khiển (đã chừa chỗ cho chân dung) nên không che chữ hay ô nào (review-1 #7). */
+.guide-hello.guide-hello--toast {
+  right: calc(var(--space-4) + 56px + var(--space-3));
+  bottom: calc(var(--space-4) + 4px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: auto;
+  max-width: min(520px, calc(100vw - 2 * var(--space-4) - 56px - var(--space-3)));
+  padding: 2px 2px 2px var(--space-1);
+  border-radius: var(--radius);
+  transform-origin: 100% 50%;
+}
+
+.guide-hello--toast::after {
+  right: -7px;
+  bottom: calc(50% - 6px);
+  border-width: 1px 1px 0 0;
+}
+
+.guide-hello__go {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 40px;
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guide-hello__go:hover {
+  background: var(--veil);
+}
+
+.guide-hello--toast .guide-hello__face {
+  width: 32px;
+  height: 32px;
+}
+
+.guide-hello--toast .guide-hello__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 /* Lời chào đang mở: dòng gợi ý "kéo để xoay" chờ tới lượt (mỗi lúc chỉ một lời nhắn cho người mới) */
 body.guide-hello-open .view__hint.is-new {
+  visibility: hidden;
+}
+
+/* Chế độ giải thích: dải thông báo nằm ở chân màn hình, nơi có dòng gợi ý "kéo để xoay" — dòng này nhường chỗ
+   (bong bóng của khung nhìn nói cùng điều đó) thay vì bị dải đè lên (review-1 #7). */
+body.guide-explain .view__hint {
   visibility: hidden;
 }
 
@@ -3608,6 +3715,27 @@ body.present .guide-tip {
     min-height: var(--tap);
     min-width: var(--tap);
     border-radius: var(--radius);
+  }
+}
+
+/* Lời chào trên điện thoại (review-1 #3): một dải mảnh trong khung nhìn, ngay TRÊN thẻ đang chọn (--card-h) và
+   dòng φ (--foot-h), nên không che chữ nào; vùng trời bị che chỉ cao ~60 px. Bấm vào chân dung/lời chào = bật chế độ
+   giải thích; × = để sau. */
+@media (max-width: 900px) {
+  .guide-hello.guide-hello--toast {
+    position: absolute;
+    left: var(--space-2);
+    right: var(--space-2);
+    top: auto;
+    bottom: calc(var(--foot-h, 0px) + var(--card-h, 0px) + var(--space-2) * 2);
+    z-index: 7;
+    max-width: 480px;
+    transform-origin: 50% 100%;
+  }
+
+  .guide-hello__go,
+  .guide-hello__x {
+    min-height: var(--tap);
   }
 }
 

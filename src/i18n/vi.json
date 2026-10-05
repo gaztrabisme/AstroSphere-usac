@@ -59,7 +59,7 @@
     "equator": "Xích đạo trời",
     "zones": "Tô màu vùng mọc – lặn",
     "zonesTip": "Tô màu ba vùng tại vĩ độ này: sao không bao giờ lặn, sao mọc và lặn, sao không bao giờ mọc.",
-    "tryStar": "Bấm vào một ngôi sao để biết nó đang cao bao nhiêu, ở hướng nào và có lặn không.",
+    "cue": "Bấm vào một ngôi sao trên bầu trời để xem nó ở đâu và có lặn không.",
     "more": "Muốn xem thiên cầu, dải số liệu và bài ôn tập? Chọn «Đầy đủ» ở thanh trên cùng."
   },
   "view": {
@@ -653,6 +653,8 @@
     "helloBody": "Mình là Usui-chan, linh vật của CLB Thiên văn USAC. Khi nào thắc mắc, bấm vào ảnh của mình để bật chế độ giải thích: rê chuột hoặc chạm vào nút nào, mình sẽ nói nút đó dùng để làm gì.",
     "helloExplain": "Giải thích các nút",
     "helloLater": "Để sau",
+    "helloShort": "Chào bạn! Bấm vào mình để mình giải thích các nút",
+    "helloClose": "Đóng lời chào",
     "poseAlt": "Usui-chan cầm cờ CLB Thiên văn USAC, đứng cạnh kính thiên văn",
     "banner": "Chế độ giải thích — rê chuột hoặc chạm vào một nút · Esc để thoát",
     "bannerClose": "Thoát chế độ giải thích",

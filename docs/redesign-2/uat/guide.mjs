@@ -66,6 +66,17 @@ async function avatarClear(page) {
   );
   return others.filter((o) => overlaps(av, o)).map((o) => o.cls);
 }
+/** Hộp của các phần tử chữ ĐANG HIỆN khớp `sel` (fix-1: lớp nổi không được đè lên chữ). */
+const textBoxes = (page, sel) =>
+  page.evaluate((s) =>
+    [...document.querySelectorAll(s)].map((e) => {
+      const r = e.getBoundingClientRect();
+      const cs = getComputedStyle(e);
+      let vis = cs.display !== 'none' && r.width > 0 && !!e.offsetParent;
+      for (let a = e; a && vis; a = a.parentElement) if (getComputedStyle(a).visibility === 'hidden') vis = false;
+      return { x: r.x, y: r.y, w: r.width, h: r.height, vis, cls: e.className || e.tagName };
+    }), sel);
+const SIMPLE_TEXT = '.simple legend, .simple label, .simple p, .simple .infocard, .view__hint, .view__key';
 const dragSky = async (page) => {
   const r = await rect(page, '#view-horizon .view__canvas');
   const x = r.x + r.w * 0.3;
@@ -104,6 +115,10 @@ const dragSky = async (page) => {
   const hr = await rect(page, '.guide-hello');
   const sky = await rect(page, '#view-horizon .view__canvas');
   check('(hello) does not cover the horizon sky in Simple', !overlaps(hr, sky), JSON.stringify(hr));
+  const under = (await textBoxes(page, SIMPLE_TEXT)).filter((b) => overlaps(hr, b)).map((b) => b.cls);
+  check('(fix-1 #7) the hello overlaps no visible text (panel footer and docked card give way while it is open)', under.length === 0, under.join(', '));
+  const cue0 = await page.evaluate(() => getComputedStyle(document.querySelector('.simple__cue')).display);
+  check('(fix-1 #4) the hello replaces the first-action cue: the cue is not shown while the hello is open', cue0 === 'none', cue0);
   await page.screenshot({ path: `${SHOTS}guide-hello-1440.png` });
 
   // Tải lại: không chào nữa.
@@ -122,6 +137,16 @@ const dragSky = async (page) => {
   await page.getByRole('button', { name: 'Để sau' }).click();
   check('(later) "Để sau" dismisses the hello', (await helloCount(page)) === 0);
   check('(later) focus returns to the avatar, not to <body>', await page.evaluate(() => document.activeElement?.classList.contains('guide-avatar')));
+  const cue = await page.evaluate(() => {
+    const c = document.querySelector('.simple__cue');
+    const cs = getComputedStyle(c);
+    const step1 = document.querySelector('.simple legend').getBoundingClientRect();
+    const r = c.getBoundingClientRect();
+    return { text: c.textContent, display: cs.display, color: cs.color, size: parseFloat(cs.fontSize), above: r.bottom <= step1.top };
+  });
+  check('(fix-1 #4) after "Để sau" the cue "Bấm vào một ngôi sao…" shows above step 1, white, ≥ 15 px', cue.display !== 'none' && /^Bấm vào một ngôi sao trên bầu trời/.test(cue.text) && cue.color === 'rgb(242, 242, 242)' && cue.size >= 15 && cue.above, JSON.stringify(cue));
+  const footHint = await page.evaluate(() => [...document.querySelectorAll('.simple__next p')].map((p) => p.textContent));
+  check('(fix-1 #4) one cue, not three: the panel footer no longer repeats "Bấm vào một ngôi sao"', footHint.every((x) => !/Bấm vào một ngôi sao/.test(x)), footHint.join(' | '));
   await page.waitForTimeout(5000);
   await dragSky(page);
   await page.waitForTimeout(800);
@@ -132,6 +157,14 @@ const dragSky = async (page) => {
     explain: document.body.classList.contains('guide-explain'),
   }));
   check('(later) nothing appears uninvited after 5 s and a sky drag', !after.hello && !after.tip && !after.banner && !after.explain, JSON.stringify(after));
+  check('(fix-1 #4) a drag alone keeps the cue (it asks for a star)', await page.locator('.simple__cue').isVisible());
+  await page.evaluate(async () => { const { selectCatalogHip } = await import('/src/scenario.ts'); selectCatalogHip({ store: window.__app.store, actions: window.__app.actions }, 32349); });
+  await page.waitForTimeout(200);
+  const gone = await page.evaluate(() => ({ hidden: document.querySelector('.simple__cue').hidden, stored: localStorage.getItem('astrosphere.hint.v1') }));
+  check('(fix-1 #4) the cue hides after the first star selection, and the hint key is stored', gone.hidden && gone.stored === 'true', JSON.stringify(gone));
+  await page.reload();
+  await page.waitForFunction(() => window.__app?.horizon, null, { timeout: 30000 });
+  check('(fix-1 #4) after a reload the cue stays hidden', await page.evaluate(() => document.querySelector('.simple__cue').hidden));
   await ctx.close();
 }
 
@@ -181,6 +214,9 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   }));
   check('(explain) clicking the avatar enters explain mode (aria-pressed, orange ring)', on.body && on.pressed === 'true' && on.ring === 'rgb(242, 101, 34)', JSON.stringify(on));
   check('(explain) banner reads "Chế độ giải thích — rê chuột hoặc chạm vào một nút · Esc để thoát"', on.banner === 'Chế độ giải thích — rê chuột hoặc chạm vào một nút · Esc để thoát', on.banner);
+  const bannerBox = await rect(page, '.guide-banner');
+  const underBanner = (await textBoxes(page, SIMPLE_TEXT)).filter((b) => overlaps(bannerBox, b)).map((b) => b.cls);
+  check('(fix-1 #7) the explain banner overlaps no visible text (panel footer, hint caption)', underBanner.length === 0, underBanner.join(', '));
 
   await page.locator('.btn--codex').hover();
   await page.waitForTimeout(300);
@@ -304,14 +340,23 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   await waitHello(page);
   const hr = await rect(page, '.guide-hello');
   const sky = await rect(page, '#view-horizon .view__canvas');
-  check('(375) the hello fits on screen as a bottom sheet', hr.x >= 0 && hr.x + hr.w <= 375 && hr.y >= 0 && hr.y + hr.h <= 812, JSON.stringify(hr));
-  check('(375) the hello does not cover the sky', !overlaps(hr, sky), JSON.stringify({ hr, sky }));
-  const fs = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.guide-hello__body')).fontSize));
-  check('(375) hello text is ≥ 16 px on phones', fs >= 16, `${fs}px`);
+  // fix-1 #3: không còn tấm đáy; một dải mảnh trong khung nhìn, trên thẻ đang chọn và dòng φ.
+  check('(fix-1 #3, 375) the hello is a compact toast: height ≤ 90 px, inside the viewport', hr.h <= 90 && hr.x >= 0 && hr.x + hr.w <= 375 && hr.y >= 0 && hr.y + hr.h <= 812, JSON.stringify(hr));
+  const foot = await rect(page, '#view-horizon .view__foot');
+  const chip = await rect(page, '.infocard');
+  check('(fix-1 #3, 375) the toast overlaps neither the φ readout bar nor the selection chip', !overlaps(hr, foot) && !overlaps(hr, chip) && hr.y + hr.h <= chip.y, JSON.stringify({ hr, foot, chip }));
+  check('(fix-1 #3, 375) the toast covers ≤ 15 % of the sky', (hr.w * hr.h) / (sky.w * sky.h) <= 0.15, `${Math.round((100 * hr.w * hr.h) / (sky.w * sky.h))} %`);
+  const toast = await page.evaluate(() => ({
+    text: document.querySelector('.guide-hello__title').textContent,
+    face: !!document.querySelector('.guide-hello .guide-hello__face'),
+    fs: parseFloat(getComputedStyle(document.querySelector('.guide-hello__title')).fontSize),
+  }));
+  check('(fix-1 #3, 375) toast = avatar + "Chào bạn! Bấm vào mình để mình giải thích các nút" + ×, text ≥ 15 px', toast.face && toast.text === 'Chào bạn! Bấm vào mình để mình giải thích các nút' && toast.fs >= 15, JSON.stringify(toast));
   check('(375) no horizontal scroll with the hello open', await noHScroll(page));
   const btnH = await page.evaluate(() => [...document.querySelectorAll('.guide-hello button')].map((b) => b.getBoundingClientRect().height));
   check('(375) hello buttons are ≥ 44 px', btnH.every((x) => x >= 44), btnH.join(','));
-  await page.getByRole('button', { name: 'Để sau' }).tap();
+  await page.getByRole('button', { name: 'Đóng lời chào' }).tap();
+  check('(fix-1 #3, 375) × dismisses the toast', (await helloCount(page)) === 0);
 
   const av = await rect(page, '.guide-avatar');
   check('(375) avatar ≥ 44 px, inside the viewport', av.w >= 44 && av.h >= 44 && av.x >= 0 && av.x + av.w <= 375, JSON.stringify(av));
@@ -365,6 +410,17 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   check('(375 full) no horizontal scroll', await noHScroll(page));
   await page.getByRole('button', { name: 'Thoát chế độ giải thích' }).tap();
   check('(375) the banner close button exits explain mode', !(await explaining(page)));
+  await ctx.close();
+}
+
+// fix-1 #3: chạm vào lời chào (chân dung + chữ) làm đúng điều nó nói — bật chế độ giải thích.
+{
+  const ctx = await context({ width: 375, height: 812, touch: true });
+  const page = await open(ctx);
+  await waitHello(page);
+  await page.locator('.guide-hello__go').tap();
+  await waitExplain(page, true).catch(() => {});
+  check('(fix-1 #3, 375) tapping the toast enters explain mode', (await explaining(page)) && (await helloCount(page)) === 0);
   await ctx.close();
 }
 
