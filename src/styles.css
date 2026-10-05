@@ -606,7 +606,8 @@ body.learn-open .layout {
 
 .data__item:last-child .data__v {
   font-size: 15px;
-  white-space: normal;
+  /* Hai dòng có chủ ý "α …, δ …" / "A …, h …" (review-3 D2); chỉ ngắt thêm sau dấu phẩy. */
+  white-space: pre-line;
 }
 
 /* ------------------------------------------------------------------ Thẻ thông tin */

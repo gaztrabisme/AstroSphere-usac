@@ -298,6 +298,16 @@ export const DATA_CELLS = [
 ] as const;
 export type DataKey = (typeof DATA_CELLS)[number]['key'];
 
+const NB = '\u00a0';
+
+/** Giá trị ô "Đối tượng đang chọn": hai dòng (ngắt bằng \n, CSS white-space: pre-line), cặp ký hiệu–giá trị không ngắt. */
+export function selectedValueText(name: string, ra: number, dec: number, az: number, alt: number): string {
+  const nb = (x: string) => x.replace(/ /g, NB);
+  const raText = nb(fmtHMS(ra, { seconds: false }));
+  const azText = Number.isFinite(az) ? fmtDeg(az, 1) : '—';
+  return `${name.split(' (')[0]}: α${NB}${raText}, δ${NB}${fmtDegSigned(dec, 1)}\nA${NB}${azText}, h${NB}${fmtDegSigned(alt, 1)}`;
+}
+
 export function dataBar(store: Store, actions: Actions) {
   const items = {} as Record<DataKey, HTMLElement>;
   const cells = {} as Record<DataKey, HTMLElement>;
@@ -336,7 +346,9 @@ export function dataBar(store: Store, actions: Actions) {
     const obj = resolveSelection(s);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
-      setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
+      // Hai dòng có chủ ý (review-3 D2): "tên: α …, δ …" rồi "A …, h …". Trong mỗi cặp "ký hiệu giá trị" dùng khoảng
+      // trắng không ngắt (U+00A0), nên dòng chỉ có thể xuống sau dấu phẩy, không bao giờ giữa "h" và "+20,9°".
+      setText(items.selected, selectedValueText(obj.name, obj.ra, obj.dec, az, alt));
     } else setText(items.selected, t('data.selectedNone'));
   };
   return { el, update };

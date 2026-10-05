@@ -188,6 +188,13 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
         h: Math.round(c.getBoundingClientRect().height),
       };
     });
+  const selLines = await page.evaluate(() => {
+    const v = document.querySelector('.databar [data-emphasis=selected] .data__v');
+    const range = document.createRange();
+    range.selectNodeContents(v);
+    return { text: v.textContent, lines: [...new Set([...range.getClientRects()].map((r) => Math.round(r.top)))].length };
+  });
+  check('1440: selected-object value renders as exactly two lines (α, δ / A, h)', selLines.lines === 2 && /\nA\u00a0/.test(selLines.text), JSON.stringify(selLines));
   const first = await state();
   check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');
@@ -232,6 +239,15 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   });
   check('375: key formula line "φ = … · Độ cao thiên cực …" is inside the first 812 px', first.keyVisible && /^φ = .*Độ cao thiên cực/.test(first.keyText) && first.keyTop >= 0 && first.keyBottom <= 812, JSON.stringify(first));
   check('375: collapsed info card is one slim row (≤ 52 px) with the name and A/h', first.card.h <= 52 && /Polaris/.test(first.card.text) && /A\u00a0[\d,]+°/.test(first.card.text) && /h\u00a0[+−-][\d,]+°/.test(first.card.text), JSON.stringify(first.card));
+  // review-3 D2: giá trị đối tượng đang chọn là hai dòng có chủ ý, không ngắt giữa "h" và giá trị.
+  const selLines = await page.evaluate(() => {
+    const v = document.querySelector('.databar [data-emphasis=selected] .data__v');
+    const range = document.createRange();
+    range.selectNodeContents(v);
+    const tops = [...new Set([...range.getClientRects()].map((r) => Math.round(r.top)))];
+    return { text: v.textContent, lines: tops.length };
+  });
+  check('375: selected-object value renders as exactly two lines (α, δ / A, h)', selLines.lines === 2 && /\nA\u00a0/.test(selLines.text), JSON.stringify(selLines));
   await page.locator('.infocard__title').click();
   await page.waitForTimeout(200);
   const opened = await page.evaluate(() => ({ collapsed: document.querySelector('.infocard').classList.contains('is-collapsed'), h: Math.round(document.querySelector('.infocard').getBoundingClientRect().height) }));
