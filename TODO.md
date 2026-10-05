@@ -41,11 +41,12 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 
 ## Sau thiết kế lại (review-4) / Open after the redesign
 
-- [ ] **Constellation colours imitate semantic colours** (review-4 G2). Ursa Major is light blue (like the axis) and Ursa Minor is pink (like the vertical circle). Draw constellation figures in one neutral desaturated tone (`src/data/constellations.ts` colours, `scene/skyLayer.ts`).
-- [ ] **Phone first view** (review-4 B4). The "Nhìn từ người quan sát / Góc nhìn" strip pushes the dome down. Move these as icons inside the canvas.
-- [ ] **Projector legibility** (review-4 H1). Enlarge the header in presentation mode, make star labels at least 28 px and white, and thicken or drop the dashed lines.
-- [ ] **Label/line crossings near the pole** (review-4 D2). Constellation lines cross their own names. Consider leader lines or hiding constellation names that collide.
-- [ ] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision.
+- [x] **Constellation colours imitate semantic colours** (review-4 G2). (fbe876f: one neutral figure tone `COLORS.figure`, minimum ΔE to any semantic colour 0 → 0,098; see `docs/redesign-2/polish.md`) Ursa Major is light blue (like the axis) and Ursa Minor is pink (like the vertical circle). Draw constellation figures in one neutral desaturated tone (`src/data/constellations.ts` colours, `scene/skyLayer.ts`).
+- [x] **Phone first view** (review-4 B4). (02c52b6: 44 px icon buttons inside the canvas, view header hidden on phones, dome framed 6 % higher) The "Nhìn từ người quan sát / Góc nhìn" strip pushes the dome down. Move these as icons inside the canvas.
+- [x] **Projector legibility** (review-4 H1). (b664219: star labels 28 px and white, titles 30/26 px, denser dashes at ×2 width) Enlarge the header in presentation mode, make star labels at least 28 px and white, and thicken or drop the dashed lines.
+- [x] **Label/line crossings near the pole** (review-4 D2). (fbe876f: background names rank last with clearance, 85 % pill, selection ring as an obstacle, the selected star always named) Constellation lines cross their own names. Consider leader lines or hiding constellation names that collide.
+- [ ] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision. Measured after the review-4 polish: 0,98× (a box of 43,5 % of the frame can reach at most 2,30×, so the 2× default is out of reach without removing the data bar). See `docs/redesign-2/polish.md`.
+- [ ] **Random and manual star colours reuse semantic colours.** `STAR_COLORS` in `src/state.ts` includes `#f472b6` (exactly the vertical-circle pink), `#60a5fa` (near the axis blue) and `#facc15` (near the equator yellow). Pick them from hues the scene does not use, or use the neutral figure tone.
 
 ## Kho mã / Repository
 
