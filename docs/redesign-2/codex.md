@@ -1,6 +1,6 @@
 # Codex (redesign-2 stream C, goal row R3)
 
-**Status:** built on branch `redesign/codex`. **UAT:** `docs/redesign-2/uat/codex.mjs`. **Unit tests:** `src/codex/codex.test.ts`.
+**Status:** built on branch `redesign/codex`. Revised after review 1 (entry states, imagery, facts column, neutral "mới" and progress): see [fix-1-codex.md](fix-1-codex.md). **UAT:** `docs/redesign-2/uat/codex.mjs`. **Unit tests:** `src/codex/codex.test.ts`.
 
 ## What the owner asked for (2026-10-05)
 
