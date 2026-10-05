@@ -202,6 +202,12 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     return { color: p.color, style: p.fontStyle, value: getComputedStyle(i).color };
   });
   check('1440: input placeholders are italic and dimmer than typed values', ph.style === 'italic' && ph.color !== ph.value, JSON.stringify(ph));
+  // review-3 D1: tiêu đề "Thiên cầu" là số hai nhưng không trông như bị vô hiệu: cùng màu chữ và độ đậm, nhỏ hơn.
+  const titles = await page.evaluate(() => {
+    const st = (sel) => { const cs = getComputedStyle(document.querySelector(sel)); return { color: cs.color, weight: Number(cs.fontWeight), size: parseFloat(cs.fontSize) }; };
+    return { horizon: st('#view-horizon .view__head h2'), sphere: st('#view-sphere .view__head h2') };
+  });
+  check('1440: "Thiên cầu" title has the same colour and weight as the horizon title, one step smaller', titles.sphere.color === titles.horizon.color && titles.sphere.weight === titles.horizon.weight && titles.sphere.size < titles.horizon.size, JSON.stringify(titles));
   const first = await state();
   check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');

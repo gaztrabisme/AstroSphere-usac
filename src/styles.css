@@ -341,10 +341,11 @@ body.learn-open .layout {
   font-size: 15px;
 }
 
-/* Thiên cầu là "số hai" (review-2 B2): tiêu đề nhẹ hơn, màu phụ — giản đồ chân trời đọc là số một. */
+/* Thiên cầu là "số hai" (review-2 B2) nhưng không được trông như bị vô hiệu (review-3 D1): cùng độ đậm tiêu đề,
+   màu --text, chỉ nhỏ hơn một bậc — thứ bậc nằm ở cỡ chữ và độ rộng khung, không ở màu xám. */
 #view-sphere .view__head h2 {
-  font-weight: 500;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text);
 }
 
 .view__sub {
@@ -1592,6 +1593,10 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
+body.present #view-sphere .view__head h2 {
+  font-size: 18px;
+}
+
 /* Máy chiếu (review-2 H1): bỏ phần vỏ cỡ máy tính — phụ đề khung, nút nhỏ trong khung (phím C vẫn đặt lại góc
    nhìn) và cả thẻ thông tin (chữ ~13 px không đọc được từ cuối phòng). Hai khung nhìn chia hết bề ngang. */
 body.present .view__sub,
@@ -2012,6 +2017,10 @@ body.present .swatch--line {
 
   .view__head h2 {
     font-size: 17px;
+  }
+
+  #view-sphere .view__head h2 {
+    font-size: 16px;
   }
 }
 
