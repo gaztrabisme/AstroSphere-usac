@@ -84,9 +84,13 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row(t('info.highest')),
   };
   const status = h('span', { class: 'status' });
+  const detailsHead = h('h4', { text: t('info.details') });
+  const detailsDl = h('dl');
   const body = h(
     'div',
     { class: 'infocard__body' },
+    detailsHead,
+    detailsDl,
     h('h4', { text: t('info.equatorial') }),
     h('dl', null, r.ra.el, r.dec.el, r.ha.el),
     h('h4', { text: t('info.horizontal') }),
@@ -162,6 +166,10 @@ export function infoCard(store: Store, actions: Actions) {
       staticKey = key;
       const rs = riseSet(obj.ra, obj.dec, s.lat);
       setText(title, obj.name);
+      detailsHead.hidden = detailsDl.hidden = !obj.details?.length;
+      detailsDl.replaceChildren(
+        ...(obj.details ?? []).map(([k, v]) => h('div', { class: 'kv' }, h('dt', { text: k }), h('dd', null, h('span', { class: 'kv__v', text: v })))),
+      );
       dot.style.background = obj.color;
       setText(kind, obj.mag !== undefined ? `${obj.kind} · ${t('info.mag', { m: fmtNum(obj.mag, 2) })}` : obj.kind);
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);

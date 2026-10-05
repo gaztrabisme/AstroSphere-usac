@@ -102,6 +102,38 @@ for (const g of geo.features) {
   }
 }
 
+// --- Thiên thể sâu: 110 thiên thể Messier + vài thiên thể NGC/PGC sáng ở bầu trời phía Nam ---
+// Mỗi phần tử: [định danh chính, định danh phụ, tên thường gọi (EN), loại, cấp sao V, kích thước biểu kiến (′), α, δ]
+const messier = readJson('node_modules/d3-celestial/data/messier.json').features;
+const bright = readJson('node_modules/d3-celestial/data/dsos.bright.json').features;
+const EXTRA_DSO = {
+  'NGC 5139': ['NGC 5139', 'ω Cen', 'Omega Centauri'],
+  'NGC 104': ['NGC 104', '47 Tuc', '47 Tucanae'],
+  'NGC 3372': ['NGC 3372', '', 'Carina Nebula'],
+  'NGC 869': ['NGC 869', 'h Per', 'Double Cluster (h Persei)'],
+  'NGC 884': ['NGC 884', 'χ Per', 'Double Cluster (χ Persei)'],
+  'PGC 17223': ['LMC', 'PGC 17223', 'Large Magellanic Cloud'],
+  'NGC 292': ['SMC', 'NGC 292', 'Small Magellanic Cloud'],
+  'IC 2602': ['IC 2602', '', 'Southern Pleiades'],
+};
+const dimOf = (d) => {
+  const parts = String(d || '').split('x').map(Number).filter((x) => x > 0);
+  return parts.length ? round(Math.max(...parts), 1) : 0;
+};
+const dsos = [];
+for (const f of messier) {
+  const p = f.properties;
+  const [lon, lat] = f.geometry.coordinates;
+  dsos.push([f.id, p.desig || '', (p.alt || '').replace('´', "'"), p.type, p.mag, dimOf(p.dim), toRa(lon), round(lat, 4)]);
+}
+for (const f of bright) {
+  const extra = EXTRA_DSO[f.id];
+  if (!extra) continue;
+  const p = f.properties;
+  const [lon, lat] = f.geometry.coordinates;
+  dsos.push([extra[0], extra[1], extra[2], p.type, p.mag, dimOf(p.dim), toRa(lon), round(lat, 4)]);
+}
+
 const write = (name, data) => {
   const s = JSON.stringify(data);
   writeFileSync(join(outDir, name), s);
@@ -110,4 +142,5 @@ const write = (name, data) => {
 write('stars.json', { magLimit: MAG_LIMIT, ...stars, names });
 write('constellations.json', constellations);
 write('land.json', rings);
+write('dsos.json', dsos);
 console.log(`Sao: ${stars.ra.length}, chòm sao: ${Object.keys(constellations).length}, vòng lục địa: ${rings.length}`);

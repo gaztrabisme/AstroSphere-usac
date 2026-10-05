@@ -14,7 +14,7 @@ export interface CatalogData {
 
 const data = raw as unknown as CatalogData;
 
-/** Tên tiếng Việt của một số sao nổi tiếng (theo tên quốc tế). */
+/** Tên tiếng Việt của một số sao nổi tiếng (theo tên quốc tế) — chỉ hiện trong phần chi tiết của thẻ thông tin. */
 export const VI_STAR_NAMES: Record<string, string> = {
   Sirius: 'Thiên Lang',
   Canopus: 'Lão Nhân',
@@ -44,9 +44,9 @@ export interface CatalogStar {
   mag: number;
   bv: number;
   hip: number;
-  /** Tên hiển thị tiếng Việt (có kèm tên quốc tế nếu có). */
+  /** Tên hiển thị theo tên quốc tế (IAU) kèm ký hiệu Bayer: "Sirius (α CMa)". */
   label: string;
-  /** Tên ngắn dùng làm nhãn trên khung nhìn (rỗng nếu sao không có tên riêng). */
+  /** Tên riêng quốc tế dùng làm nhãn trên khung nhìn (rỗng nếu sao không có tên riêng). */
   shortName: string;
 }
 
@@ -57,8 +57,6 @@ function nameOf(hip: number): { label: string; short: string } {
   const n = data.names[String(hip)];
   if (!n) return { label: `HIP ${hip}`, short: '' };
   const [proper, desig] = n;
-  const vi = proper ? VI_STAR_NAMES[proper] : undefined;
-  if (vi) return { label: `${vi} (${proper}${desig ? `, ${desig}` : ''})`, short: vi };
   if (proper) return { label: desig ? `${proper} (${desig})` : proper, short: proper };
   return { label: desig || `HIP ${hip}`, short: '' };
 }
@@ -76,6 +74,24 @@ export function getCatalogStar(index: number): CatalogStar {
     label,
     shortName: short,
   };
+}
+
+/** Định danh chuẩn của sao theo HIP: "Sirius · α CMa · HIP 32349" (tên riêng theo IAU, Bayer/Flamsteed, Hipparcos). */
+export function starDesignations(hip: number): string {
+  const n = data.names[String(hip)];
+  return [n?.[0], n?.[1], `HIP ${hip}`].filter(Boolean).join(' · ');
+}
+
+/** Tên tiếng Việt của sao (nếu có) theo HIP. */
+export function starNameVi(hip: number): string {
+  const proper = data.names[String(hip)]?.[0];
+  return (proper && VI_STAR_NAMES[proper]) || '';
+}
+
+/** Mã chòm sao IAU của sao, lấy từ ký hiệu Bayer/Flamsteed ("α CMa" → "CMa"). */
+export function starConstellation(hip: number): string {
+  const desig = data.names[String(hip)]?.[1] ?? '';
+  return desig.split(' ').pop() ?? '';
 }
 
 export function catalogArrays() {

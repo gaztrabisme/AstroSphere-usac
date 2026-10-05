@@ -2,7 +2,7 @@
 
 import { clamp, gmstDeg, julianDate, norm360 } from './astro';
 import { getCatalogStar, catalogIndexByHip } from './data/catalog';
-import { ALL_FIGURES, getTemplate } from './data/constellations';
+import { ALL_FIGURES, constellationName, getTemplate } from './data/constellations';
 import { DEFAULT_PLACE } from './data/places';
 
 export type TrailMode = 'none' | 'short' | 'long';
@@ -34,7 +34,12 @@ export interface Figure {
   segs: [number, number][];
 }
 
-export type Selection = { kind: 'user'; id: string } | { kind: 'catalog'; index: number } | { kind: 'sun' } | null;
+export type Selection =
+  | { kind: 'user'; id: string }
+  | { kind: 'catalog'; index: number }
+  | { kind: 'dso'; index: number }
+  | { kind: 'sun' }
+  | null;
 
 export interface Toggles {
   hourCircle0: boolean;
@@ -58,6 +63,7 @@ export interface Toggles {
   ecliptic: boolean;
   galactic: boolean;
   sun: boolean;
+  deepSky: boolean;
 }
 
 export interface LabelToggles {
@@ -115,10 +121,11 @@ export const DEFAULT_TOGGLES: Toggles = {
   altAzGrid: false,
   eqGrid: false,
   catalog: true,
-  constellationLines: false,
+  constellationLines: true,
   ecliptic: false,
   galactic: false,
   sun: false,
+  deepSky: false,
 };
 
 export const DEFAULT_LABELS: LabelToggles = {
@@ -175,13 +182,14 @@ function buildConstellation(templateId: string): { stars: UserStar[]; figure: Fi
   const tpl = getTemplate(templateId);
   const fig = ALL_FIGURES[templateId];
   if (!tpl || !fig) return null;
+  const name = constellationName(templateId);
   const figureId = nextId('f');
   const stars: UserStar[] = fig.stars.map(([ra, dec, mag, hip], i) => {
     const ci = hip ? catalogIndexByHip(hip) : undefined;
     const cat = ci !== undefined ? getCatalogStar(ci) : undefined;
     return {
       id: nextId('s'),
-      name: cat ? cat.label : `${tpl.name} – sao ${i + 1}`,
+      name: cat ? cat.label : `${name} – ${i + 1}`,
       ra,
       dec,
       mag,
@@ -196,7 +204,7 @@ function buildConstellation(templateId: string): { stars: UserStar[]; figure: Fi
   const figure: Figure = {
     id: figureId,
     templateId,
-    name: tpl.name,
+    name,
     color: tpl.color,
     starIds: stars.map((x) => x.id),
     segs: fig.segs.map(([a, b]) => [a, b] as [number, number]),
@@ -225,15 +233,7 @@ export function createInitialState(): AppState {
     selected: null,
     sunDate: todayIso(now),
   };
-  for (const id of ['UMa', 'UMi', 'Ori']) {
-    const c = buildConstellation(id);
-    if (c) {
-      base.stars.push(...c.stars);
-      base.figures.push(c.figure);
-    }
-  }
-  const polaris = base.stars.find((x) => x.name.startsWith('Sao Bắc Cực'));
-  if (polaris) base.selected = { kind: 'user', id: polaris.id };
+  // Mặc định chỉ hiện sao thật cùng đường nối và tên chòm sao (tên quốc tế); các lớp khác người dùng tự bật.
   return base;
 }
 

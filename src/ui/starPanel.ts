@@ -2,7 +2,7 @@
 
 import { fmtNum, parseDegrees, parseHours } from '../astro';
 import { catalogCount, catalogMagLimit } from '../data/catalog';
-import { TEMPLATES } from '../data/constellations';
+import { constellationName, constellationNameVi, TEMPLATES } from '../data/constellations';
 import { t } from '../i18n';
 import { MAX_USER_STARS, type Actions, type Store, type TrailMode } from '../state';
 import { button, checkbox, clear, fieldset, h, newId } from './dom';
@@ -18,21 +18,21 @@ export function starPanel(store: Store, actions: Actions): HTMLElement {
   const tplSelect = h(
     'select',
     { id: 'tpl-select', 'aria-label': t('panel.stars.templateAria') },
-    ...TEMPLATES.map((tp) => h('option', { value: tp.id, text: `${tp.name} (${tp.alias})` })),
+    ...TEMPLATES.map((tp) => h('option', { value: tp.id, text: constellationName(tp.id) })),
   );
   const tplNote = h('p', { class: 'hint' });
   const updateNote = () => {
     const tp = TEMPLATES.find((x) => x.id === tplSelect.value);
-    tplNote.textContent = tp ? tp.note : '';
+    tplNote.textContent = tp ? `${t('panel.stars.nameVi', { name: constellationNameVi(tp.id) })} ${tp.note}` : '';
   };
   tplSelect.addEventListener('change', updateNote);
   updateNote();
   const addTpl = button(t('panel.stars.addTemplate'), () => {
     const id = tplSelect.value;
-    const tp = TEMPLATES.find((x) => x.id === id)!;
-    if (actions.hasConstellation(id)) return say(t('panel.stars.alreadyAdded', { name: tp.name }), 'err');
+    const name = constellationName(id);
+    if (actions.hasConstellation(id)) return say(t('panel.stars.alreadyAdded', { name }), 'err');
     if (!actions.addConstellation(id)) return say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err');
-    say(t('panel.stars.addedTemplate', { name: tp.name }));
+    say(t('panel.stars.addedTemplate', { name }));
   }, { cls: 'btn--primary' });
   const figureChips = h('div', { class: 'chips chips--figures' });
 

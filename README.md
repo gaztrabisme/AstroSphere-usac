@@ -36,7 +36,9 @@ npm run dev
 - *Vị trí quan sát*: nhập vĩ độ/kinh độ (kiểm tra miền giá trị), thanh trượt vĩ độ, bản đồ thế giới nội bộ (bấm/kéo, phím mũi tên), nút nhanh Hà Nội, Huế, Đà Nẵng, TP.HCM, Cà Mau, Trường Sa, Hoàng Sa, Xích đạo, Bắc Cực, Nam Cực.
 - *Hoạt ảnh*: chạy/tạm dừng; chế độ liên tục, 1 ngày thiên văn rồi dừng, bước theo giờ; tốc độ 5–60 giây cho một ngày thiên văn; thanh "Giờ thiên văn" để quay bằng tay; nút "Bây giờ".
 - *Hiển thị*: vòng giờ 0h, xích đạo trời, mặt dưới chân trời, ba vùng tô màu (kèm chú giải), góc xích đạo trời – chân trời, độ cao thiên cực, trục và mặt phẳng xích đạo, thiên đỉnh/thiên để, kinh tuyến, đường thẳng đứng (kèm cung h và A), lưới chân trời và lưới xích đạo; nhãn bật/tắt theo từng nhóm.
-- *Điều khiển sao*: 16 mẫu chòm sao tên tiếng Việt (Đại Hùng, Tiểu Hùng + sao Bắc Cực, Thiên Hậu, Thợ Săn, Nam Thập Tự, Thần Nông, Thiên Nga…), sao ngẫu nhiên, nhập (α, δ) theo nhiều định dạng, xóa sao, ~1300 sao sáng thật và đường nối 88 chòm sao, vết sao (không / ngắn / dài) và đặt lại vết.
+- *Điều khiển sao*: 16 mẫu chòm sao (Ursa Major, Ursa Minor + Polaris, Cassiopeia, Orion, Crux, Scorpius, Cygnus…), sao ngẫu nhiên, nhập (α, δ) theo nhiều định dạng, xóa sao, ~1300 sao sáng thật và đường nối 88 chòm sao, vết sao (không / ngắn / dài) và đặt lại vết.
+
+**Quy ước tên**: trên bầu trời, sao và chòm sao ghi theo tên quốc tế (IAU: Sirius, Ursa Major…); tên tiếng Việt (Hán Việt / thuần Việt, theo Wikipedia tiếng Việt "Danh sách chòm sao") chỉ hiện trong thẻ thông tin khi bấm vào. Mặc định khi mở trang chỉ hiện sao thật cùng đường nối và tên 88 chòm sao; thiên thể sâu, hoàng đạo, Mặt Trời, vùng tô màu… người dùng tự bật trong bảng Hiển thị.
 
 **Thẻ thông tin** khi bấm vào sao: α, δ, H, A, h, trạng thái (cận cực / mọc – lặn / không mọc), LST và phương vị lúc mọc, qua kinh tuyến, lặn, thời gian ở trên chân trời. Thẻ kéo được và thu gọn được.
 

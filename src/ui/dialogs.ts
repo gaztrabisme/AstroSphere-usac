@@ -10,7 +10,10 @@
 // Trong một dòng: **chữ đậm**, \( TeX \) công thức trong dòng, {{#màu}} ô màu.
 // Công thức được dựng bằng KaTeX (đóng gói kèm ứng dụng, chỉ tải khi mở hộp thoại lần đầu).
 
+import { fmtDegSigned, fmtHMS, fmtNum } from '../astro';
+import { COMETS, DSOS, dsoDesignation } from '../data/deepSky';
 import { t, tList } from '../i18n';
+import { fmtLightYears } from '../selection';
 import { h } from './dom';
 
 const INLINE = /(\*\*.+?\*\*|\\\(.+?\\\)|\{\{#[0-9a-fA-F]{3,8}\}\})/g;
@@ -101,8 +104,8 @@ function renderMath(root: HTMLElement): void {
     });
 }
 
-function makeDialog(id: string, title: string, lines: string[]): HTMLDialogElement {
-  const content = renderLines(lines);
+function makeDialog(id: string, title: string, lines: string[], custom?: HTMLElement): HTMLDialogElement {
+  const content = custom ?? renderLines(lines);
   const dlg = h(
     'dialog',
     { class: 'dialog', id, 'aria-labelledby': `${id}-title` },
@@ -123,9 +126,83 @@ function makeDialog(id: string, title: string, lines: string[]): HTMLDialogEleme
   return dlg;
 }
 
+const simbad = (id: string) => `https://simbad.cds.unistra.fr/simbad/sim-id?Ident=${encodeURIComponent(id)}`;
+
+/** Bảng tra cứu thiên thể sâu và sao chổi (nội dung phụ, không nằm trong giao diện chính). */
+function catalogContent(): HTMLElement {
+  const root = h('div', { class: 'dialog__content' }, ...tList('catalog.intro').map((p) => h('p', null, ...inline(p))));
+  const scroll = (table: HTMLTableElement) => h('div', { class: 'table-scroll' }, table);
+  const head = (keys: string[]) => h('thead', null, h('tr', null, ...keys.map((k) => h('th', { scope: 'col', text: t(`catalog.col.${k}`) }))));
+
+  root.append(h('h3', { text: t('catalog.dsoTitle') }));
+  const rows = DSOS.filter((o) => o.distanceLy || o.featured);
+  root.append(
+    scroll(
+      h(
+        'table',
+        { class: 'data-table' },
+        head(['designation', 'nameEn', 'nameVi', 'type', 'ra', 'dec', 'mag', 'size', 'distance']),
+        h(
+          'tbody',
+          null,
+          ...rows.map((o) =>
+            h(
+              'tr',
+              null,
+              h('td', null, h('a', { href: simbad(o.aliases[0]?.startsWith('NGC') ? o.aliases[0] : o.id), target: '_blank', rel: 'noopener', text: dsoDesignation(o) })),
+              h('td', { text: o.nameEn || '—' }),
+              h('td', { text: o.nameVi || '—' }),
+              h('td', { text: o.typeVi }),
+              h('td', { class: 'num', text: fmtHMS(o.ra, { seconds: false }) }),
+              h('td', { class: 'num', text: fmtDegSigned(o.dec, 1) }),
+              h('td', { class: 'num', text: fmtNum(o.mag, 1) }),
+              h('td', { class: 'num', text: o.sizeArcmin ? `${fmtNum(o.sizeArcmin, o.sizeArcmin < 10 ? 1 : 0)}′` : '—' }),
+              h('td', { class: 'num', text: o.distanceLy ? fmtLightYears(o.distanceLy) : '—' }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  root.append(h('p', { class: 'hint', text: t('catalog.dsoNote', { n: DSOS.length }) }));
+
+  root.append(h('h3', { text: t('catalog.cometTitle') }));
+  root.append(
+    scroll(
+      h(
+        'table',
+        { class: 'data-table' },
+        head(['comet', 'period', 'q', 'e', 'i', 'last', 'next', 'note']),
+        h(
+          'tbody',
+          null,
+          ...COMETS.map((c) =>
+            h(
+              'tr',
+              null,
+              h('td', null, h('strong', { text: c.designation }), h('br'), h('span', { class: 'muted', text: c.nameVi })),
+              h('td', { class: 'num', text: t('catalog.years', { v: fmtNum(c.periodYr, c.periodYr < 100 ? 1 : 0) }) }),
+              h('td', { class: 'num', text: fmtNum(c.perihelionAu, 3) }),
+              h('td', { class: 'num', text: fmtNum(c.eccentricity, 3) }),
+              h('td', { class: 'num', text: `${fmtNum(c.inclinationDeg, 1)}°` }),
+              h('td', { class: 'num', text: c.lastPerihelion }),
+              h('td', { class: 'num', text: c.nextPerihelion }),
+              h('td', { text: c.note }),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  root.append(...tList('catalog.sources').map((p) => h('p', { class: 'hint' }, ...inline(p))));
+  return root;
+}
+
 export function createDialogs() {
   const help = makeDialog('dlg-help', t('help.title'), tList('help.body'));
   const about = makeDialog('dlg-about', t('about.title'), tList('about.body'));
+  const catalog = makeDialog('dlg-catalog', t('catalog.title'), [], catalogContent());
+  catalog.classList.add('dialog--wide');
   const open = (dlg: HTMLDialogElement) => {
     dlg.showModal();
     renderMath(dlg);
@@ -133,6 +210,7 @@ export function createDialogs() {
   return {
     help: () => open(help),
     about: () => open(about),
-    isOpen: () => help.open || about.open,
+    catalog: () => open(catalog),
+    isOpen: () => help.open || about.open || catalog.open,
   };
 }

@@ -141,11 +141,13 @@ for (const p of panelDefs) {
 }
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
 
+window.addEventListener('open-catalog', () => dialogs.catalog());
 const footer = h(
   'footer',
   { class: 'site-footer' },
   h('p', { class: 'site-footer__credit', text: t('app.footer') }),
   h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
+  h('p', { class: 'site-footer__links' }, h('button', { type: 'button', class: 'link-btn', text: t('app.catalogLink'), onclick: () => dialogs.catalog() })),
 );
 app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer, learn.el);
 

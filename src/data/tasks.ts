@@ -47,17 +47,17 @@ const near = (target: number, tol: number) => (v: number) => Math.abs(v - target
 export const TASKS: Task[] = [
   {
     id: 'polaris-hanoi',
-    title: 'Sao Bắc Cực ở Hà Nội',
-    question: 'Đặt vị trí ở Hà Nội. Sao Bắc Cực cao khoảng bao nhiêu độ so với đường chân trời?',
+    title: 'Polaris ở Hà Nội',
+    question: 'Đặt vị trí ở Hà Nội. Polaris (sao Bắc Cực) cao khoảng bao nhiêu độ so với đường chân trời?',
     setup: (ctx) => {
       ctx.actions.setLocation(HANOI.lat, HANOI.lon);
       ensureConstellation(ctx, 'UMi');
       selectHip(ctx, 11767);
     },
     answer: { type: 'number', unit: '°', check: near(21.03, 1.5) },
-    hint: 'Độ cao của thiên cực Bắc đúng bằng vĩ độ người quan sát. Sao Bắc Cực chỉ cách thiên cực Bắc chưa tới 1°.',
+    hint: 'Độ cao của thiên cực Bắc đúng bằng vĩ độ người quan sát. Polaris chỉ cách thiên cực Bắc chưa tới 1°.',
     explain:
-      'Ở Hà Nội φ = 21,03° nên thiên cực Bắc cao 21,03°. Sao Bắc Cực (δ ≈ +89,3°) quay một vòng rất nhỏ quanh thiên cực, nên độ cao của nó chỉ dao động trong khoảng 20,3°–21,8°.',
+      'Ở Hà Nội φ = 21,03° nên thiên cực Bắc cao 21,03°. Polaris (δ ≈ +89,3°) quay một vòng rất nhỏ quanh thiên cực, nên độ cao của nó chỉ dao động trong khoảng 20,3°–21,8°.',
   },
   {
     id: 'equator-circumpolar',
@@ -67,16 +67,16 @@ export const TASKS: Task[] = [
       ctx.actions.setLocation(0, ctx.store.state.lon);
       zones(ctx, true);
     },
-    answer: { type: 'choice', options: ['Sao Bắc Cực', 'Các sao gần thiên cực Nam', 'Không có sao nào', 'Mọi sao'], correct: 2 },
+    answer: { type: 'choice', options: ['Polaris (sao Bắc Cực)', 'Các sao gần thiên cực Nam', 'Không có sao nào', 'Mọi sao'], correct: 2 },
     hint: 'Điều kiện cận cực (Bắc bán cầu): δ > 90° − φ. Thử thay φ = 0°.',
     explain:
       'Với φ = 0°, cần δ > 90° — không sao nào thỏa mãn. Ở xích đạo mọi sao đều mọc và lặn, và ở trên chân trời đúng 12 giờ thiên văn mỗi ngày.',
   },
   {
     id: 'crux-circumpolar',
-    title: 'Nam Thập Tự không bao giờ lặn',
+    title: 'Crux không bao giờ lặn',
     question:
-      'Tìm một vĩ độ mà tại đó MỌI sao của chòm Nam Thập Tự đều là sao cận cực (không bao giờ lặn). Đặt vĩ độ đó trong mô phỏng rồi bấm "Kiểm tra".',
+      'Tìm một vĩ độ mà tại đó MỌI sao của chòm Crux (Nam Thập Tự) đều là sao cận cực (không bao giờ lặn). Đặt vĩ độ đó trong mô phỏng rồi bấm "Kiểm tra".',
     setup: (ctx) => {
       ensureConstellation(ctx, 'Cru');
       zones(ctx, true);
@@ -91,9 +91,9 @@ export const TASKS: Task[] = [
         return s.stars.filter((x) => ids.has(x.id)).every((x) => classify(x.dec, s.lat) === 'circumpolar');
       },
     },
-    hint: 'Sao "cao" nhất của Nam Thập Tự là Gacrux (δ ≈ −57,1°). Ở Nam bán cầu, sao là cận cực khi δ < −(90° − |φ|).',
+    hint: 'Sao "cao" nhất của Crux là Gacrux (δ ≈ −57,1°). Ở Nam bán cầu, sao là cận cực khi δ < −(90° − |φ|).',
     explain:
-      'Cần 90° − |φ| < 57,1° ⇒ |φ| > 32,9° và người quan sát ở Nam bán cầu. Ví dụ ở Sydney hay Cape Town (vĩ độ ≈ 33,9° Nam), Nam Thập Tự không bao giờ lặn. Ở Việt Nam, Nam Thập Tự mọc rồi lặn và chỉ thấy thấp ở chân trời phía Nam.',
+      'Cần 90° − |φ| < 57,1° ⇒ |φ| > 32,9° và người quan sát ở Nam bán cầu. Ví dụ ở Sydney hay Cape Town (vĩ độ ≈ 33,9° Nam), Crux không bao giờ lặn. Ở Việt Nam, Crux mọc rồi lặn và chỉ thấy thấp ở chân trời phía Nam.',
   },
   {
     id: 'tilt-hanoi',
@@ -156,9 +156,9 @@ export const TASKS: Task[] = [
   },
   {
     id: 'sirius-meridian',
-    title: 'Thiên Lang qua kinh tuyến',
+    title: 'Sirius qua kinh tuyến',
     question:
-      'Kéo thanh "Giờ thiên văn" sao cho sao Thiên Lang (Sirius) nằm đúng trên kinh tuyến trên (góc giờ H ≈ 0), rồi bấm "Kiểm tra".',
+      'Kéo thanh "Giờ thiên văn" sao cho sao Sirius (Thiên Lang) nằm đúng trên kinh tuyến trên (góc giờ H ≈ 0), rồi bấm "Kiểm tra".',
     setup: (ctx) => {
       ctx.actions.pause();
       ensureConstellation(ctx, 'CMa');
@@ -172,13 +172,13 @@ export const TASKS: Task[] = [
         return !!sirius && Math.abs(hourAngleDeg(lstOf(s), sirius.ra)) <= 3.75;
       },
     },
-    hint: 'Một sao qua kinh tuyến trên khi góc giờ H = LST − α = 0, tức là LST = α. Xem xích kinh của Thiên Lang trong thẻ thông tin.',
-    explain: 'Thiên Lang có α ≈ 6h 45m, nên nó qua kinh tuyến (lên cao nhất, ở hướng Nam với người ở Việt Nam) khi LST ≈ 6h 45m.',
+    hint: 'Một sao qua kinh tuyến trên khi góc giờ H = LST − α = 0, tức là LST = α. Xem xích kinh của Sirius trong thẻ thông tin.',
+    explain: 'Sirius có α ≈ 6h 45m, nên nó qua kinh tuyến (lên cao nhất, ở hướng Nam với người ở Việt Nam) khi LST ≈ 6h 45m.',
   },
   {
     id: 'max-alt',
     title: 'Độ cao cực đại',
-    question: 'Ở TP.HCM (φ = 10,82°), sao Thiên Lang (δ ≈ −16,72°) lên cao nhất bao nhiêu độ?',
+    question: 'Ở TP.HCM (φ = 10,82°), sao Sirius (δ ≈ −16,72°) lên cao nhất bao nhiêu độ?',
     setup: (ctx) => ctx.actions.setLocation(HCM.lat, HCM.lon),
     answer: { type: 'number', unit: '°', check: near(62.46, 1) },
     hint: 'Độ cao lúc qua kinh tuyến trên: h_max = 90° − |φ − δ|.',

@@ -1,6 +1,7 @@
 // Khung nhìn phải: giản đồ chân trời — người quan sát đứng ở tâm mặt phẳng chân trời.
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { equatorialToHorizontal } from '../astro';
 import { sunEquatorial } from '../selection';
 import { lstOf, type AppState, type Store } from '../state';
@@ -71,7 +72,45 @@ export class HorizonDiagramView extends View {
     this.dome.userData.tip = 'skyDome';
     this.scene.add(this.dome);
 
+    // Ánh sáng cho mô hình 3D người quan sát (các đối tượng khác dùng vật liệu không chịu sáng)
+    this.scene.add(new THREE.HemisphereLight('#dbe6ff', '#2f4a2f', 2.2));
+    const key = new THREE.DirectionalLight('#ffffff', 2.4);
+    key.position.set(R * 0.6, R, R * 0.8);
+    this.scene.add(key);
+    this.loadObserverModel();
+
     this.update(store.state);
+  }
+
+  /**
+   * Thay hình nhân mặc định bằng mô hình glTF (public/models/usui-chan.glb) nếu có.
+   * Mô hình được co giãn về chiều cao cố định, đặt chân lên mặt phẳng chân trời, quay mặt về hướng Nam (+Z).
+   */
+  private loadObserverModel(): void {
+    const url = `${import.meta.env.BASE_URL}models/usui-chan.glb`;
+    new GLTFLoader().load(
+      url,
+      (gltf) => {
+        const model = gltf.scene;
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const height = this.R * 0.2;
+        const k = height / Math.max(size.y, 1e-6);
+        model.scale.setScalar(k);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.set(-center.x * k, -box.min.y * k, -center.z * k);
+        model.traverse((o) => {
+          if ((o as THREE.Mesh).isMesh) o.userData.tip = 'observer';
+        });
+        this.person.clear();
+        this.person.add(model);
+        this.dirty = true;
+      },
+      undefined,
+      () => {
+        /* Chưa có mô hình: giữ hình nhân đơn giản */
+      },
+    );
   }
 
   protected clipBelow(s: AppState): boolean {
@@ -113,6 +152,8 @@ export class HorizonDiagramView extends View {
   /** Góc nhìn của người quan sát: đứng ở tâm, nhìn quanh bầu trời. */
   setFirstPerson(on: boolean): void {
     this.firstPerson = on;
+    // Ở góc nhìn người quan sát, camera nằm đúng vị trí mắt nên ẩn mô hình đi.
+    this.person.visible = !on;
     const R = this.R;
     if (on) {
       const eye = new THREE.Vector3(0, R * 0.06, 0);
@@ -140,7 +181,15 @@ export class HorizonDiagramView extends View {
   }
 
   protected hoverTargets(): THREE.Object3D[] {
-    return [...super.hoverTargets(), this.ground, this.dome, ...this.person.children];
+    return [...super.hoverTargets(), this.ground, this.dome, ...this.personMeshes()];
+  }
+
+  private personMeshes(): THREE.Object3D[] {
+    const out: THREE.Object3D[] = [];
+    this.person.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) out.push(o);
+    });
+    return out;
   }
 
   resetCamera(): void {

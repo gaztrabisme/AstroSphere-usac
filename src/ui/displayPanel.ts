@@ -35,6 +35,7 @@ const EXTRA: [ToggleKey, string?][] = [
   ['ecliptic', COLORS.ecliptic],
   ['galactic', COLORS.galactic],
   ['sun', COLORS.sun],
+  ['deepSky', '#f9a8d4'],
 ];
 
 const LABEL_KEYS: (keyof LabelToggles)[] = ['directions', 'poles', 'circles', 'stars', 'angles'];
@@ -95,6 +96,7 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
       h('div', { class: 'field' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
       h('div', { class: 'chips' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
       sunInfo,
+      h('div', { class: 'row' }, button(t('panel.display.openCatalog'), () => window.dispatchEvent(new Event('open-catalog')), { cls: 'btn--small btn--ghost', title: t('panel.display.openCatalogTip') })),
     ),
   );
 

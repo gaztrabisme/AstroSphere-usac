@@ -148,6 +148,8 @@ export abstract class View {
       if (vis) {
         lbl.getWorldPosition(_v);
         if (clip && lbl.userData.hideBelowHorizon && _v.y < -0.03 * this.R) vis = false;
+        // Nhãn dày đặc (tên chòm sao, tên sao) chỉ hiện ở nửa thiên cầu quay về phía người xem để đỡ rối.
+        else if (lbl.userData.hideFarSide && _v.dot(this.camera.position) < 0) vis = false;
         else if (this.isOccluded(_v)) vis = false;
       }
       lbl.visible = vis;
