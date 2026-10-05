@@ -66,6 +66,8 @@ export function infoCard(store: Store, actions: Actions) {
   const kindText = h('span');
   const magText = h('span', { class: 'infocard__mag' });
   const kind = h('p', { class: 'infocard__kind' }, kindText, magText);
+  // Điện thoại, thẻ thu gọn: một dòng mảnh "tên · A …, h …" (review-3 B4) — chạm để mở đầy đủ.
+  const brief = h('span', { class: 'infocard__brief' });
   const collapseBtn = h('button', {
     type: 'button',
     class: 'icon-btn',
@@ -137,6 +139,7 @@ export function infoCard(store: Store, actions: Actions) {
       { class: 'infocard__head' },
       dot,
       title,
+      brief,
       collapseBtn,
       h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
     ),
@@ -176,9 +179,10 @@ export function infoCard(store: Store, actions: Actions) {
   const endDrag = () => (drag = null);
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
-  // Màn hình rộng: bấm vào thanh tiêu đề (không phải nút, không phải kéo) cũng mở/thu gọn thẻ (review-2 B2).
+  // Bấm vào thanh tiêu đề (không phải nút, không phải kéo) cũng mở/thu gọn thẻ (review-2 B2).
   head.addEventListener('click', (e) => {
-    if (dragged || (e.target as HTMLElement).closest('button') || !isWide() || el.classList.contains('is-empty')) return;
+    // Điện thoại: chạm vào dòng mảnh của thẻ thu gọn cũng mở thẻ ra (review-3 B4).
+    if (dragged || (e.target as HTMLElement).closest('button') || el.classList.contains('is-empty')) return;
     setCollapsed(!el.classList.contains('is-collapsed'));
   });
 
@@ -265,6 +269,7 @@ export function infoCard(store: Store, actions: Actions) {
     setRow(r.ha, fmtHMS(ha, { signed: true }), ha >= 0 ? t('info.haWest') : t('info.haEast'));
     setRow(r.az, Number.isFinite(az) ? fmtDeg(az, 2) : '—', compassName(az));
     setRow(r.alt, fmtDegSigned(alt, 2), alt >= 0 ? t('info.above') : t('info.below'));
+    setText(brief, `A\u00a0${Number.isFinite(az) ? fmtDeg(az, 1) : '—'} · h\u00a0${fmtDegSigned(alt, 1)}`);
   };
 
   /** "Đặt lại": về trạng thái lần đầu vào trang (thẻ thu gọn, lựa chọn mặc định không tự mở thẻ). */

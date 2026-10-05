@@ -651,6 +651,11 @@ body.learn-open .layout {
   font-size: 15px;
 }
 
+/* Dòng tóm tắt "A …, h …" chỉ dùng cho thẻ thu gọn trên điện thoại (xem @media max-width 900px). */
+.infocard__brief {
+  display: none;
+}
+
 .infocard.is-collapsed .infocard__body,
 .infocard.is-collapsed .infocard__vi,
 .infocard.is-collapsed .infocard__kind {
@@ -1765,10 +1770,11 @@ body.present .swatch--line {
   }
 
   /* Điện thoại: cảnh 3D cao hơn (review-1 B4) — dải số liệu ở ngay dưới, dòng cốt lõi nằm trong khung. */
+  /* review-3 B4: khung vừa với cảnh (vòm + đĩa rộng hơn cao), không còn dải trời trống phía trên vòm; dòng cốt lõi
+     "φ = … · Độ cao thiên cực …" và đầu dải số liệu nằm trong màn hình đầu 375 × 812. */
   .views {
     grid-template-columns: 1fr;
-    height: 70svh;
-    min-height: 360px;
+    height: clamp(360px, calc(100vw + 80px), 70svh);
   }
 
   .views[data-active='sphere'] #view-horizon,
@@ -1781,7 +1787,12 @@ body.present .swatch--line {
     display: none;
   }
 
+  /* Nút công cụ của khung nổi trên góc trên của cảnh (vùng trời trống phía trên vòm), không chiếm một hàng riêng. */
   .view__head {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
     justify-content: flex-end;
     padding: 4px 6px;
   }
@@ -1812,6 +1823,43 @@ body.present .swatch--line {
 
   .infocard__head {
     cursor: default;
+  }
+
+  /* Thu gọn trên điện thoại (review-3 B4): MỘT dòng mảnh — chấm màu, tên, "A …, h …", nút mở/đóng 44 px — thay cho
+     một thẻ lớn gần như trống. Chạm vào dòng để mở đầy đủ. */
+  .infocard.is-collapsed {
+    padding: 0 2px 0 10px;
+  }
+
+  .infocard.is-collapsed .infocard__head {
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .infocard.is-collapsed .infocard__dot {
+    margin-top: 0;
+  }
+
+  .infocard.is-collapsed .infocard__title {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .infocard.is-collapsed:not(.is-empty) .infocard__brief {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
   }
 
   .infocard[style] {

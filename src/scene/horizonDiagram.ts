@@ -13,6 +13,9 @@ const TWILIGHT = new THREE.Color('#141f3d');
 const DAY = new THREE.Color('#1d4374');
 /** Độ đục của đĩa chân trời (review-3 B2: 0,92 → 0,55): mặt đất lùi về sau, thiên cực, trục, cung h/A nổi lên. */
 const GROUND_OPACITY = 0.55;
+/** Góc nhìn ngang (độ) của giản đồ chân trời trong khung dọc. */
+const PORTRAIT_HFOV = 46;
+const DEG = Math.PI / 180;
 
 export class HorizonDiagramView extends View {
   private ground: THREE.Mesh;
@@ -119,7 +122,10 @@ export class HorizonDiagramView extends View {
     // Khung ngang rộng (màn hình máy tính): thu hẹp góc nhìn để vòm trời và đĩa chân trời lấp khung — khung chân
     // trời là tiêu điểm của trang (review-2 B2, color-theory T1).
     if (this.firstPerson) return 75;
-    return aspect >= 1.2 ? 37 : super.preferredFov(aspect);
+    if (aspect >= 1.2) return 37;
+    // Khung dọc (điện thoại, review-3 B4): bề ngang là giới hạn — chọn góc nhìn dọc sao cho góc nhìn NGANG cố định
+    // (~46°, vòm và đĩa lấp bề ngang, còn chỗ cho chữ T/Đ), thay vì góc dọc cố định để lại trời trống phía trên.
+    return Math.min(62, Math.max(37, (2 * Math.atan(Math.tan((PORTRAIT_HFOV / 2) * DEG) / aspect)) / DEG));
   }
 
   isFirstPerson(): boolean {

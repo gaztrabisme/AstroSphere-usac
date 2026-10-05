@@ -216,6 +216,28 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   check('375: default view tab is the horizon diagram', defView === 'Giản đồ chân trời', defView ?? '');
   const collapsed = await page.evaluate(() => document.querySelector('.infocard').classList.contains('is-collapsed'));
   check('375: info card starts collapsed', collapsed);
+  // review-3 B4: dòng cốt lõi nằm trong màn hình đầu; thẻ thu gọn là MỘT dòng mảnh có tên và A/h; chạm để mở.
+  const first = await page.evaluate(() => {
+    const key = document.querySelector('#view-horizon .view__key');
+    const k = key.getBoundingClientRect();
+    const c = document.querySelector('.infocard');
+    const r = c.getBoundingClientRect();
+    return {
+      keyText: key.textContent,
+      keyTop: Math.round(k.top),
+      keyBottom: Math.round(k.bottom),
+      keyVisible: getComputedStyle(key).visibility !== 'hidden' && k.height > 0,
+      card: { h: Math.round(r.height), text: c.querySelector('.infocard__head').textContent },
+    };
+  });
+  check('375: key formula line "φ = … · Độ cao thiên cực …" is inside the first 812 px', first.keyVisible && /^φ = .*Độ cao thiên cực/.test(first.keyText) && first.keyTop >= 0 && first.keyBottom <= 812, JSON.stringify(first));
+  check('375: collapsed info card is one slim row (≤ 52 px) with the name and A/h', first.card.h <= 52 && /Polaris/.test(first.card.text) && /A\u00a0[\d,]+°/.test(first.card.text) && /h\u00a0[+−-][\d,]+°/.test(first.card.text), JSON.stringify(first.card));
+  await page.locator('.infocard__title').click();
+  await page.waitForTimeout(200);
+  const opened = await page.evaluate(() => ({ collapsed: document.querySelector('.infocard').classList.contains('is-collapsed'), h: Math.round(document.querySelector('.infocard').getBoundingClientRect().height) }));
+  check('375: tapping the slim row expands the info card', !opened.collapsed && opened.h > 52, JSON.stringify(opened));
+  await page.locator('.infocard__title').click();
+  await page.waitForTimeout(200);
   await page.screenshot({ path: `${SHOTS}ux-after-375.png` });
   const tabs = page.locator('.paneltabs [role=tab]');
   const n = await tabs.count();
