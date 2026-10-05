@@ -40,6 +40,17 @@ const wantsPose = (): boolean => media('(min-width: 901px) and (min-height: 860p
  */
 const wantsToast = (): boolean => media('(max-width: 900px)') || (!wantsPose() && document.body.classList.contains('mode-simple'));
 
+/** Lời chào đè lên thẻ đang chọn (hoặc chữ cuối của nhóm 3) trong dải điều khiển của chế độ Cơ bản. */
+function coversDock(hello: HTMLElement): boolean {
+  const r = hello.getBoundingClientRect();
+  for (const el of document.querySelectorAll<HTMLElement>('.simple__dock, .simple fieldset, .simple__group')) {
+    const d = el.getBoundingClientRect();
+    if (d.width === 0 || d.height === 0) continue;
+    if (r.left < d.right && d.left < r.right && r.top < d.bottom + 8 && d.top < r.bottom) return true;
+  }
+  return false;
+}
+
 const guideTarget = (node: EventTarget | null): HTMLElement | null =>
   node instanceof Element && !node.closest(OWN) ? node.closest<HTMLElement>('[data-guide]') : null;
 const isOwn = (node: EventTarget | null): boolean => node instanceof Element && !!node.closest(OWN);
@@ -69,12 +80,15 @@ export function createGuideUi({ avatar, skies }: { avatar: HTMLButtonElement; sk
       { class: `guide-hello${pose ? ' guide-hello--pose' : ''}${wide ? ' guide-hello--wide' : ''}`, 'aria-labelledby': 'guide-hello-title' },
       h('div', { class: 'guide-hello__head' }, face, h('h2', { class: 'guide-hello__title', id: 'guide-hello-title', text: t('guide.helloTitle') })),
       h('p', { class: 'guide-hello__body', text: t('guide.helloBody') }),
+      // Việc đầu tiên nên làm là bấm vào bầu trời, không phải vào Usui-chan (fix-2 #2): dòng mời đậm, chữ sáng; hai
+      // nút bên dưới cùng là nút phụ (viền), không nút nào tô cam đặc để giành chỗ "số một" với bầu trời.
+      h('p', { class: 'guide-hello__star', text: t('guide.helloStar') }),
       h(
         'div',
         { class: 'guide-hello__actions' },
         h('button', {
           type: 'button',
-          class: 'btn btn--primary',
+          class: 'btn guide-hello__explain',
           text: t('guide.helloExplain'),
           onclick: () => {
             closeHello();
@@ -121,7 +135,15 @@ export function createGuideUi({ avatar, skies }: { avatar: HTMLButtonElement; sk
     // Ngay sau nút chân dung trong thứ tự DOM: người dùng bàn phím Tab từ chân dung là tới lời chào.
     // Không chuyển tiêu điểm vào lời chào (không cướp tiêu điểm).
     avatar.after(hello);
+    // Lớp này ẩn lời mời ở đầu dải (CSS) — thêm TRƯỚC khi đo để thẻ đang chọn ở đúng chỗ của nó.
     document.body.classList.add('guide-hello-open');
+    // Ảnh toàn thân phải nằm DƯỚI thẻ đang chọn trong dải điều khiển, không che nó (fix-2 #9). Không đủ chỗ (màn hình
+    // thấp, thẻ cao) → dùng dải lời chào mảnh ngay trên chân dung.
+    if (hello.classList.contains('guide-hello--pose') && coversDock(hello)) {
+      hello.remove();
+      hello = toastHello();
+      avatar.after(hello);
+    }
     for (const s of skies) s.addEventListener('pointerdown', onSky);
     // Vũ đạo "kích hoạt → theo sau" (motion › choreography): chân dung gật nhẹ một lần, bong bóng theo sau 120 ms.
     avatar.classList.add('is-greeting');

@@ -3,6 +3,29 @@
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/**
+ * Mũi tên gập (chevron) chỉ XUỐNG, nét 1,8 px trên khung 16 × 16 (fix-2 #8): nút mở/thu gọn thẻ thông tin. "+" từng
+ * đọc thành "thêm"; chevron là ký hiệu quen thuộc của "mở ra / gập lại". CSS xoay 180° khi thẻ đang mở.
+ */
+export function chevronIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.8');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('class', 'chevron');
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', 'M3.5 6l4.5 4.5L12.5 6');
+  svg.append(path);
+  return svg;
+}
+
 /** Cuốn sách mở (nút Codex, fix-1 #8): hai trang và gáy sách, nét 1,6 px trên khung 16 × 16. */
 export function bookIcon(): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');

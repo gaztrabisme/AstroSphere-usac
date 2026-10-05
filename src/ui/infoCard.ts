@@ -21,6 +21,7 @@ import { resolveSelection, sunEquatorial } from '../selection';
 import { lstOf, type Actions, type AppState, type Store } from '../state';
 import { h, setHidden, setText } from './dom';
 import { bindEmphasis } from './emphasis';
+import { chevronIcon } from './icons';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
@@ -69,21 +70,23 @@ export function infoCard(store: Store, actions: Actions) {
   const kind = h('p', { class: 'infocard__kind' }, kindText, magText);
   // Điện thoại, thẻ thu gọn: một dòng mảnh "tên · A …, h …" (review-3 B4) — chạm để mở đầy đủ.
   const brief = h('span', { class: 'infocard__brief' });
-  const collapseBtn = h('button', {
-    type: 'button',
-    class: 'icon-btn',
-    'aria-expanded': 'true',
-    'aria-label': t('info.collapse'),
-    'data-guide': 'infoCollapse',
-    title: t('info.collapse'),
-    text: '–',
-    onclick: () => setCollapsed(!el.classList.contains('is-collapsed')),
-  });
+  const collapseBtn = h(
+    'button',
+    {
+      type: 'button',
+      class: 'icon-btn infocard__fold',
+      'aria-expanded': 'true',
+      'aria-label': t('info.collapse'),
+      'data-guide': 'infoCollapse',
+      title: t('info.collapse'),
+      onclick: () => setCollapsed(!el.classList.contains('is-collapsed')),
+    },
+    chevronIcon(), // fix-2 #8: chevron thay cho "+"/"–" ("+" đọc thành "thêm")
+  );
   /** Thu gọn thẻ về một dòng tiêu đề (tên đối tượng) hoặc mở ra đầy đủ. */
   function setCollapsed(collapsed: boolean): void {
     el.classList.toggle('is-collapsed', collapsed);
     collapseBtn.setAttribute('aria-expanded', String(!collapsed));
-    collapseBtn.textContent = collapsed ? '+' : '–';
     const label = t(collapsed ? 'info.expand' : 'info.collapse');
     collapseBtn.setAttribute('aria-label', label);
     collapseBtn.title = label;
