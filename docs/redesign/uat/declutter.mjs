@@ -4,7 +4,8 @@
 //
 // Ở 1440×900, 375×812 (cả hai thẻ khung nhìn), khi rê chuột lên ô "Độ cao thiên cực" và ở chế độ trình chiếu
 // 1920×1080: lấy hộp của mọi nhãn CSS2D đang hiện (display ≠ none, visibility ≠ hidden) và khẳng định
-// (1) không hai nhãn nào chồng nhau quá 2 px, (2) không nhãn nào tràn ra ngoài khung canvas của nó.
+// (1) không hai nhãn nào chồng nhau quá 2 px, (2) không nhãn nào tràn ra ngoài khung canvas của nó. Khi tô sáng độ
+// cao thiên cực: (3) bốn chữ hướng vẫn hiện, nhãn số đo và tên Polaris cũng hiện (review-3 D2).
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:4190/?quality=fixed';
@@ -73,7 +74,14 @@ function judge(tag, views) {
   judge('1440', await measure(page));
   await page.locator('.databar [data-emphasis=pole]').hover();
   await page.waitForTimeout(800);
-  judge('1440 hover pole', await measure(page));
+  const hv = await measure(page);
+  judge('1440 hover pole', hv);
+  // review-3 D2: nhãn số đo nhường chỗ (dời dọc cung), không che chữ hướng; tên đối tượng chọn vẫn hiện ở cả hai khung.
+  const hz = hv.find((v) => v.view === 'view-horizon').labels.map((l) => l.text);
+  const missing = ['B', 'N', 'Đ', 'T'].filter((d) => !hz.includes(d));
+  check('1440 hover pole view-horizon: all four cardinals B/N/Đ/T stay visible', missing.length === 0, `missing=${missing.join(',')}`);
+  check('1440 hover pole view-horizon: the emphasised pole-altitude label is visible', hz.some((x) => x.startsWith('Độ cao thiên cực')), hz.join(' | '));
+  for (const v of hv) check(`1440 hover pole ${v.view}: the selected star's name (Polaris) is visible`, v.labels.some((l) => l.text === 'Polaris'), v.labels.map((l) => l.text).join(' | '));
   await ctx.close();
 }
 {

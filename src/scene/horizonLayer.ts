@@ -179,6 +179,9 @@ export class HorizonLayer {
     // Chip tối, chữ sáng, viền xanh của trục: không còn "xanh trên xanh trên xanh lá" (review-1 F2). Nhãn đặt ngay
     // ngoài trung điểm của cung, chữ chạy ra xa trục.
     this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.axis, anchor: [-0.04, 0.5], emph: 'pole' });
+    // Vị trí thay thế dọc theo cung (ghi lại khi vĩ độ đổi): nhãn nhường chỗ cho chữ hướng B/N thay vì che nó.
+    this.poleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    this.angleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.poleAlt.add(this.poleSector, this.poleArc, this.poleLabel);
     this.group.add(this.poleAlt);
   }
@@ -197,6 +200,11 @@ export class HorizonLayer {
     this.angleSector.geometry = sectorGeometry(from, to, r);
     writeFatLine(this.angleArc, _pts, greatArcInto(from, to, r, 40, _pts));
     this.angleLabel.position.copy(horVec(incl * 0.6, baseAz, r * 1.08));
+    const aAlts = this.angleLabel.userData.alts!;
+    horVec(incl * 0.35, baseAz, r * 1.08, aAlts[0]);
+    horVec(incl * 0.85, baseAz, r * 1.08, aAlts[1]);
+    horVec(incl * 0.15, baseAz, r * 1.08, aAlts[2]);
+    horVec(Math.min(incl + 8, 89), baseAz, r * 1.08, aAlts[3]);
     setLabelText(this.angleLabel, `90° − |φ| = ${fmtDeg(incl)}`);
 
     // Độ cao thiên cực: từ điểm Bắc lên thiên cực Bắc (hoặc từ Nam lên thiên cực Nam).
@@ -209,6 +217,13 @@ export class HorizonLayer {
     if (pAlt < 0.01) writeFatLine(this.poleArc, _pts, greatArcInto(pf, pf, rp, 1, _pts));
     else writeFatLine(this.poleArc, _pts, greatArcInto(pf, pt, rp, 40, _pts));
     this.poleLabel.position.copy(horVec(Math.max(pAlt / 2, 4), pAz, rp * 1.06));
+    // Thứ tự thử: gần chân trời hơn, gần thiên cực hơn, sát chân trời, rồi vượt quá thiên cực.
+    const pAlts = this.poleLabel.userData.alts!;
+    horVec(Math.max(pAlt * 0.25, 2), pAz, rp * 1.06, pAlts[0]);
+    horVec(Math.max(pAlt * 0.75, 6), pAz, rp * 1.06, pAlts[1]);
+    horVec(1, pAz, rp * 1.06, pAlts[2]);
+    horVec(Math.min(pAlt + 8, 89), pAz, rp * 1.06, pAlts[3]);
+    horVec(Math.min(pAlt + 16, 89), pAz, rp * 1.06, pAlts[4]);
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
 

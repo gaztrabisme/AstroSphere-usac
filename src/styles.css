@@ -49,6 +49,7 @@
   --scrim: #000000b3; /* nền mờ sau hộp thoại */
   --veil: #ffffff14; /* lớp phủ sáng nhẹ khi rê chuột */
   --label-halo: #000; /* viền chữ cho nhãn trong cảnh 3D */
+  --label-pill: #0a0a0aa6; /* nền viên thuốc mờ sau mọi nhãn cảnh: đường kẻ đi dưới nhãn không cắt nét chữ */
   --scene-label-dim: #d4d4d4; /* tên sao danh mục: 13,4:1 trên nền trời, 5,26:1 trên mặt đất xanh (cả khi không có viền) */
 
   /* Màu ngữ nghĩa của cảnh 3D (trùng scene/colors.ts) — không đổi theo thương hiệu. */
@@ -430,6 +431,11 @@ body.learn-open .layout {
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
+  /* Mọi nhãn cảnh có viên thuốc tối mờ như nhãn "A = …" (review-3 D2/I1.1): đường xích đạo, trục, vòng chọn đi
+     ngang qua nhãn bị che dưới nền này thay vì cắt ngang chữ. Viền chữ bên dưới vẫn giữ cho phần nền mờ. */
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--label-pill);
   /* Viền chữ tối (review-2 D2): bốn bóng cứng 1 px tạo viền liền quanh nét chữ, thêm hai lớp mờ — nhãn đọc được
      cả khi nằm trên đường kẻ, chòm sao hay bề mặt Trái Đất. */
   text-shadow:

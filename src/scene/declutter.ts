@@ -10,6 +10,9 @@ export const EDGE = 6;
 /** Khoảng trống tối thiểu giữa hai nhãn (px). 4 px (trước là 2): "N" và "Achernar" không còn dính nhau (review-2 D2). */
 export const GAP = 4;
 
+/** Số vị trí thay thế tối đa cho mỗi nhãn (vd. các điểm dọc theo cung của nhãn số đo). */
+export const MAX_ALTS = 6;
+
 export class LabelBoxes {
   n = 0;
   x = new Float32Array(0);
@@ -18,9 +21,22 @@ export class LabelBoxes {
   h = new Float32Array(0);
   /** 1 = được phép đẩy vào trong mép thay vì bị ẩn. */
   nudge = new Uint8Array(0);
+  /**
+   * Khoảng trống thêm (px) mà hộp này đòi hỏi quanh mình: nhãn đối tượng đang chọn và nhãn số đo đang tô sáng dọn
+   * chỗ rộng hơn, để tên sao/chòm sao hạng thấp không chen sát vào (review-3 D2).
+   */
+  pad = new Float32Array(0);
+  /** 1 = không có chỗ trống nào thì vẫn giữ ở vị trí gốc (nhãn số đo đang tô sáng: là nội dung chính lúc đó). */
+  must = new Uint8Array(0);
+  /** Độ lệch ngang đặt trước (px) đã cộng vào x khi đẩy hộp — khung nhìn cộng lại khi áp vào điểm neo. */
+  ox = new Float32Array(0);
+  /** Vị trí thay thế (góc trên trái, px) thử theo thứ tự khi vị trí gốc bị chiếm: altN[i] vị trí tại i*MAX_ALTS. */
+  altN = new Uint8Array(0);
+  altX = new Float32Array(0);
+  altY = new Float32Array(0);
   /** Kết quả: 1 = giữ. */
   keep = new Uint8Array(0);
-  /** Kết quả: độ dời (px) đã áp dụng để đưa nhãn vào trong mép. */
+  /** Kết quả: độ dời (px) từ vị trí gốc tới vị trí đã chọn (đẩy vào trong mép và/hoặc vị trí thay thế). */
   dx = new Float32Array(0);
   dy = new Float32Array(0);
 
@@ -33,6 +49,12 @@ export class LabelBoxes {
     this.w = new Float32Array(c);
     this.h = new Float32Array(c);
     this.nudge = new Uint8Array(c);
+    this.pad = new Float32Array(c);
+    this.must = new Uint8Array(c);
+    this.ox = new Float32Array(c);
+    this.altN = new Uint8Array(c);
+    this.altX = new Float32Array(c * MAX_ALTS);
+    this.altY = new Float32Array(c * MAX_ALTS);
     this.keep = new Uint8Array(c);
     this.dx = new Float32Array(c);
     this.dy = new Float32Array(c);
@@ -50,52 +72,88 @@ export class LabelBoxes {
     this.w[i] = w;
     this.h[i] = h;
     this.nudge[i] = nudge ? 1 : 0;
+    this.pad[i] = 0;
+    this.must[i] = 0;
+    this.ox[i] = 0;
+    this.altN[i] = 0;
     this.keep[i] = 0;
     this.dx[i] = 0;
     this.dy[i] = 0;
     return i;
   }
+
+  /** Thêm một vị trí thay thế (góc trên trái, px) cho hộp i; bỏ qua khi đã đủ MAX_ALTS. */
+  addAlt(i: number, x: number, y: number): void {
+    const k = this.altN[i];
+    if (k >= MAX_ALTS) return;
+    this.altX[i * MAX_ALTS + k] = x;
+    this.altY[i * MAX_ALTS + k] = y;
+    this.altN[i] = k + 1;
+  }
 }
 
-/** Quyết định giữ/ẩn từng hộp trong khung W×H (px). Độ phức tạp O(n · số hộp đã giữ). */
+/** Hộp (x, y, w, h) có chạm hộp nào đã giữ trước i không (khoảng trống = gap + phần đệm lớn hơn của hai hộp). */
+function hits(b: LabelBoxes, i: number, x: number, y: number, w: number, h: number, gap: number): boolean {
+  const pi = b.pad[i];
+  for (let j = 0; j < i; j++) {
+    if (!b.keep[j]) continue;
+    const g = gap + (b.pad[j] > pi ? b.pad[j] : pi);
+    if (x < b.x[j] + b.w[j] + g && b.x[j] < x + w + g && y < b.y[j] + b.h[j] + g && b.y[j] < y + h + g) return true;
+  }
+  return false;
+}
+
+/**
+ * Quyết định giữ/ẩn từng hộp trong khung W×H (px). Mỗi hộp thử vị trí gốc rồi lần lượt các vị trí thay thế; vị trí
+ * đầu tiên nằm trong khung (sau khi đẩy vào trong mép nếu được phép) và không chạm hộp đã giữ thì được chọn.
+ * Không có vị trí nào: ẩn, trừ hộp `must` (giữ ở vị trí gốc). Độ phức tạp O(n · số vị trí · số hộp đã giữ).
+ */
 export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap = GAP): void {
   const n = b.n;
   for (let i = 0; i < n; i++) {
-    let x = b.x[i];
-    let y = b.y[i];
+    const x0 = b.x[i];
+    const y0 = b.y[i];
     const w = b.w[i];
     const h = b.h[i];
-    let dx = 0;
-    let dy = 0;
-    if (x < edge) dx = edge - x;
-    else if (x + w > W - edge) dx = W - edge - (x + w);
-    if (y < edge) dy = edge - y;
-    else if (y + h > H - edge) dy = H - edge - (y + h);
-    if (dx !== 0 || dy !== 0) {
-      // Nhãn quá lớn so với khung, hoặc không được phép dời: ẩn.
-      if (!b.nudge[i] || w > W - 2 * edge || h > H - 2 * edge) {
-        b.keep[i] = 0;
-        continue;
+    const tooBig = w > W - 2 * edge || h > H - 2 * edge;
+    const na = b.altN[i];
+    let placed = false;
+    let fx = NaN;
+    let fy = NaN;
+    for (let k = -1; k < na; k++) {
+      let x = k < 0 ? x0 : b.altX[i * MAX_ALTS + k];
+      let y = k < 0 ? y0 : b.altY[i * MAX_ALTS + k];
+      let dx = 0;
+      let dy = 0;
+      if (x < edge) dx = edge - x;
+      else if (x + w > W - edge) dx = W - edge - (x + w);
+      if (y < edge) dy = edge - y;
+      else if (y + h > H - edge) dy = H - edge - (y + h);
+      if (dx !== 0 || dy !== 0) {
+        // Nhãn quá lớn so với khung, hoặc không được phép dời: vị trí này không dùng được.
+        if (!b.nudge[i] || tooBig) continue;
+        x += dx;
+        y += dy;
       }
-      x += dx;
-      y += dy;
-    }
-    let hit = false;
-    for (let j = 0; j < i; j++) {
-      if (!b.keep[j]) continue;
-      if (x < b.x[j] + b.w[j] + gap && b.x[j] < x + w + gap && y < b.y[j] + b.h[j] + gap && b.y[j] < y + h + gap) {
-        hit = true;
-        break;
+      // Vị trí hợp lệ đầu tiên (kể cả khi bị chiếm) là chỗ dự phòng của hộp `must`.
+      if (Number.isNaN(fx)) {
+        fx = x;
+        fy = y;
       }
+      if (hits(b, i, x, y, w, h, gap)) continue;
+      fx = x;
+      fy = y;
+      placed = true;
+      break;
     }
-    if (hit) {
+    if (!placed && !(b.must[i] && !Number.isNaN(fx))) {
       b.keep[i] = 0;
       continue;
     }
     b.keep[i] = 1;
-    b.x[i] = x;
-    b.y[i] = y;
-    b.dx[i] = dx;
-    b.dy[i] = dy;
+    b.x[i] = fx;
+    b.y[i] = fy;
+    b.dx[i] = fx - x0;
+    b.dy[i] = fy - y0;
   }
 }
