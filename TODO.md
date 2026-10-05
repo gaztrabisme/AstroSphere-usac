@@ -39,6 +39,14 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 - [ ] **Offline use for club sessions** (spec K3). Add a service worker that precaches the hashed assets, star data and constellation data; test with the network off; plan cache invalidation for GitHub Pages deploys.
 - [x] **Thicker lines in presentation mode** (spec K7). Add `View.setLineScale(k)` that scales `LineMaterial.linewidth` and label size when `body.present` is on. Done in a597273 (lines ×2, scene labels ×1,8, emphasis composes with the scale).
 
+## Sau thiết kế lại (review-4) / Open after the redesign
+
+- [ ] **Constellation colours imitate semantic colours** (review-4 G2). Ursa Major is light blue (like the axis) and Ursa Minor is pink (like the vertical circle). Draw constellation figures in one neutral desaturated tone (`src/data/constellations.ts` colours, `scene/skyLayer.ts`).
+- [ ] **Phone first view** (review-4 B4). The "Nhìn từ người quan sát / Góc nhìn" strip pushes the dome down. Move these as icons inside the canvas.
+- [ ] **Projector legibility** (review-4 H1). Enlarge the header in presentation mode, make star labels at least 28 px and white, and thicken or drop the dashed lines.
+- [ ] **Label/line crossings near the pole** (review-4 D2). Constellation lines cross their own names. Consider leader lines or hiding constellation names that collide.
+- [ ] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision.
+
 ## Kho mã / Repository
 
 - [x] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped). (c18ce19)
