@@ -379,6 +379,10 @@ scenePromise.then(
       sphere = v.sphere;
       horizon = v.horizon;
       for (const view of [sphere, horizon]) attachViewInteraction(view, store, actions);
+      // Nút công cụ nổi trên cảnh là vật cản cứng của bộ gỡ chồng chéo nhãn: "Thiên đỉnh" không nằm dưới nút
+      // "Nhìn từ người quan sát" (fix-2 #1). Đo khi đổi kích thước, không đo mỗi khung hình.
+      sphere.setOverlays([...sphereBox.querySelectorAll<HTMLElement>('.view-tool')]);
+      horizon.setOverlays([...horizonBox.querySelectorAll<HTMLElement>('.view-tool')]);
       if (presenting) for (const view of [sphere, horizon]) view.setPresentation(true, PRESENT_LINE_SCALE);
       sphere.update(store.state);
       horizon.update(store.state);

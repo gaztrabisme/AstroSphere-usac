@@ -137,6 +137,9 @@ export class SkyLayer {
       this.axis.add(dot);
       const lbl = makeLabel(t(sign > 0 ? 'scene.ncp' : 'scene.scp'), 'poles', { color: '#93c5fd' });
       lbl.position.set(0, 0, sign * axisLen * 1.04);
+      // Vị trí thay thế xa hơn dọc trục (fix-2 #3): ở khung thiên cầu chữ hướng "B" nay đứng xa vành hơn và có thể
+      // chiếm chỗ ngay trên thiên cực — tên thiên cực lùi ra ngoài thay vì bị ẩn.
+      lbl.userData.alts = [new THREE.Vector3(0, 0, sign * axisLen * 1.12), new THREE.Vector3(0, 0, sign * axisLen * 1.2)];
       this.axis.add(lbl);
     }
     this.fixed.add(this.axis);
@@ -283,7 +286,7 @@ export class SkyLayer {
       const holder = new THREE.Group();
       // Hạng 50 (thấp nhất) và khoảng trống 6 px: tên chòm nền nhường tên sao, thiên cực, tên vòng; chỗ chật thì ẩn
       // thay vì nằm sát hay đè lên nhãn khác (review-4 D2, 5642 · U4 · L55 · 00:08–01:27: một thứ bậc rõ).
-      const lbl = makeLabel(constellationName(abbr), 'stars', { cls: 'lbl--constellation lbl--allsky', rank: ALLSKY_NAME_RANK, clear: 6, hideFarSide: true });
+      const lbl = makeLabel(constellationName(abbr), 'stars', { cls: 'lbl--constellation lbl--allsky', rank: ALLSKY_NAME_RANK, clear: 6, hideFarSide: true, avoidDisc: true });
       lbl.position.copy(c.normalize().multiplyScalar(R * 1.01));
       holder.add(lbl);
       holder.visible = !(this.lastFigures ?? []).some((f) => f.templateId === abbr);
@@ -485,7 +488,7 @@ export class SkyLayer {
           for (let k = before; k < seg.length; k += 3) colors.push(c.r, c.g, c.b);
         }
         if (count) {
-          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation', rank: 30 });
+          const lbl = makeLabel(fig.name, 'stars', { color: fig.color, cls: 'lbl--constellation', rank: 30, avoidDisc: true });
           lbl.position.copy(centroid.normalize().multiplyScalar(R * 1.06));
           this.user.add(lbl);
         }

@@ -8,11 +8,12 @@ import type { AppState, Store } from '../state';
 import { createEarthTexture } from './earth';
 import { COLORS, dynamicFatLine, greatArcInto, sectorGeometry, translucent, writeFatLine } from './geom';
 import { makeLabel, setLabelText, type Label } from './labels';
-import { SKY_RADIUS, View } from './view';
+import { SKY_RADIUS, View, type KeepOutDisc } from './view';
 
 const _arc = new Float32Array(41 * 3);
 const _dir = new THREE.Vector3();
 const _hit = new THREE.Vector3();
+const _c = new THREE.Vector3();
 
 export class CelestialSphereView extends View {
   private earth: THREE.Mesh;
@@ -117,6 +118,23 @@ export class CelestialSphereView extends View {
     const mid = new THREE.Vector3(0, Math.sin((lat / 2) * DEG), Math.cos((lat / 2) * DEG));
     this.latLabel.position.copy(mid.multiplyScalar(r * 1.25));
     setLabelText(this.latLabel, `φ = ${fmtDeg(lat)}`);
+  }
+
+  /**
+   * Đĩa quả địa cầu trên màn hình (fix-2 #3): tâm = hình chiếu tâm Trái Đất, bán kính = bán kính góc asin(r/d) đổi ra
+   * px (cộng 4 px viền). Tên chòm sao chạm đĩa này bị ẩn — chúng từng in đè lên lục địa (VULPECULA, SAGITTA…).
+   * Không cấp phát.
+   */
+  protected keepOutDisc(out: KeepOutDisc, W: number, H: number): boolean {
+    const d = this.camera.position.length();
+    if (d <= this.earthR) return false;
+    _c.set(0, 0, 0).project(this.camera);
+    if (_c.z > 1) return false;
+    const a = Math.asin(this.earthR / d);
+    out.x = ((_c.x + 1) / 2) * W;
+    out.y = ((1 - _c.y) / 2) * H;
+    out.r = Math.tan(a) * this.camera.projectionMatrix.elements[5] * (H / 2) + 4;
+    return true;
   }
 
   protected isOccluded(world: THREE.Vector3): boolean {

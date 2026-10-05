@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declutter, EDGE, GAP, LabelBoxes, MAX_ALTS } from './declutter';
+import { declutter, EDGE, GAP, hitsDisc, LabelBoxes, MAX_ALTS } from './declutter';
 
 function boxes(list: [number, number, number, number, boolean?][]): LabelBoxes {
   const b = new LabelBoxes();
@@ -154,5 +154,76 @@ describe('declutter', () => {
     declutter(b, 800, 600);
     expect(b.keep[d]).toBe(1);
     expect(b.dx[d]).toBe(0);
+  });
+
+  it('fix-2 #1: a hard obstacle blocks soft boxes too, a plain obstacle does not', () => {
+    const b = boxes([
+      [600, 10, 80, 34], // #0 lớp nổi (nút công cụ): vật cản cứng
+      [100, 100, 40, 40], // #1 vòng chọn: vật cản thường
+      [610, 20, 60, 16], // #2 nhãn soft trùng nút → thử vị trí thay thế
+      [105, 110, 30, 16], // #3 nhãn soft trùng vòng chọn → giữ nguyên chỗ
+    ]);
+    for (const k of [0, 1]) {
+      b.solid[k] = 1;
+      b.must[k] = 1;
+    }
+    b.hard[0] = 1;
+    b.soft[2] = 1;
+    b.soft[3] = 1;
+    b.addAlt(2, 610, 80);
+    declutter(b, 800, 600);
+    expect([...b.keep.slice(0, 4)]).toEqual([1, 1, 1, 1]);
+    expect(b.y[2]).toBe(80);
+    expect(b.dy[3]).toBe(0);
+  });
+
+  it('fix-2 #1: a soft box with no free place next to a hard obstacle is hidden', () => {
+    const b = boxes([
+      [600, 10, 80, 34],
+      [610, 20, 60, 16],
+    ]);
+    b.solid[0] = 1;
+    b.must[0] = 1;
+    b.hard[0] = 1;
+    b.soft[1] = 1;
+    declutter(b, 800, 600);
+    expect(b.keep[1]).toBe(0);
+  });
+
+  it('fix-2 #3: hitsDisc is a rectangle–circle test', () => {
+    const b = new LabelBoxes();
+    b.setDisc(100, 100, 50);
+    expect(hitsDisc(b, 90, 90, 20, 20)).toBe(true); // tâm nằm trong hộp
+    expect(hitsDisc(b, 140, 95, 40, 10)).toBe(true); // chạm mép phải của vòng
+    expect(hitsDisc(b, 140, 140, 30, 30)).toBe(false); // góc hộp ngoài vòng (khoảng cách 56,6 > 50)
+    expect(hitsDisc(b, 300, 300, 10, 10)).toBe(false);
+    b.reset();
+    expect(hitsDisc(b, 90, 90, 20, 20)).toBe(false); // reset() xóa vùng tròn
+  });
+
+  it('fix-2 #3: avoidDisc boxes leave the disc (alternative place or hidden); others ignore it', () => {
+    const b = boxes([
+      [90, 90, 40, 16], // #0 tên chòm trên quả địa cầu, không có chỗ khác → ẩn
+      [95, 120, 40, 16], // #1 tên chòm trên quả địa cầu, có chỗ thay thế ngoài vòng → dời
+      [100, 60, 40, 16], // #2 nhãn thường (vd. "Người quan sát") → giữ nguyên
+    ]);
+    b.ensure(3);
+    b.setDisc(100, 100, 50);
+    b.avoidDisc[0] = 1;
+    b.avoidDisc[1] = 1;
+    b.addAlt(1, 300, 120);
+    declutter(b, 800, 600);
+    expect([...b.keep.slice(0, 3)]).toEqual([0, 1, 1]);
+    expect(b.x[1]).toBe(300);
+    expect(b.dx[2]).toBe(0);
+  });
+
+  it('fix-2 #3: an avoidDisc box stays hidden even when it is `must`', () => {
+    const b = boxes([[90, 90, 40, 16]]);
+    b.setDisc(100, 100, 50);
+    b.avoidDisc[0] = 1;
+    b.must[0] = 1;
+    declutter(b, 800, 600);
+    expect(b.keep[0]).toBe(0);
   });
 });

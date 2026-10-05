@@ -11,6 +11,7 @@ import { resolveSelection, sunJd } from '../selection';
 import { lstOf, type AppState, type Selection } from '../state';
 import { horizonFrameMatrix, horVec, type ViewKind } from './frames';
 import {
+  arrowTexture,
   COLORS,
   dynamicFatLine,
   fatLine,
@@ -37,6 +38,9 @@ const _radec = { ra: 0, dec: 0 };
 const _hor: Horizontal = { alt: 0, az: 0 };
 /** Độ mờ của dấu "bóng" (vòng đứt nét, chấm, cung h) khi đối tượng chọn khuất dưới mặt đất. */
 const GHOST_OPACITY = 0.8;
+/** Cỡ mũi tên mép khung so với vòng chọn (fix-2 #11). */
+const GHOST_ARROW_K = 0.42;
+const _g = new THREE.Vector3();
 
 export class HorizonLayer {
   readonly group = new THREE.Group();
@@ -80,6 +84,12 @@ export class HorizonLayer {
   private ghostRing: THREE.Sprite | null = null;
   private ghostDot: THREE.Mesh | null = null;
   private ghostArc: Line2 | null = null;
+  /** Mũi tên mép khung: chỉ hiện khi vị trí thật của dấu "bóng" ra ngoài khung (fix-2 #11). */
+  private ghostArrow: THREE.Sprite | null = null;
+  /** Vị trí thật (tọa độ cảnh) của đối tượng chọn khuất dưới mặt đất. */
+  private readonly ghostStar = new THREE.Vector3();
+  /** Dấu "bóng" đang bị kẹp vào trong mép khung (đọc bởi kiểm thử chấp nhận). */
+  ghostClamped = false;
   /** Nhãn "Sirius đang ở dưới chân trời (h = −73°)" — trong cảnh chính (nhãn CSS không bị cắt). */
   private under = new THREE.Group();
   private underLabel: Label | null = null;
@@ -115,7 +125,9 @@ export class HorizonLayer {
     ];
     for (const [key, az] of dirs) {
       const lbl = makeLabel(t(key), 'directions', { cls: 'lbl--dir', hideBelowHorizon: false });
-      const rr = R * (view === 'horizon' ? 1.1 : 1.07);
+      // Khung thiên cầu: chữ hướng xa vành hơn (1,07 → 1,16 R, fix-2 #3) — "B" không còn chạm vòng chọn quanh Polaris
+      // (thiên cực nằm ngay trên vành, chỉ cách điểm Bắc φ độ).
+      const rr = R * (view === 'horizon' ? 1.1 : 1.16);
       lbl.position.copy(horVec(0, az, rr));
       // Vị trí thay thế dọc theo đường chân trời (fix-1 G1): chữ B không đè lên vòng chọn quanh Polaris ở khung thiên
       // cầu — dời sang bên cạnh, vẫn sát điểm hướng của nó. Cố định trong khung chân trời, dựng một lần.
@@ -228,7 +240,14 @@ export class HorizonLayer {
         depthTest: false,
         boundsRadius: bounds,
       });
-      this.ghost.add(arc, dot, ring);
+      const arrow = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: arrowTexture('#ffffff'), transparent: true, opacity: 0.95, depthTest: false, depthWrite: false, sizeAttenuation: false }),
+      );
+      arrow.scale.setScalar(SEL_RING_SCALE * GHOST_ARROW_K);
+      arrow.renderOrder = 3;
+      arrow.visible = false;
+      this.ghost.add(arc, dot, ring, arrow);
+      this.ghostArrow = arrow;
       this.ghostRing = ring;
       this.ghostDot = dot;
       this.ghostArc = arc;
@@ -360,6 +379,7 @@ export class HorizonLayer {
     this.uKeyAz = azK;
     this.uKeyV = vOn;
     const star = horVec(alt, az, R, _star);
+    this.ghostStar.copy(star);
     this.ghostRing!.position.copy(star);
     this.ghostDot!.position.copy(star);
     // Cung h đứt nét: chỉ khi đường thẳng đứng đang bật (cùng hộp kiểm với cung h liền nét phía trên chân trời).
@@ -389,6 +409,60 @@ export class HorizonLayer {
       this.underKey = key;
       setLabelText(lbl, t('scene.belowHorizon', { name: this.underName, h: near ? fmtDegSigned(Math.min(alt, -0.1), 1) : fmtDegSigned(key, 0) }));
     }
+  }
+
+  /**
+   * Kẹp dấu "bóng" vào trong khung (fix-2 #11): khi hình chiếu của đối tượng khuất dưới mặt đất rơi ra ngoài canvas
+   * (hay quá sát mép — vòng bị cắt nửa), vòng đứt nét và nhãn cảnh báo dời vào trong mép (cùng độ sâu), và một mũi
+   * tên nhỏ ở phía mép chỉ về vị trí thật. Gọi mỗi lần vẽ khi `ghostOn`; chỉ dùng vectơ nháp, không cấp phát.
+   * `ringPx`: bán kính ngoài của vòng chọn trên màn hình.
+   */
+  clampGhost(camera: THREE.Camera, W: number, H: number, ringPx: number): void {
+    const ring = this.ghostRing;
+    const arrow = this.ghostArrow;
+    const lbl = this.underLabel;
+    if (!ring || !arrow || !lbl) return;
+    camera.updateMatrixWorld();
+    _g.copy(this.ghostStar).project(camera);
+    const sx = ((_g.x + 1) / 2) * W;
+    const sy = ((1 - _g.y) / 2) * H;
+    const arrowPx = ringPx * 2 * GHOST_ARROW_K;
+    const m = ringPx + arrowPx + 6;
+    const inside = _g.z <= 1 && sx >= m && sx <= W - m && sy >= m && sy <= H - m;
+    const wasClamped = this.ghostClamped;
+    this.ghostClamped = !inside && W > 2 * m && H > 2 * m;
+    if (!this.ghostClamped) {
+      if (wasClamped) {
+        ring.position.copy(this.ghostStar);
+        lbl.position.copy(this.ghostStar);
+        this.ghostDot!.visible = true;
+        arrow.visible = false;
+      }
+      return;
+    }
+    // Điểm sau camera (z > 1): lật hướng để mũi tên vẫn chỉ đúng phía.
+    const behind = _g.z > 1;
+    let tx = behind ? W - sx : sx;
+    let ty = behind ? H - sy : sy;
+    const cx = Math.min(W - m, Math.max(m, tx));
+    const cy = Math.min(H - m, Math.max(m, ty));
+    // Hướng (px, y xuống) từ điểm đã kẹp tới vị trí thật.
+    tx -= cx;
+    ty -= cy;
+    const len = Math.hypot(tx, ty) || 1;
+    const ux = tx / len;
+    const uy = ty / len;
+    const z = behind ? 0.5 : _g.z;
+    _g.set((cx / W) * 2 - 1, 1 - (cy / H) * 2, z).unproject(camera);
+    ring.position.copy(_g);
+    lbl.position.copy(_g);
+    this.ghostDot!.visible = false;
+    // Mũi tên nằm giữa vòng và mép, chỉ về vị trí thật (ảnh gốc chỉ xuống: góc xoay = atan2(ux, uy)).
+    const d = ringPx + arrowPx / 2 + 2;
+    _g.set(((cx + ux * d) / W) * 2 - 1, 1 - ((cy + uy * d) / H) * 2, z).unproject(camera);
+    arrow.position.copy(_g);
+    (arrow.material as THREE.SpriteMaterial).rotation = Math.atan2(ux, uy);
+    arrow.visible = true;
   }
 
   /**

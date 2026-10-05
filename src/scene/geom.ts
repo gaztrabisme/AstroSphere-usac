@@ -327,6 +327,30 @@ export function ringTexture(color = '#ffffff', dashed = false): THREE.CanvasText
   return t;
 }
 
+/**
+ * Ảnh mũi tên tam giác chỉ XUỐNG (64 px) cho dấu "bóng" bị kẹp vào mép khung (fix-2 #11). Sprite xoay bằng
+ * `SpriteMaterial.rotation` để chỉ về phía vị trí thật của đối tượng.
+ */
+export function arrowTexture(color = '#ffffff'): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#04060d';
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(10, 16);
+  ctx.lineTo(54, 16);
+  ctx.lineTo(32, 52);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fill();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 export function disposeObject(obj: THREE.Object3D): void {
   obj.traverse((o) => {
     const anyO = o as THREE.Mesh;

@@ -35,6 +35,20 @@ export class LabelBoxes {
   solid = new Uint8Array(0);
   /** 1 = hộp này không né vật cản (`solid`), chỉ né nhãn. */
   soft = new Uint8Array(0);
+  /**
+   * 1 = vật cản "cứng": cả hộp `soft` cũng phải né (fix-2 #1). Dùng cho lớp giao diện nổi trên khung nhìn — nút công
+   * cụ của khung nhìn đè lên mọi nhãn bên dưới, kể cả "Thiên đỉnh" vốn là nhãn `soft`.
+   */
+  hard = new Uint8Array(0);
+  /**
+   * 1 = hộp này không được chạm vùng tròn giữ trống (`discX/discY/discR`): tên chòm sao không in lên quả địa cầu ở
+   * khung thiên cầu (fix-2 #3). Vị trí chạm vùng tròn không dùng được; không còn vị trí nào thì nhãn ẩn.
+   */
+  avoidDisc = new Uint8Array(0);
+  /** Vùng tròn giữ trống (px): tâm và bán kính; bán kính ≤ 0 = không có. Đặt lại mỗi lần reset(). */
+  discX = 0;
+  discY = 0;
+  discR = 0;
   /** Độ lệch ngang đặt trước (px) đã cộng vào x khi đẩy hộp — khung nhìn cộng lại khi áp vào điểm neo. */
   ox = new Float32Array(0);
   /** Vị trí thay thế (góc trên trái, px) thử theo thứ tự khi vị trí gốc bị chiếm: altN[i] vị trí tại i*MAX_ALTS. */
@@ -60,6 +74,8 @@ export class LabelBoxes {
     this.must = new Uint8Array(c);
     this.solid = new Uint8Array(c);
     this.soft = new Uint8Array(c);
+    this.hard = new Uint8Array(c);
+    this.avoidDisc = new Uint8Array(c);
     this.ox = new Float32Array(c);
     this.altN = new Uint8Array(c);
     this.altX = new Float32Array(c * MAX_ALTS);
@@ -71,6 +87,14 @@ export class LabelBoxes {
 
   reset(): void {
     this.n = 0;
+    this.discR = 0;
+  }
+
+  /** Đặt vùng tròn giữ trống (px) cho các hộp `avoidDisc`. */
+  setDisc(x: number, y: number, r: number): void {
+    this.discX = x;
+    this.discY = y;
+    this.discR = r;
   }
 
   /** Thêm một hộp (góc trên trái x, y; px). Trả về chỉ số. Gọi theo thứ tự ưu tiên giảm dần. */
@@ -85,6 +109,8 @@ export class LabelBoxes {
     this.must[i] = 0;
     this.solid[i] = 0;
     this.soft[i] = 0;
+    this.hard[i] = 0;
+    this.avoidDisc[i] = 0;
     this.ox[i] = 0;
     this.altN[i] = 0;
     this.keep[i] = 0;
@@ -112,11 +138,24 @@ function hits(b: LabelBoxes, i: number, x: number, y: number, w: number, h: numb
   const soft = b.soft[i];
   for (let j = 0; j < i; j++) {
     if (!b.keep[j]) continue;
-    if (soft && b.solid[j]) continue;
+    if (soft && b.solid[j] && !b.hard[j]) continue;
     const g = gap + (b.pad[j] > pi ? b.pad[j] : pi);
     if (x < b.x[j] + b.w[j] + g && b.x[j] < x + w + g && y < b.y[j] + b.h[j] + g && b.y[j] < y + h + g) return true;
   }
   return false;
+}
+
+/** Hộp (x, y, w, h) có chạm vùng tròn giữ trống của `b` không (điểm gần tâm nhất của hộp nằm trong vòng). */
+export function hitsDisc(b: LabelBoxes, x: number, y: number, w: number, h: number): boolean {
+  const r = b.discR;
+  if (!(r > 0)) return false;
+  const cx = b.discX;
+  const cy = b.discY;
+  const px = cx < x ? x : cx > x + w ? x + w : cx;
+  const py = cy < y ? y : cy > y + h ? y + h : cy;
+  const dx = px - cx;
+  const dy = py - cy;
+  return dx * dx + dy * dy < r * r;
 }
 
 /**
@@ -151,6 +190,8 @@ export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap 
         x += dx;
         y += dy;
       }
+      // Hộp tránh quả địa cầu: vị trí chạm vùng tròn không dùng được (kể cả làm chỗ dự phòng).
+      if (b.avoidDisc[i] && hitsDisc(b, x, y, w, h)) continue;
       // Vị trí hợp lệ đầu tiên (kể cả khi bị chiếm) là chỗ dự phòng của hộp `must`.
       if (Number.isNaN(fx)) {
         fx = x;

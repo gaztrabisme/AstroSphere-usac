@@ -48,6 +48,11 @@ export interface LabelData {
    * trời" là thông tin duy nhất về đối tượng đang chọn khi nó bị mặt đất che (fix-1 #2).
    */
   must: boolean;
+  /**
+   * Không in lên quả địa cầu ở khung thiên cầu (LabelBoxes.avoidDisc, fix-2 #3): tên chòm sao có điểm neo — hay hộp
+   * chữ — rơi vào đĩa Trái Đất trên màn hình thì ẩn.
+   */
+  avoidDisc: boolean;
 }
 
 export interface Label extends CSS2DObject {
@@ -74,6 +79,8 @@ export interface LabelOpts {
   clear?: number;
   /** Luôn giữ (xem LabelData.must). */
   must?: boolean;
+  /** Tránh đĩa quả địa cầu (xem LabelData.avoidDisc). */
+  avoidDisc?: boolean;
   /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
   edge?: string;
 }
@@ -116,6 +123,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     alts: null,
     clear: opts.clear ?? 0,
     must: opts.must ?? false,
+    avoidDisc: opts.avoidDisc ?? false,
   };
   return obj;
 }

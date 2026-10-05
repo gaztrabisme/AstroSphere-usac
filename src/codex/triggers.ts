@@ -338,6 +338,8 @@ export function codexButton(store: Store, actions: Actions): HTMLButtonElement {
     badge.hidden = n === 0;
     badge.textContent = String(n);
     btn.setAttribute('aria-label', n ? t('codexUi.buttonAriaNew', { n }) : t('codexUi.button'));
+    // Tooltip giải thích con số trên huy hiệu (fix-2 #10): "3 mục mới trong Codex: bấm để đọc".
+    btn.title = n ? t('codexUi.buttonTipNew', { n }) : t('codexUi.buttonTip');
   };
   onCodexChange(sync);
   sync();

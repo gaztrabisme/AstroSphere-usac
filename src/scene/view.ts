@@ -62,6 +62,14 @@ export abstract class View implements QualityTarget {
   private boxes = new LabelBoxes();
   private boxLabel: (Label | null)[] = [];
   private needMeasure = true;
+  /**
+   * Lớp giao diện nổi trên khung nhìn (nút "Nhìn từ người quan sát", "Góc nhìn mặc định" — fix-2 #1): hộp px tương
+   * đối với canvas (x, y, w, h liên tiếp), đo khi khung hoặc nút đổi kích thước, KHÔNG đo mỗi khung hình. Nhãn né
+   * các hộp này như vật cản cứng (kể cả "Thiên đỉnh").
+   */
+  private overlayEls: HTMLElement[] = [];
+  private readonly overlayRects = new Float32Array(MAX_OVERLAYS * 4);
+  private overlayN = 0;
   /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
   private lineScale = 1;
   private baseWidths = new WeakMap<Line2, number>();
@@ -200,6 +208,39 @@ export abstract class View implements QualityTarget {
     this.camera.fov = this.preferredFov(w / h);
     this.applyViewOffset();
     this.camera.updateProjectionMatrix();
+    this.measureOverlays();
+    this.dirty = true;
+  }
+
+  /**
+   * Khai báo các phần tử giao diện nổi trên canvas (fix-2 #1). Hộp của chúng được đo ngay, khi khung nhìn đổi kích
+   * thước, và khi chính chúng đổi kích thước (ResizeObserver: nút thu về chỉ còn biểu tượng, ẩn khi trình chiếu).
+   */
+  setOverlays(els: HTMLElement[]): void {
+    this.overlayEls = els.slice(0, MAX_OVERLAYS);
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => this.measureOverlays());
+      for (const el of this.overlayEls) ro.observe(el);
+    }
+    this.measureOverlays();
+  }
+
+  private measureOverlays(): void {
+    const els = this.overlayEls;
+    if (els.length === 0 && this.overlayN === 0) return;
+    const c = this.container.getBoundingClientRect();
+    const r4 = this.overlayRects;
+    let n = 0;
+    for (let i = 0; i < els.length; i++) {
+      const r = els[i].getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue; // ẩn (trình chiếu, display: none)
+      r4[n * 4] = r.left - c.left;
+      r4[n * 4 + 1] = r.top - c.top;
+      r4[n * 4 + 2] = r.width;
+      r4[n * 4 + 3] = r.height;
+      n++;
+    }
+    this.overlayN = n;
     this.dirty = true;
   }
 
@@ -283,6 +324,9 @@ export abstract class View implements QualityTarget {
     }
     if (!this.dirty || this.width === 0 || this.height === 0 || !this.onScreen || this.suspended) return false;
     const s = this.store.state;
+    // Dấu "bóng" ra ngoài khung → kẹp vào trong mép, kèm mũi tên chỉ hướng (fix-2 #11). Trước updateMatrixWorld để
+    // nhãn cảnh báo đi theo vòng đã kẹp.
+    if (this.horizon.ghostOn) this.horizon.clampGhost(this.camera, this.width, this.height, this.selRingPx());
     this.scene.updateMatrixWorld();
     this.updateLabels(s);
     this.renderer.render(this.scene, this.camera);
@@ -316,6 +360,14 @@ export abstract class View implements QualityTarget {
   }
 
   /**
+   * Vùng tròn giữ trống (px) cho nhãn `avoidDisc` — khung thiên cầu: đĩa của quả địa cầu trên màn hình, để tên chòm
+   * sao không in lên Trái Đất (fix-2 #3). Lớp con ghi vào `out` và trả về true. Mặc định không có.
+   */
+  protected keepOutDisc(_out: KeepOutDisc, _W: number, _H: number): boolean {
+    return false;
+  }
+
+  /**
    * Phiên bản cấu trúc của cảnh (thêm/bớt nhãn hoặc đích rê chuột). Các lớp con thêm đối tượng
    * sau khi dựng phải cộng phần của mình vào đây.
    */
@@ -338,9 +390,9 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      // +2: chỗ cho vật cản vòng chọn (pushObstacle) và vùng giữ trống (keepOut).
-      this.boxLabel.length = list.length + 2;
-      this.boxes.ensure(list.length + 2);
+      // +2: chỗ cho vật cản vòng chọn (pushObstacle) và vùng giữ trống (keepOut); + lớp giao diện nổi.
+      this.boxLabel.length = list.length + 2 + MAX_OVERLAYS;
+      this.boxes.ensure(list.length + 2 + MAX_OVERLAYS);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
@@ -351,6 +403,7 @@ export abstract class View implements QualityTarget {
     cam.updateMatrixWorld();
     const boxes = this.boxes;
     boxes.reset();
+    if (this.keepOutDisc(_kd, W, H)) boxes.setDisc(_kd.x, _kd.y, _kd.r);
     let sel: Label | null = null;
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
@@ -376,6 +429,16 @@ export abstract class View implements QualityTarget {
     // đang tô sáng (dời dọc theo cung nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi thiên cực/thiên đỉnh
     // (review-4 D2); rồi đối tượng đang chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng. Nhãn tự neo quanh
     // vòng chọn (tô sáng, thiên cực, đối tượng chọn) là `soft`: không né vật cản.
+    // Nút nổi trên canvas (fix-2 #1): vật cản CỨNG — nhãn `soft` ("Thiên đỉnh", tên đối tượng chọn) cũng né.
+    const r4 = this.overlayRects;
+    for (let o = 0; o < this.overlayN; o++) {
+      const k = boxes.n;
+      this.boxLabel[k] = null;
+      boxes.push(r4[o * 4], r4[o * 4 + 1], r4[o * 4 + 2], r4[o * 4 + 3], false);
+      boxes.must[k] = 1;
+      boxes.solid[k] = 1;
+      boxes.hard[k] = 1;
+    }
     if (this.sky.selRingWorld(_v)) this.pushObstacle(_v, this.selRingPx(), W, H);
     if (this.keepOut(_ko, W, H)) {
       const k = boxes.n;
@@ -387,7 +450,7 @@ export abstract class View implements QualityTarget {
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       if (lbl.userData.group !== 'directions' || !lbl.visible || !ancestorsVisible(lbl)) continue;
-      const h = lbl.userData.h || EST_H;
+      const h = lbl.userData.h || EST_H * this.estK();
       const k = this.pushBox(lbl, W, H, true, 0, Math.round(h * DIR_PAD_K));
       if (k >= 0) boxes.must[k] = 1;
     }
@@ -426,6 +489,7 @@ export abstract class View implements QualityTarget {
       // tượng chọn — bên phải, trái, trên, dưới vòng, rồi các vị trí thay thế của nó.
       const must = ud.must;
       const k = this.pushBox(lbl, W, H, ud.rank < 20, must ? this.selRingPx() : 0, ud.clear);
+      if (k >= 0 && ud.avoidDisc) boxes.avoidDisc[k] = 1;
       if (k >= 0 && must) {
         boxes.must[k] = 1;
         boxes.soft[k] = 1;
@@ -440,8 +504,8 @@ export abstract class View implements QualityTarget {
         continue;
       }
       const ud = lbl.userData;
-      const w = ud.w || estimateWidth(lbl);
-      const h = ud.h || EST_H;
+      const w = ud.w || estimateWidth(lbl) * this.estK();
+      const h = ud.h || EST_H * this.estK();
       const sx = boxes.dx[k] + boxes.ox[k];
       if (sx !== 0) lbl.center.x = ud.cx0 - sx / w;
       if (boxes.dy[k] !== 0) lbl.center.y = ud.cy0 - boxes.dy[k] / h;
@@ -466,8 +530,8 @@ export abstract class View implements QualityTarget {
     if (_p.z < -1 || _p.z > 1) return -1;
     const ud = lbl.userData;
     if (ud.w === 0) this.needMeasure = true;
-    const w = ud.w || estimateWidth(lbl);
-    const h = ud.h || EST_H;
+    const w = ud.w || estimateWidth(lbl) * this.estK();
+    const h = ud.h || EST_H * this.estK();
     const sx = ((_p.x + 1) / 2) * W;
     const sy = ((1 - _p.y) / 2) * H;
     // Chỉ đẩy vào trong khi điểm neo còn nằm trong khung; điểm ở ngoài khung thì nhãn bị ẩn.
@@ -594,6 +658,15 @@ export abstract class View implements QualityTarget {
     this.dirty = true;
   }
 
+  /**
+   * Hệ số cho kích thước ƯỚC LƯỢNG của nhãn chưa đo (fix-2): khi trình chiếu chữ nhãn to gấp --lbl-k = 2,35 lần
+   * (styles.css). Ước lượng theo cỡ thường từng làm nhãn mới hiện trong lúc chạy thời gian thò ra ngoài mép khung
+   * đúng một khung hình, trước khi được đo thật (γ Điểm xuân phân, declutter.mjs 1920).
+   */
+  private estK(): number {
+    return this.presenting ? PRESENT_LBL_K : 1;
+  }
+
   /** Cỡ chữ nhãn đổi (chế độ trình chiếu): đo lại mọi nhãn ở lần vẽ tới. */
   invalidateLabelSizes(): void {
     for (const lbl of this.labelList) lbl.userData.w = 0;
@@ -685,6 +758,17 @@ export interface KeepOutBox {
 }
 const _ko: KeepOutBox = { x: 0, y: 0, w: 0, h: 0 };
 
+/** Vùng tròn giữ trống (px): tâm và bán kính. */
+export interface KeepOutDisc {
+  x: number;
+  y: number;
+  r: number;
+}
+const _kd: KeepOutDisc = { x: 0, y: 0, r: 0 };
+
+/** Số phần tử giao diện nổi tối đa trên một khung nhìn (nhóm nút công cụ). */
+const MAX_OVERLAYS = 4;
+
 /**
  * Vùng đệm quanh chữ hướng B/N/Đ/T, theo chiều cao chữ (fix-1 G1): ở khung thiên cầu "Thiên đỉnh" từng nằm ngay
  * cạnh "T" và đọc thành một cụm "T Thiên đỉnh". Một nửa chiều cao chữ ≈ 10 px thường, ≈ 20 px khi trình chiếu.
@@ -696,6 +780,8 @@ const FOCUS_PAD = 8;
 
 /** Chiều cao ước lượng của nhãn chưa đo (px). */
 const EST_H = 16;
+/** --lbl-k của body.present trong styles.css. */
+const PRESENT_LBL_K = 2.35;
 
 /** Bề rộng ước lượng của nhãn chưa đo (px) — chỉ dùng cho khung hình đầu tiên trước khi đo. */
 function estimateWidth(lbl: Label): number {
