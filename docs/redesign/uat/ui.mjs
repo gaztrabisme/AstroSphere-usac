@@ -5,6 +5,15 @@ import { mkdirSync } from 'node:fs';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:4174/?quality=fixed';
+// redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
+// starts with the stored choice "full" (same key the mode switch writes).
+const FULL_MODE = () => {
+  try {
+    localStorage.setItem('astrosphere.mode.v1', JSON.stringify('full'));
+  } catch {
+    /* storage blocked: the page falls back to Simple and the checks will say so */
+  }
+};
 const SHOTS = new globalThis.URL('../shots/', import.meta.url).pathname;
 mkdirSync(SHOTS, { recursive: true });
 
@@ -19,6 +28,7 @@ const errors = [];
 
 async function openPage(width, height) {
   const page = await browser.newPage({ viewport: { width, height } });
+  await page.addInitScript(FULL_MODE);
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.goto(URL);
