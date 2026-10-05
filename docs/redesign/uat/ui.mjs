@@ -101,7 +101,8 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   check('exactly one club link (rel=noopener, target=_blank)', clubLinks.length === 1 && clubLinks[0].rel.includes('noopener') && clubLinks[0].target === '_blank', JSON.stringify(clubLinks));
 
   const order = await page.locator('.topbar__actions .btn .btn__text').allTextContents();
-  check('top bar order', order.join('|') === 'Ôn tập|Trình chiếu|Đặt lại|Trợ giúp|Giới thiệu', order.join(' | '));
+  // redesign-2 C: nút Codex đứng ngay trước Trợ giúp.
+  check('top bar order', order.join('|') === 'Ôn tập|Trình chiếu|Đặt lại|Codex|Trợ giúp|Giới thiệu', order.join(' | '));
 
   const brand = await page.evaluate(() => {
     const cs = (sel, p) => getComputedStyle(document.querySelector(sel))[p];

@@ -187,7 +187,14 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   // Mặc định (main của CLB) không thêm sẵn chòm mẫu: thêm Ursa Major và Ursa Minor để kiểm tra thẻ chòm.
   await page.evaluate(() => { window.__app.actions.addConstellation('UMa'); window.__app.actions.addConstellation('UMi'); });
   await page.waitForTimeout(300);
-  const labels = await page.evaluate(() => [...document.querySelectorAll('.lbl--constellation, .lbl--star, .lbl--catalog')].map((l) => l.textContent));
+  // Đọc nhãn từ đồ thị cảnh (cả nhãn đang ở mặt khuất): kết quả không phụ thuộc giờ thật lúc chạy kiểm tra.
+  const labels = await page.evaluate(() => {
+    const out = [];
+    window.__app.sphere.scene.traverse((o) => {
+      if (o.isCSS2DObject && /lbl--(constellation|star|catalog)/.test(o.element.className)) out.push(o.element.textContent);
+    });
+    return out;
+  });
   check('3D labels use IAU / international names', labels.includes('Ursa Major') && labels.includes('Polaris') && !labels.some((l) => /Bắc Cực|Đại Hùng|Thợ Săn/.test(l)), labels.slice(0, 12).join(', '));
   const chips = await page.locator('.figure-chip').allTextContents();
   check('figure chips use IAU names', chips.some((c) => c.startsWith('Ursa Major')) && chips.some((c) => c.startsWith('Ursa Minor')), chips.join(' | '));

@@ -2,6 +2,7 @@
 
 import { fmtDeg, fmtNum, parseNum } from '../astro';
 import { SPECIAL_PLACES, VN_PLACES, type Place } from '../data/places';
+import { termLink } from '../codex/triggers';
 import { t } from '../i18n';
 import type { Actions, Store } from '../state';
 import { button, fieldset, h } from './dom';
@@ -75,7 +76,8 @@ export function locationPanel(store: Store, actions: Actions): HTMLElement {
     h('p', { class: 'hint', id: 'lat-help', text: t('panel.location.inputHint') }),
     err,
     h('div', { class: 'slider-row' }, h('span', { class: 'slider-row__label', text: t('panel.location.latSliderShort') }), latSlider),
-    poleLine,
+    // Codex (redesign-2 C): dòng cốt lõi kèm liên kết "?" tới mục độ cao thiên cực = vĩ độ.
+    h('div', { class: 'pole-row' }, poleLine, termLink('latPole', t('data.pole'))),
     map.el,
     h('p', { class: 'hint', text: t('panel.location.mapHint') }),
     fieldset(t('panel.location.vn'), h('div', { class: 'chips' }, ...VN_PLACES.map(placeBtn))),

@@ -1,6 +1,7 @@
 // Bảng 3: Hiển thị (các hộp kiểm, nhãn theo nhóm, phần mở rộng).
 
 import { fmtDegSigned, fmtDuration, riseSet } from '../astro';
+import { TOGGLE_ENTRY, termLink } from '../codex/triggers';
 import { t } from '../i18n';
 import { COLORS } from '../scene/colors';
 import { sunEquatorial } from '../selection';
@@ -97,7 +98,9 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
         emphasis: k,
       });
       boxes.set(k, cb);
-      return cb.el;
+      // Codex (redesign-2 C): liên kết "?" ở cuối dòng hộp kiểm → mục giải thích khái niệm.
+      const entry = TOGGLE_ENTRY[k];
+      return entry ? h('div', { class: 'check-row' }, cb.el, termLink(entry, t(`toggle.${k}`))) : cb.el;
     });
 
   const master = checkbox(t('labels.all'), store.state.labels.all, (v) => actions.setLabel('all', v), { tip: t('labels.allTip') });
