@@ -4139,3 +4139,32 @@ body.present .guide-tip {
 .status--neverRise {
   --status-dot: var(--zone-neverrise);
 }
+
+/* 4. Sàn 13 px cho chữ giải thích ngoài USACodex (review-2 #5): ghi chú từng dòng của thẻ thông tin, chú thích dải số
+   liệu, phụ đề khung nhìn, gợi ý dưới hộp kiểm và trong bảng, chú giải màu, dòng gợi ý dưới giản đồ, lời nhắn ô nhập,
+   chú thích rê chuột và nút trong bong bóng của Usui-chan. Cùng độ đặc hiệu với quy tắc gốc và đứng sau chúng nên thắng
+   cả các bản trong @media; bản trình chiếu (body.present …) vẫn to hơn. Nhãn trong cảnh 3D có cỡ riêng (gỡ chồng chéo),
+   chữ trong USACodex thuộc phần USACodex: không đổi ở đây. */
+.infocard__vi,
+.infocard__kind,
+.infocard__mag,
+.infocard h4,
+.kv dt,
+.kv__x,
+.kv__note,
+.data__k,
+.data__n,
+.view__sub,
+.view__hint,
+.check__hint,
+.hint,
+.note,
+.sub__teaser,
+.field-msg,
+.field-error,
+.legend,
+.legend-zones,
+.tooltip,
+.guide-tip__use {
+  font-size: 13px;
+}

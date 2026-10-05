@@ -87,3 +87,39 @@ All three dots pass the 3:1 non-text minimum. The state is also named in words, 
 - *Colour as a sign/code* (color-theory, 5642 · U3 · L39 · 02:36–03:20). The zone colours are a code with a legend. A teal fill while the zone layer is off and its legend is hidden borrowed the code out of context. As a small dot, the colour only marks the link to the zone layer, and the word carries the meaning.
 - *Fewer colours, better decisions* (color-theory, 1140 · U3 · L08 · 09:58–11:48). The info card now has no large coloured areas, so the scene's semantic colours stay the strongest colour in view.
 - *Pair hue with a word and a value* (color-theory, functional colour, stateful signal policy). The word is primary, and the dot is redundant.
+
+## 4. A 13 px floor for explanatory text outside USACodex (review-2 #5)
+
+**What changed:** one rule in the new section of `styles.css` sets 13 px on:
+
+| Text | Selectors | Before |
+|---|---|---|
+| Info-card rows | `.kv dt`, `.kv__x`, `.kv__note`, `.infocard h4`, `.infocard__kind`, `.infocard__mag`, `.infocard__vi` | 12 and 12,5 px |
+| Data-bar captions | `.data__k`, `.data__n` | 12 px |
+| View subtitles | `.view__sub` | already 13 px |
+| Horizon readout hint | `.view__hint` | already 13 px |
+| Toggle hints | `.check__hint` | 12 px |
+| Panel hints | `.hint`, `.note`, `.sub__teaser`, `.field-msg`, `.field-error` | 12 and 12,5 px |
+| Legend | `.legend`, `.legend-zones` | 12,5 px, and 12 px at ≤ 900 px |
+| Hover tooltip | `.tooltip` | 12,5 px |
+| Usui-chan's bubble | `.guide-tip__use` | 12,5 px. The bubble text itself was already 14 to 16 px. |
+| Status pill | `.status` (item 3) | 12 px |
+
+Scope and precedence:
+- The rule has the same specificity as the originals and comes after them, so it also wins over their `@media` variants.
+- The presentation-mode sizes (`body.present …`, 14 to 20 px) stay larger.
+- Not changed: the 3D scene labels, which have their own declutter sizing, and everything inside USACodex.
+
+**Measured** (`decisions.mjs`):
+- The minimum computed font size over every text-bearing element in those containers is 13 px. That holds at 1440 × 900 and 375 × 812, in Full and in Simple, and covers 154 to 218 elements.
+- Usui-chan's bubble was measured in a separate first-visit page.
+
+**Wrapping** (line counts per element before and after, measured; there is no horizontal scroll at 375 px):
+- The LST caption "dải trời đang qua kinh tuyến" now breaks into two lines, like the neighbouring "chỉ dời giờ, không đổi dáng trời" already did. The data bar grows 3 px at 1440 px and 28 px at 375 px.
+- At 1440 px, two panel hints ("Bấm hoặc kéo trên bản đồ…" and the α/δ input format) gain one line each. These are paragraphs and break cleanly.
+- No label, chip or button wraps.
+
+**Lessons applied:**
+- *Treat accessibility as a requirement, and render the actual artifact* (frontend, principles 4 and 6). The floor is enforced by a computed-style check across both modes and both widths, not by reading the CSS. The wrap side effects were measured and then looked at in renders.
+- *Real words affect space and layout* (ux, 798 · U2 · L05 · 01:55–03:03). The longest Vietnamese captions set the cost. I checked them in place instead of assuming that 1 px is harmless.
+- Contrast was not changed. These texts already use `--muted` or `--subtle` (≥ 4,6:1) or `--text`.
