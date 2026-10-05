@@ -4,6 +4,7 @@ import './styles.css';
 import logoUrl from './assets/usac-logo.png';
 import { Animator } from './animator';
 import { codexButton, isCodexOpen } from './codex/triggers';
+import { createGuide } from './guide/boot';
 import { t } from './i18n';
 import { startFrameLoop, type FrameView } from './runtime/frameLoop';
 import { createQuality } from './runtime/quality';
@@ -92,8 +93,8 @@ const dialogs = {
 let sphere: CelestialSphereView | null = null;
 let horizon: HorizonDiagramView | null = null;
 
-const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top btn--top-main', icon: '✎', title: t('top.learnTip') });
-const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top btn--top-present', icon: '⛶', title: t('top.presentTip') });
+const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top btn--top-main', icon: '✎', title: t('top.learnTip'), guide: 'learn' });
+const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top btn--top-present', icon: '⛶', title: t('top.presentTip'), guide: 'present' });
 presentBtn.setAttribute('aria-pressed', 'false');
 const topbar = h(
   'header',
@@ -118,25 +119,25 @@ const topbar = h(
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
     learnBtn,
     presentBtn,
-    button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
+    button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip'), guide: 'reset' }),
     codexButton(store, actions), // Codex (redesign-2 C)
-    button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip') }),
-    button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip') }),
+    button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip'), guide: 'help' }),
+    button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip'), guide: 'about' }),
   ),
 );
 
 // ---------------------------------------------------------------- Hai khung nhìn
-const sphereHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.sphereAria') });
-const horizonHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.horizonAria') });
+const sphereHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.sphereAria'), 'data-guide': 'sphereView' });
+const horizonHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.horizonAria'), 'data-guide': 'horizonView' });
 /**
  * Nút công cụ của khung nhìn (review-4 B4): nút biểu tượng 44 px NỔI ở góc trên phải của cảnh, không còn chiếm một
  * hàng riêng phía trên cảnh. Tên truy cập = aria-label (cũng là chữ hiện cạnh biểu tượng trên màn hình rộng), title
  * giải thích thêm. Nằm ngoài vùng role="img" của canvas để trình đọc màn hình vẫn thấy nút.
  */
-function viewTool(icon: string, label: string, tip: string, onClick: () => void): HTMLButtonElement {
+function viewTool(icon: string, label: string, tip: string, onClick: () => void, opts: { guide: string }): HTMLButtonElement {
   return h(
     'button',
-    { type: 'button', class: 'view-tool', 'aria-label': label, title: tip, onclick: onClick },
+    { type: 'button', class: 'view-tool', 'aria-label': label, title: tip, 'data-guide': opts.guide, onclick: onClick },
     h('span', { class: 'view-tool__icon', 'aria-hidden': 'true', text: icon }),
     h('span', { class: 'view-tool__text', 'aria-hidden': 'true', text: label }),
   ) as HTMLButtonElement;
@@ -149,7 +150,7 @@ const fpBtn = viewTool('👁', t('view.firstPerson'), t('view.firstPersonTip'), 
   // Nút bật/tắt: tên giữ nguyên, trạng thái nằm ở aria-pressed (và viền cam khi đang bật).
   fpBtn.setAttribute('aria-pressed', String(on));
   fpBtn.title = on ? t('view.outside') : t('view.firstPersonTip');
-});
+}, { guide: 'firstPerson' });
 fpBtn.setAttribute('aria-pressed', 'false');
 
 function viewBox(id: string, title: string, sub: string, host: HTMLElement, tools: HTMLElement[], foot: HTMLElement | null = null) {
@@ -181,24 +182,27 @@ function updateKeyLine(s: AppState) {
 }
 
 const sphereBox = viewBox('view-sphere', t('view.sphere'), t('view.sphereSub'), sphereHost, [
-  viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => sphere?.resetCamera()),
+  viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => sphere?.resetCamera(), { guide: 'resetCamera' }),
 ]);
 const horizonBox = viewBox(
   'view-horizon',
   t('view.horizon'),
   t('view.horizonSub'),
   horizonHost,
-  [fpBtn, viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => horizon?.resetCamera())],
+  [fpBtn, viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => horizon?.resetCamera(), { guide: 'resetCamera' })],
   horizonFoot,
 );
 
 // Dòng gợi ý nổi hơn cho tới lần kéo/bấm đầu tiên vào một khung nhìn.
 bindHintCaption(hintLine, [horizonHost, sphereHost]);
 
+// Usui-chan (redesign-2 R4): chân dung ở góc; lời chào lần đầu và chế độ giải thích tải lười (src/guide/guide.ts).
+const guideUi = createGuide({ skies: [horizonHost, sphereHost] });
+
 const card = infoCard(store, actions);
 const legend = h('div', { class: 'legend', 'aria-label': t('legend.aria') });
 // Thứ tự đọc = thứ tự khái niệm: giản đồ chân trời (điều bạn thấy) trước, thiên cầu (vì sao như vậy) sau.
-const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el);
+const views = h('section', { class: 'views', 'data-active': 'horizon' }, horizonBox, sphereBox, card.el, guideUi.el);
 
 // Điện thoại: thẻ thông tin nổi ở đáy khung nhìn phải nằm trên chân khung (dòng cốt lõi + gợi ý).
 if (typeof ResizeObserver !== 'undefined') {
@@ -217,7 +221,7 @@ const viewTab = (key: 'sphere' | 'horizon') =>
     onclick: () => selectView(key),
   });
 const tabEls = { sphere: viewTab('sphere'), horizon: viewTab('horizon') };
-const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria') }, tabEls.horizon, tabEls.sphere);
+const viewTabs = h('div', { class: 'viewtabs', role: 'tablist', 'aria-label': t('view.tabsAria'), 'data-guide': 'viewTabs' }, tabEls.horizon, tabEls.sphere);
 type ViewKey = 'sphere' | 'horizon';
 const viewRoving = rovingTabs(viewTabs, (tab) => selectView(tab.dataset.view as ViewKey));
 function selectView(key: ViewKey) {
@@ -237,7 +241,7 @@ const panelDefs = [
   { key: 'stars', el: starPanel(store, actions) },
 ];
 const panels = h('section', { class: 'panels', 'data-active': 'location', 'aria-label': t('panel.aria') });
-const panelTabs = h('div', { class: 'paneltabs', role: 'tablist', 'aria-label': t('panel.tabsAria') });
+const panelTabs = h('div', { class: 'paneltabs', role: 'tablist', 'aria-label': t('panel.tabsAria'), 'data-guide': 'panelTabs' });
 /** Chọn bảng; bấm lại vào thẻ đang mở thì thu gọn (chỉ khi bấm, không khi dùng phím mũi tên). */
 function selectPanel(key: string, toggleCollapse: boolean) {
   const same = panels.dataset.active === key && !panels.classList.contains('collapsed');
@@ -271,9 +275,13 @@ const footer = h(
   'footer',
   { class: 'site-footer' },
   h('p', { class: 'site-footer__sig' }, h('strong', { text: t('app.signature') }), ` · ${t('app.slogan')}`),
-  h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email') })),
-  h('p', { class: 'site-footer__club' }, h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗` })),
-  h('p', { class: 'site-footer__links' }, h('button', { type: 'button', class: 'link-btn', text: t('app.catalogLink'), onclick: () => dialogs.catalog() })),
+  h('p', { class: 'site-footer__contact' }, `${t('app.contact')} `, h('a', { href: `mailto:${t('app.email')}`, text: t('app.email'), 'data-guide': 'email' })),
+  h(
+    'p',
+    { class: 'site-footer__club' },
+    h('a', { href: t('app.clubUrl'), rel: 'noopener', target: '_blank', title: t('app.clubLinkTip'), text: `${t('app.clubLink')} ↗`, 'data-guide': 'clubLink' }),
+  ),
+  h('p', { class: 'site-footer__links' }, h('button', { type: 'button', class: 'link-btn', text: t('app.catalogLink'), 'data-guide': 'catalog', onclick: () => dialogs.catalog() })),
 );
 
 // ---------------------------------------------------------------- Chế độ trình chiếu (spec K6, K8)
@@ -282,6 +290,7 @@ const PRESENT_LINE_SCALE = 2;
 function setPresent(on: boolean) {
   if (on === presenting) return;
   presenting = on;
+  if (on) guideUi.close(); // trình chiếu: Usui-chan ẩn (CSS) và chế độ giải thích tắt
   document.body.classList.toggle('present', on);
   // Máy chiếu: đường ×2, nhãn cảnh ×1,8 (CSS: body.present --lbl-k), đo lại nhãn để gỡ chồng chéo đúng cỡ.
   for (const v of [sphere, horizon]) v?.setPresentation(on, PRESENT_LINE_SCALE);
@@ -343,6 +352,16 @@ function updateLegend(s: AppState) {
 // ---------------------------------------------------------------- Khởi tạo 3D (tải động)
 for (const host of [sphereHost, horizonHost]) host.append(h('p', { class: 'view__loading', text: t('view.loading') }));
 
+/**
+ * Lời chào lần đầu của Usui-chan: SAU khi bầu trời đã hiện (người mới thấy bầu trời trước, rồi mới được chào), và
+ * trễ thêm một nhịp để hai thứ không xuất hiện cùng lúc. Không chào trong chế độ trình chiếu.
+ */
+function greet() {
+  window.setTimeout(() => {
+    if (!presenting) guideUi.hello();
+  }, 700);
+}
+
 function showSceneError(key: 'view.webglError' | 'view.loadError') {
   for (const host of [sphereHost, horizonHost]) {
     clear(host);
@@ -362,16 +381,19 @@ scenePromise.then(
       sphere.update(store.state);
       horizon.update(store.state);
       loop.markUiDirty();
+      greet();
       return v;
     } catch (err) {
       console.error(err);
       showSceneError('view.webglError');
+      greet();
       return null;
     }
   },
   (err) => {
     console.error(err);
     showSceneError('view.loadError');
+    greet();
     return null;
   },
 );
@@ -450,13 +472,15 @@ const SPACE_OWNERS = 'button,a,summary,label,[role=tab],input,select,textarea,[c
 const ARROW_OWNERS = '[role=tablist],[role=slider],[role=radiogroup]';
 
 window.addEventListener('keydown', (e) => {
-  // Ưu tiên Esc: 1) hộp thoại gốc, kể cả Codex (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) bỏ chọn.
+  // Ưu tiên Esc: 1) hộp thoại gốc, kể cả Codex (trình duyệt tự đóng) → 2) lời chào / chế độ giải thích của
+  // Usui-chan → 3) ngăn Ôn tập → 4) bỏ chọn.
   if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen() || isCodexOpen()) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   // Tính "đang gõ" TRƯỚC khi xử lý Esc: Esc trong ô nhập không được bỏ chọn hay đóng ngăn.
   const typing = !!target && (!!target.closest('input,select,textarea') || target.isContentEditable || target.getAttribute('role') === 'slider');
   if (typing) return;
   if (e.key === 'Escape') {
+    if (guideUi.escape()) return;
     if (learn.isOpen()) learn.open(false);
     else actions.select(null);
     return;

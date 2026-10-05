@@ -8,7 +8,7 @@ import { t } from '../i18n';
 import { atPlace, goToPlace, QUICK_PLACES, zones } from '../scenario';
 import { COLORS } from '../scene/colors';
 import type { Actions, AppState, Store } from '../state';
-import { checkbox, h, setText } from './dom';
+import { checkbox, guide, h, setText } from './dom';
 
 /** Hai mức tốc độ cho người mới (giây cho một ngày thiên văn). */
 export const SIMPLE_RATES = { slow: 60, fast: 15 } as const;
@@ -46,10 +46,10 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
     'fieldset',
     { class: 'simple__group' },
     h('legend', { text: t('simple.whereTitle') }),
-    h('div', { class: 'chips', role: 'group', 'aria-label': t('simple.placesAria') }, ...chips.map((c) => c.el)),
+    h('div', { class: 'chips', role: 'group', 'aria-label': t('simple.placesAria'), 'data-guide': 'simplePlaces' }, ...chips.map((c) => c.el)),
     h(
       'div',
-      { class: 'simple__slider' },
+      { class: 'simple__slider', 'data-guide': 'simpleLat' },
       h('label', { htmlFor: 'simple-lat', text: t('simple.lat') }),
       latOut,
       latSlider,
@@ -57,7 +57,7 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
   );
 
   // ------------------------------------------------ 2. Bầu trời quay
-  const playBtn = h('button', { type: 'button', class: 'btn simple__play', 'aria-pressed': 'false', onclick: () => actions.togglePlay() });
+  const playBtn = h('button', { type: 'button', class: 'btn simple__play', 'aria-pressed': 'false', 'data-guide': 'simplePlay', onclick: () => actions.togglePlay() });
   const speedInputs = new Map<SimpleSpeed, HTMLInputElement>();
   const speedOpt = (k: SimpleSpeed) => {
     const input = h('input', {
@@ -77,7 +77,7 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
       'div',
       { class: 'simple__row' },
       playBtn,
-      h('div', { class: 'simple__speed', role: 'radiogroup', 'aria-label': t('simple.speedAria') }, speedOpt('slow'), speedOpt('fast')),
+      h('div', { class: 'simple__speed', role: 'radiogroup', 'aria-label': t('simple.speedAria'), 'data-guide': 'simpleSpeed' }, speedOpt('slow'), speedOpt('fast')),
     ),
   );
 
@@ -109,7 +109,7 @@ export function simpleControls(store: Store, actions: Actions): { el: HTMLElemen
     'fieldset',
     { class: 'simple__group' },
     h('legend', { text: t('simple.layersTitle') }),
-    h('div', { class: 'checks' }, axis.el, equator.el, zoneBox.el),
+    h('div', { class: 'checks' }, guide('simpleAxis', axis.el), guide('simpleEquator', equator.el), guide('simpleZones', zoneBox.el)),
     zoneKey,
   );
 

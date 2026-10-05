@@ -79,7 +79,7 @@ export function modeSwitch(store: Store, actions: Actions): HTMLElement {
   };
   const el = h(
     'div',
-    { class: 'modeswitch', role: 'radiogroup', 'aria-labelledby': 'modeswitch-label', title: t('mode.tip') },
+    { class: 'modeswitch', role: 'radiogroup', 'aria-labelledby': 'modeswitch-label', title: t('mode.tip'), 'data-guide': 'mode' },
     h('span', { class: 'modeswitch__label', id: 'modeswitch-label', text: t('mode.label') }),
     option('simple'),
     option('full'),

@@ -5,7 +5,7 @@ import { SPECIAL_PLACES, VN_PLACES, type Place } from '../data/places';
 import { termLink } from '../codex/triggers';
 import { t } from '../i18n';
 import type { Actions, Store } from '../state';
-import { button, fieldset, h } from './dom';
+import { button, fieldset, guide, h } from './dom';
 import { bindEmphasis } from './emphasis';
 import { WorldMap } from './worldMap';
 
@@ -67,7 +67,7 @@ export function locationPanel(store: Store, actions: Actions): HTMLElement {
     h('h2', { id: 'h-location', class: 'panel__title', text: t('panel.location.title') }),
     h(
       'div',
-      { class: 'coord-grid' },
+      { class: 'coord-grid', 'data-guide': 'latLonInput' },
       h('label', { htmlFor: 'lat-input', text: t('panel.location.lat') }),
       h('div', { class: 'coord-row' }, latInput, h('span', { class: 'unit', text: '°' }), latHem),
       h('label', { htmlFor: 'lon-input', text: t('panel.location.lon') }),
@@ -75,13 +75,13 @@ export function locationPanel(store: Store, actions: Actions): HTMLElement {
     ),
     h('p', { class: 'hint', id: 'lat-help', text: t('panel.location.inputHint') }),
     err,
-    h('div', { class: 'slider-row' }, h('span', { class: 'slider-row__label', text: t('panel.location.latSliderShort') }), latSlider),
+    h('div', { class: 'slider-row', 'data-guide': 'latSlider' }, h('span', { class: 'slider-row__label', text: t('panel.location.latSliderShort') }), latSlider),
     // Codex (redesign-2 C): dòng cốt lõi kèm liên kết "?" tới mục độ cao thiên cực = vĩ độ.
     h('div', { class: 'pole-row' }, poleLine, termLink('latPole', t('data.pole'))),
-    map.el,
+    guide('worldMap', map.el),
     h('p', { class: 'hint', text: t('panel.location.mapHint') }),
-    fieldset(t('panel.location.vn'), h('div', { class: 'chips' }, ...VN_PLACES.map(placeBtn))),
-    fieldset(t('panel.location.special'), h('div', { class: 'chips' }, ...SPECIAL_PLACES.map(placeBtn))),
+    guide('places', fieldset(t('panel.location.vn'), h('div', { class: 'chips' }, ...VN_PLACES.map(placeBtn)))),
+    guide('places', fieldset(t('panel.location.special'), h('div', { class: 'chips' }, ...SPECIAL_PLACES.map(placeBtn)))),
   );
 
   const sync = () => {

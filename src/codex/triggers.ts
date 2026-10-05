@@ -274,6 +274,7 @@ export function termLink(id: string, term: string): HTMLButtonElement {
       type: 'button',
       class: 'term',
       'data-codex': id,
+      'data-guide': 'term',
       title: t('codexUi.termTip'),
       onclick: (e: Event) => {
         e.stopPropagation();
@@ -324,6 +325,7 @@ export function codexButton(store: Store, actions: Actions): HTMLButtonElement {
       type: 'button',
       class: 'btn btn--top btn--codex',
       title: t('codexUi.buttonTip'),
+      'data-guide': 'codex',
       onclick: () => openCodex(),
     },
     h('span', { class: 'btn__icon', 'aria-hidden': 'true', text: '◈' }),

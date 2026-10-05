@@ -74,6 +74,7 @@ export function infoCard(store: Store, actions: Actions) {
     class: 'icon-btn',
     'aria-expanded': 'true',
     'aria-label': t('info.collapse'),
+    'data-guide': 'infoCollapse',
     title: t('info.collapse'),
     text: '–',
     onclick: () => setCollapsed(!el.classList.contains('is-collapsed')),
@@ -152,7 +153,7 @@ export function infoCard(store: Store, actions: Actions) {
   const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
   const el = h(
     'aside',
-    { class: 'infocard is-empty', 'aria-label': t('info.aria') },
+    { class: 'infocard is-empty', 'aria-label': t('info.aria'), 'data-guide': 'infoCard' },
     h(
       'header',
       { class: 'infocard__head' },
@@ -160,7 +161,15 @@ export function infoCard(store: Store, actions: Actions) {
       title,
       brief,
       collapseBtn,
-      h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
+      h('button', {
+        type: 'button',
+        class: 'icon-btn infocard__close',
+        'aria-label': t('info.close'),
+        title: t('info.close'),
+        text: '×',
+        'data-guide': 'infoClose',
+        onclick: () => actions.select(null),
+      }),
     ),
     viName,
     kind,
@@ -311,14 +320,14 @@ export function infoCard(store: Store, actions: Actions) {
  * `group-end` đánh dấu ô cuối của một cụm (khoảng trống lớn hơn phía sau thay cho đường viền).
  */
 export const DATA_CELLS = [
-  { key: 'lat', tip: false, end: false },
-  { key: 'pole', tip: true, end: false },
-  { key: 'incl', tip: true, end: true },
-  { key: 'lon', tip: false, end: false },
-  { key: 'lst', tip: true, end: false },
-  { key: 'gst', tip: true, end: false },
-  { key: 'solar', tip: true, end: true },
-  { key: 'selected', tip: false, end: false },
+  { key: 'lat', tip: false, end: false, guide: 'dataLat' },
+  { key: 'pole', tip: true, end: false, guide: 'dataPole' },
+  { key: 'incl', tip: true, end: true, guide: 'dataIncl' },
+  { key: 'lon', tip: false, end: false, guide: 'dataLon' },
+  { key: 'lst', tip: true, end: false, guide: 'dataLst' },
+  { key: 'gst', tip: true, end: false, guide: 'dataGst' },
+  { key: 'solar', tip: true, end: true, guide: 'dataSolar' },
+  { key: 'selected', tip: false, end: false, guide: 'dataSelected' },
 ] as const;
 export type DataKey = (typeof DATA_CELLS)[number]['key'];
 
@@ -342,7 +351,13 @@ export function dataBar(store: Store, actions: Actions) {
     // data-emphasis: khóa "tô sáng liên kết" (số ↔ hình trong hai khung nhìn), xem ui/emphasis.ts.
     cells[c.key] = h(
       'div',
-      { class: c.end ? 'data__item data__item--end' : 'data__item', title: c.tip ? t(`data.${c.key}Tip`) : undefined, 'data-emphasis': c.key },
+      {
+        class: c.end ? 'data__item data__item--end' : 'data__item',
+        title: c.tip ? t(`data.${c.key}Tip`) : undefined,
+        'data-emphasis': c.key,
+        // Khóa giải thích của Usui-chan: chuỗi cố định trong DATA_CELLS (guide.test.ts kiểm từng khóa).
+        'data-guide': c.guide,
+      },
       h('span', { class: 'data__k', text: t(`data.${c.key}`) }),
       v,
       note,

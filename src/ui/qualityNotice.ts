@@ -8,7 +8,7 @@ export function mountQualityNotice(q: QualityController, root: HTMLElement): { e
   const text = h('span', { class: 'qnotice__text' });
   const chip = h(
     'div',
-    { class: 'qnotice__chip', hidden: true },
+    { class: 'qnotice__chip', hidden: true, 'data-guide': 'quality' },
     text,
     button(t('quality.restore'), () => q.restore(), { cls: 'btn--small btn--primary' }),
     h('button', {
