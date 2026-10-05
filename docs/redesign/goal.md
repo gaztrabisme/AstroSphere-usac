@@ -1,6 +1,6 @@
 # Goal — 2026-10-04 — redesign-2026-10-04
 
-**Status:** DRAFT — not an active stop condition until the requester approves the Plan Block.
+**Status:** APPROVED 2026-10-04 (owner "go" on the plan); amended 2026-10-04 (below).
 **Decision owner:** requester (repo owner). **Audited by:** coordinator at Close.
 
 ## Deliverable — redesigned AstroSphere on branch `claude/wonderful-lovelace-7sdyp0`
@@ -23,7 +23,21 @@
 - The coordinator runs every UAT itself.
 
 ## Amendments
-(none)
+
+**2026-10-04, owner:** "The storytelling is too much in your face, what I meant was that sublime storytelling through UX design and not an actual story."
+- G4 above is **withdrawn**. The original row stays for the record; the guided story and hero were built, then removed in `3227a26`.
+- G4b replaces it.
+
+**2026-10-04, owner:** "All celestial objects should still be in English." This adds G10.
+
+**2026-10-04, owner:** asked whether the lessons of all relevant design skills were applied. This adds G11.
+
+| ID | Source | Success criterion | Evidence | UAT |
+|---|---|---|---|---|
+| G4b | owner amendment | The story is carried by the UX itself: concept-ordered layout, a calm opening scene, contextual one-line captions, progressive disclosure and linked highlights. There is no tour, hero screen or story player. | `docs/redesign/ux-brief.md`, `uat/ux.mjs`, `uat/highlight.mjs` | `ux.mjs` and `highlight.mjs` pass. No `.hero` or `[class*=story]` element exists. `src/story/` is absent. |
+| G10 | owner amendment | Stars, constellations, the Sun and the galactic centre carry international English names; the Vietnamese name appears only as a secondary line in the info card. Reference circles stay Vietnamese. | `src/data/catalog.ts`, `constellations.ts`, `uat/highlight.mjs` | The `highlight.mjs` name checks pass, and `grep "Sao Bắc Cực"` matches only the `VI_STAR_NAMES` table and tests. |
+| G11 | owner amendment | Relevant design-skill rules are applied, and each skill's review loop is run: measured checks, fresh-context vision review, then fixes. | `docs/redesign/review-{1,2,3}.md` | Each review file exists, with measured and vision-judged results reported separately; skipped checks (render-kit) are reported as skipped. |
 
 ## Branch resolutions (before dispatch)
-(pending go)
+
+Owner "go" on 2026-10-04. The owner accepted the defaults: D1 `TODO.md`; D2 fix overlapping review items; D3 brand direction; D4 system/Arial font; D5 report the shortfall honestly; D6 no board; D7 commit on the branch.

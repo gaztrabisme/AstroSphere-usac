@@ -40,7 +40,9 @@ Run `redesign-2026-10-04`. Sources: `grounded.md`, `goal.md`, and the approved p
 - **Top bar:** Câu chuyện · Ôn tập · Đặt lại · Trợ giúp · Giới thiệu.
 - **Footer:** club signature, slogan, email, and the single club link.
 
-## Màn hình mở đầu (hero)
+## Màn hình mở đầu (hero) — RÚT LẠI 2026-10-04
+
+> Withdrawn by owner decision 2026-10-04 (removed in `3227a26`). Storytelling now lives in the UX itself; see `ux-brief.md`. Kept below for the record.
 
 - **Content:**
   - Logo, the kicker "CLB Thiên văn USAC", a headline, and a one-line lead.
@@ -53,7 +55,9 @@ Run `redesign-2026-10-04`. Sources: `grounded.md`, `goal.md`, and the approved p
   - `?intro=1` forces the hero; `?explore=1` skips it.
   - Choosing either option sets `astrosphere.seen.v1`.
 
-## Kịch bản câu chuyện
+## Kịch bản câu chuyện — RÚT LẠI 2026-10-04
+
+> Withdrawn with the hero (`3227a26`). Its plain-language explanations were reused as inline captions (`ux-brief.md` §4).
 
 Each step sets up the simulator, says what to notice, and shows live readouts. Some steps add "Thử" chips that change the setup.
 
@@ -101,6 +105,16 @@ Each step sets up the simulator, says what to notice, and shows live readouts. S
   - Level 2: only stars brighter than magnitude 4.0.
 
 ## Phản biện (persona) — objections and how each is handled
+
+> Note 2026-10-04: rows marked "Fixed (U2)" referred to the guided story, which was withdrawn. Their intent now maps to the UX pass:
+> - K1 (clicker keys): withdrawn with the story.
+> - K2 (projector layout): presentation mode.
+> - K4 and K5 (deep link, resume): withdrawn.
+> - K9 (speed): the opening sky turns at 60 s per sidereal day.
+> - K10 (quiet notice): kept.
+> - L1–L10: their explanations live on as inline captions; L10 is superseded by the owner's English-names decision (G10).
+> - K3 (offline) stays deferred in `TODO.md`.
+> - K7 (thicker projector lines) was done in `a597273`.
 
 | # | Persona | Objection | Severity | Disposition |
 |---|---|---|---|---|

@@ -41,6 +41,6 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 
 ## Kho mã / Repository
 
-- [ ] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped).
+- [x] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped). (c18ce19)
 - [x] Main bundle 878 kB (258 kB gzip); `vite.config.ts` raises `chunkSizeWarningLimit` to hide the warning. Split Three.js / lazy-load data. (5c51d6f; entry JS now 64 kB gzip, see `docs/redesign/perf.md`)
 - [ ] Use descriptive commit messages (recent history: "f", "y", "d").
