@@ -34,7 +34,8 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 {
   const { ctx, page } = await open();
   // Fix round 1 (review-1 B4, E3): the floating toast is gone; the hint is ONE caption under the horizon view,
-  // stronger (is-new) until the first drag/click on a view.
+  // marked is-new until the first drag/click on a view. Fix round 2 (review-2 A2): the caption is always small and
+  // muted (is-new only keeps it visible on phones); the φ key line above it is the headline.
   const cap = await page.evaluate(() => {
     const el = document.querySelector('#view-horizon .view__hint');
     const canvas = document.querySelector('#view-horizon .view__canvas');
@@ -48,7 +49,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     };
   });
   check(
-    '(a) first visit: one hint caption, under (not over) the horizon canvas, emphasised, no floating toast',
+    '(a) first visit: one hint caption, under (not over) the horizon canvas, marked new, no floating toast',
     cap && cap.text === 'Kéo để xoay · bấm vào một ngôi sao' && cap.isNew && cap.below && cap.toasts === 0 && cap.captions === 1,
     JSON.stringify(cap),
   );

@@ -386,24 +386,24 @@ body.learn-open .layout {
   border-top: 1px solid var(--border);
 }
 
+/* Ý chính của cả ứng dụng (review-2 A2, I1.3): cỡ tiêu đề, đậm, ở đầu chân khung — tách hẳn khỏi dòng gợi ý. */
 .view__key {
   margin: 0;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
+/* Gợi ý thao tác: luôn nhỏ và màu phụ, để không ngang hàng với ý chính (review-2 A2). Lớp is-new (chưa tương
+   tác lần nào) chỉ quyết định việc hiện gợi ý trên điện thoại. */
 .view__hint {
   margin: 0;
   font-size: 12.5px;
+  font-weight: 400;
   color: var(--muted);
-}
-
-/* Lần đầu vào trang: gợi ý đọc như chữ thường; sau lần kéo/bấm đầu tiên nó lùi về màu phụ. */
-.view__hint.is-new {
-  color: var(--text);
-  font-weight: 600;
 }
 
 .label-layer {
@@ -1755,7 +1755,7 @@ body.present .kv__x {
   }
 
   .view__key {
-    font-size: 13.5px;
+    font-size: 15px;
   }
 
   /* Điện thoại: gợi ý chỉ hiện tới lần chạm đầu tiên, để dành chiều cao cho cảnh. */
