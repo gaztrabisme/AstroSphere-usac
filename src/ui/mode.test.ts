@@ -3,7 +3,7 @@ import vi from '../i18n/vi.json';
 import { QUICK_PLACES, atPlace } from '../scenario';
 import { Actions, createInitialState, Store, UI_MODES } from '../state';
 import { DEFAULT_UI_MODE, initialUiMode, MODE_STORAGE_KEY, resolveUiMode, urlUiMode } from './mode';
-import { SIMPLE_RATES, speedOf } from './simpleControls';
+import { sameSelection, SIMPLE_RATES, speedOf } from './simpleControls';
 
 type Dict = { [k: string]: unknown };
 const has = (key: string): boolean => {
@@ -135,5 +135,22 @@ describe('Chế độ Cơ bản: khóa chuỗi động và điều khiển', () 
     expect(speedOf(SIMPLE_RATES.fast)).toBe('fast');
     expect(speedOf(5)).toBe('fast');
     expect(speedOf(45)).toBe('slow');
+  });
+
+  it('lời mời "bấm vào một ngôi sao" nhận ra lựa chọn mặc định theo giá trị (fix-1 #4)', () => {
+    const start = createInitialState().selected;
+    expect(start).not.toBeNull();
+    // "Đặt lại" tạo đối tượng lựa chọn mới nhưng cùng thiên thể: không tính là người dùng đã chọn sao.
+    expect(sameSelection(start, createInitialState().selected)).toBe(true);
+    expect(sameSelection({ kind: 'catalog', index: 1 }, { kind: 'catalog', index: 2 })).toBe(false);
+    expect(sameSelection({ kind: 'catalog', index: 3 }, { kind: 'dso', index: 3 })).toBe(false);
+    expect(sameSelection({ kind: 'user', id: 'a' }, { kind: 'user', id: 'a' })).toBe(true);
+    expect(sameSelection({ kind: 'sun' }, { kind: 'sun' })).toBe(true);
+    expect(sameSelection(null, start)).toBe(false);
+    expect(sameSelection(null, null)).toBe(true);
+  });
+
+  it('khóa chữ mới của fix-1 có trong vi.json', () => {
+    expect(['simple.cue', 'guide.helloShort', 'guide.helloClose', 'mode.label'].filter((k) => !has(k))).toEqual([]);
   });
 });

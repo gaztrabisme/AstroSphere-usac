@@ -46,7 +46,7 @@ The browser acceptance checks:
 |---|---|---|
 | `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
 | `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
-| `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view (always small and muted) is then hidden on phones |
+| `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once, or selected a star; the hint caption under the horizon view (always small and muted) is then hidden on phones, and Simple mode's first-action cue ("Bấm vào một ngôi sao…", `src/ui/simpleControls.ts`) is not shown on later visits |
 | `astrosphere.mode.v1` | localStorage | The interface mode the user last chose, `"simple"` or `"full"` (`src/ui/mode.ts`). With no value a visitor lands in Simple. `?mode=simple\|full` overrides it for one page load and is not stored |
 | `astrosphere.codex.v1` | localStorage | Codex progress `{discovered: string[], read: string[]}` (entry ids); guard `isCodexProgress` in `src/codex/triggers.ts` |
 | `astrosphere.guide.v1` | localStorage | `{hello: true}` once Usui-chan has said her one-time hello (written as soon as it shows); guard `isGuideState` in `src/guide/state.ts`. UATs that do not test the hello pre-set it in their init scripts |

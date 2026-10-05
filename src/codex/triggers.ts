@@ -12,6 +12,7 @@ import { selectedDec } from '../emphasis';
 import { t } from '../i18n';
 import type { Actions, AppState, Store, Toggles } from '../state';
 import { h } from '../ui/dom';
+import { bookIcon } from '../ui/icons';
 import { isPlainObject, readJson, writeJson } from '../ui/storage';
 
 export const CODEX_KEY = 'astrosphere.codex.v1';
@@ -328,7 +329,7 @@ export function codexButton(store: Store, actions: Actions): HTMLButtonElement {
       'data-guide': 'codex',
       onclick: () => openCodex(),
     },
-    h('span', { class: 'btn__icon', 'aria-hidden': 'true', text: '◈' }),
+    h('span', { class: 'btn__icon', 'aria-hidden': 'true' }, bookIcon()), // fix-1 #8: cuốn sách thay cho ◈
     h('span', { class: 'btn__text', text: t('codexUi.button') }),
     badge,
   );

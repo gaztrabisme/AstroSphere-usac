@@ -31,6 +31,14 @@ const media = (q: string): boolean => {
 const isSheet = (): boolean => media('(max-width: 600px)');
 /** Ảnh toàn thân chỉ khi màn hình đủ rộng và đủ cao để lời chào không che bầu trời. */
 const wantsPose = (): boolean => media('(min-width: 901px) and (min-height: 860px)') && document.body.classList.contains('mode-simple');
+/**
+ * Lời chào dạng dải mảnh "chân dung · lời chào · ×" (review-1 #3, #7):
+ * - điện thoại và máy tính bảng dọc: trong khung nhìn, ngay trên thẻ đang chọn — thay cho tấm đáy che 35 % màn hình
+ *   và cắt dòng φ;
+ * - Cơ bản trên màn hình rộng nhưng thấp (không đủ chỗ cho ảnh toàn thân): cạnh chân dung, thay cho bong bóng lớn
+ *   từng che các ô của nhóm 3.
+ */
+const wantsToast = (): boolean => media('(max-width: 900px)') || (!wantsPose() && document.body.classList.contains('mode-simple'));
 
 const guideTarget = (node: EventTarget | null): HTMLElement | null =>
   node instanceof Element && !node.closest(OWN) ? node.closest<HTMLElement>('[data-guide]') : null;
@@ -48,16 +56,15 @@ export function createGuideUi({ avatar, skies }: { avatar: HTMLButtonElement; sk
   let hello: HTMLElement | null = null;
   const onSky = () => closeHello();
 
-  function showHello(): void {
-    if (hello || explaining || document.body.classList.contains('present')) return;
-    const pose = wantsPose();
+  /** Máy tính: bong bóng lời chào (ảnh toàn thân ở Cơ bản khi đủ cao; nằm ngang ở Đầy đủ). */
+  function bubbleHello(pose: boolean): HTMLElement {
     // Đầy đủ trên màn hình rộng: cột phải là thiên cầu, nên lời chào nằm NGANG cạnh chân dung, trên dải số liệu,
     // thay vì dựng đứng che bầu trời.
     const wide = !pose && media('(min-width: 901px)') && document.body.classList.contains('mode-full');
     const face = pose
       ? h('img', { class: 'guide-hello__pose', src: poseUrl, alt: t('guide.poseAlt'), width: 596, height: 560, decoding: 'async' })
       : h('img', { class: 'guide-hello__face', src: avatarUrl, alt: '', width: 48, height: 48, decoding: 'async' });
-    hello = h(
+    return h(
       'aside',
       { class: `guide-hello${pose ? ' guide-hello--pose' : ''}${wide ? ' guide-hello--wide' : ''}`, 'aria-labelledby': 'guide-hello-title' },
       h('div', { class: 'guide-hello__head' }, face, h('h2', { class: 'guide-hello__title', id: 'guide-hello-title', text: t('guide.helloTitle') })),
@@ -77,6 +84,40 @@ export function createGuideUi({ avatar, skies }: { avatar: HTMLButtonElement; sk
         h('button', { type: 'button', class: 'btn', text: t('guide.helloLater'), onclick: () => closeHello(true) }),
       ),
     );
+  }
+
+  /** Điện thoại: một dải mảnh. Bấm vào chân dung hoặc lời chào = bật chế độ giải thích (đúng điều lời chào nói). */
+  function toastHello(): HTMLElement {
+    return h(
+      'aside',
+      { class: 'guide-hello guide-hello--toast', 'aria-labelledby': 'guide-hello-title' },
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'guide-hello__go',
+          onclick: () => {
+            closeHello();
+            enterExplain();
+          },
+        },
+        h('img', { class: 'guide-hello__face', src: avatarUrl, alt: '', width: 32, height: 32, decoding: 'async' }),
+        h('span', { class: 'guide-hello__title', id: 'guide-hello-title', text: t('guide.helloShort') }),
+      ),
+      h('button', {
+        type: 'button',
+        class: 'icon-btn guide-hello__x',
+        'aria-label': t('guide.helloClose'),
+        title: t('guide.helloClose'),
+        text: '×',
+        onclick: () => closeHello(true),
+      }),
+    );
+  }
+
+  function showHello(): void {
+    if (hello || explaining || document.body.classList.contains('present')) return;
+    hello = wantsToast() ? toastHello() : bubbleHello(wantsPose());
     // Ngay sau nút chân dung trong thứ tự DOM: người dùng bàn phím Tab từ chân dung là tới lời chào.
     // Không chuyển tiêu điểm vào lời chào (không cướp tiêu điểm).
     avatar.after(hello);
