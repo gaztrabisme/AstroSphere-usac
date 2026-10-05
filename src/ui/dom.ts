@@ -96,10 +96,17 @@ export function checkbox(label: string, checked: boolean, onChange: (v: boolean)
   return { el, input, set };
 }
 
-export function button(label: string, onClick: () => void, opts: { cls?: string; title?: string; aria?: string; icon?: string } = {}) {
+export function button(label: string, onClick: () => void, opts: { cls?: string; title?: string; aria?: string; icon?: string; guide?: string } = {}) {
   return h(
     'button',
-    { type: 'button', class: `btn ${opts.cls ?? ''}`.trim(), title: opts.title, 'aria-label': opts.aria ?? (opts.icon ? label : undefined), onclick: onClick },
+    {
+      type: 'button',
+      class: `btn ${opts.cls ?? ''}`.trim(),
+      title: opts.title,
+      'aria-label': opts.aria ?? (opts.icon ? label : undefined),
+      'data-guide': opts.guide,
+      onclick: onClick,
+    },
     opts.icon ? h('span', { class: 'btn__icon', 'aria-hidden': 'true', text: opts.icon }) : null,
     h('span', { class: 'btn__text', text: label }),
   );
@@ -108,4 +115,14 @@ export function button(label: string, onClick: () => void, opts: { cls?: string;
 /** Nhóm có tiêu đề trong bảng điều khiển. */
 export function fieldset(title: string, ...children: Child[]) {
   return h('fieldset', { class: 'group' }, h('legend', { text: title }), ...children);
+}
+
+/**
+ * Gắn khóa giải thích của Usui-chan (redesign-2 R4): `data-guide="<khóa>"`, lời giải thích ở `guide.tip.<khóa>`.
+ * Luôn viết khóa dạng chuỗi cố định (`guide('<khóa>', el)`, `'data-guide': '<khóa>'` hoặc `guide: '<khóa>'`) để
+ * src/guide/guide.test.ts tìm được.
+ */
+export function guide<T extends HTMLElement>(key: string, el: T): T {
+  el.dataset.guide = key;
+  return el;
 }

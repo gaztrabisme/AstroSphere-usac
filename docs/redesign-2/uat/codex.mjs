@@ -36,6 +36,8 @@ const newContext = (width, height) =>
         localStorage.setItem('astrosphere.hint.v1', 'true');
         // redesign-2 R2: lần đầu vào là chế độ Cơ bản; các kiểm tra này dùng giao diện Đầy đủ (thẻ có đủ dòng α, δ, H).
         localStorage.setItem('astrosphere.mode.v1', JSON.stringify('full'));
+        // redesign-2 R4: Usui-chan đã chào (lời chào lần đầu không che ảnh chụp và các thao tác kiểm tra).
+        localStorage.setItem('astrosphere.guide.v1', JSON.stringify({ hello: true }));
       } catch {
         /* bỏ qua */
       }

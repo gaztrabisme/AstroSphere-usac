@@ -26,6 +26,7 @@ The browser acceptance checks:
 - run against `npx vite preview --port 4173 --strictPort`;
 - need the launch flags `--use-angle=swiftshader --enable-unsafe-swiftshader`.
 - start in Full mode: a fresh visitor lands in Simple, so the `docs/redesign/uat/` scripts store `astrosphere.mode.v1 = "full"` in an init script. `docs/redesign-2/uat/modes.mjs` covers Simple (it needs the dev server).
+- skip Usui-chan's first-visit hello: every UAT except `docs/redesign-2/uat/guide.mjs` stores `astrosphere.guide.v1 = {"hello": true}` in its init script.
 
 ## Architecture rules
 
@@ -48,6 +49,7 @@ The browser acceptance checks:
 | `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view (always small and muted) is then hidden on phones |
 | `astrosphere.mode.v1` | localStorage | The interface mode the user last chose, `"simple"` or `"full"` (`src/ui/mode.ts`). With no value a visitor lands in Simple. `?mode=simple\|full` overrides it for one page load and is not stored |
 | `astrosphere.codex.v1` | localStorage | Codex progress `{discovered: string[], read: string[]}` (entry ids); guard `isCodexProgress` in `src/codex/triggers.ts` |
+| `astrosphere.guide.v1` | localStorage | `{hello: true}` once Usui-chan has said her one-time hello (written as soon as it shows); guard `isGuideState` in `src/guide/state.ts`. UATs that do not test the hello pre-set it in their init scripts |
 
 ## Interface text (i18n)
 
@@ -57,6 +59,7 @@ The browser acceptance checks:
   - No common English words appear in any string. The banned words are: the, and, reset, help, about, start, pause, stop, speed, show, hide, star(s), trail, north, south, east, west, settings, loading, error.
   - The formulas in `help.body` and `about.body` compile in KaTeX.
 - Keys built at runtime (template strings) are invisible to that test. Any new dynamic key family needs its own unit test that checks every generated key exists.
+- **Usui-chan's explanations** (`src/guide/`, see `docs/redesign-2/guide.md`): every interactive control carries `data-guide="<key>"`, and its text is `guide.tip.<key>` in `vi.json`. Write the key as a literal (`'data-guide': '<key>'`, `guide: '<key>'` or `guide('<key>', el)` from `ui/dom.ts`); `src/guide/guide.test.ts` collects them and fails on a missing string, an orphan string or a new non-literal assignment. A new control needs a key and a tip of at most two sentences.
 - **Codex content** lives in a second file, `src/i18n/codex.vi.json` (categories, entries, diagram labels). Only the lazy codex chunk (`src/codex/ui.ts`) imports it, so it never enters the entry chunk. The Codex interface strings stay in `vi.json` under `codexUi`.
   - `src/codex/codex.test.ts` applies the same banned-word rule and KaTeX check to it, and checks that every entry has a title, lede and body, that every `related` id, discovery-trigger id, `termLink` id and "Xem trong mô phỏng" action resolves to an entry.
   - Celestial object names (Polaris, Ursa Major, M31…) stay in English; give the Vietnamese name in the text.
@@ -87,7 +90,7 @@ The brand comes from the club site https://web-usac.vercel.app/.
 
 - Respect `prefers-reduced-motion`: no autoplay, and draw trails statically.
 - Return focus to the opener when a drawer or sheet closes.
-- **Esc priority:** dialog → learning drawer → clear the selection. Esc never fires while the user is typing.
+- **Esc priority:** dialog (including the Codex) → Usui-chan's hello / explain mode → learning drawer → clear the selection. Esc never fires while the user is typing.
 - Global shortcuts must not hijack interactive elements:
   - Space is ignored on buttons, links, `summary`, and inputs.
   - Arrow keys are ignored inside `role=tablist`, `slider` and `radiogroup`.

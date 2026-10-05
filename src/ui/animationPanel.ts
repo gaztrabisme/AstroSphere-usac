@@ -12,11 +12,11 @@ export interface AnimationPanel {
 }
 
 export function animationPanel(store: Store, actions: Actions): AnimationPanel {
-  const playBtn = h('button', { type: 'button', class: 'btn btn--play', 'aria-pressed': 'false', onclick: () => actions.togglePlay() });
+  const playBtn = h('button', { type: 'button', class: 'btn btn--play', 'aria-pressed': 'false', 'data-guide': 'play', onclick: () => actions.togglePlay() });
 
   const mode = h(
     'select',
-    { id: 'anim-mode', onchange: (e: Event) => actions.setMode((e.target as HTMLSelectElement).value as AnimMode) },
+    { id: 'anim-mode', 'data-guide': 'animMode', onchange: (e: Event) => actions.setMode((e.target as HTMLSelectElement).value as AnimMode) },
     h('option', { value: 'continuous', text: t('panel.animation.modeContinuous') }),
     h('option', { value: 'oneDay', text: t('panel.animation.modeOneDay') }),
     h('option', { value: 'stepHour', text: t('panel.animation.modeStep') }),
@@ -58,15 +58,15 @@ export function animationPanel(store: Store, actions: Actions): AnimationPanel {
     h('h2', { id: 'h-anim', class: 'panel__title', text: t('panel.animation.title') }),
     h('div', { class: 'row' }, playBtn, h('label', { class: 'sr-only', htmlFor: 'anim-mode', text: t('panel.animation.mode') }), mode),
     progress,
-    h('div', { class: 'field' }, h('div', { class: 'field__head' }, h('label', { htmlFor: 'lst', text: t('panel.animation.lst') }), lstOut), lst, ticks),
+    h('div', { class: 'field', 'data-guide': 'lstSlider' }, h('div', { class: 'field__head' }, h('label', { htmlFor: 'lst', text: t('panel.animation.lst') }), lstOut), lst, ticks),
     h(
       'div',
-      { class: 'row row--wrap' },
+      { class: 'row row--wrap', 'data-guide': 'stepHour' },
       button(t('panel.animation.stepBack'), () => actions.stepHours(-1), { title: t('panel.animation.stepBackTip') }),
       button(t('panel.animation.stepForward'), () => actions.stepHours(1), { title: t('panel.animation.stepForwardTip') }),
       button(t('panel.animation.now'), () => actions.setNow(), { title: t('panel.animation.nowTip') }),
     ),
-    h('div', { class: 'field' }, h('div', { class: 'field__head' }, h('label', { htmlFor: 'rate', text: t('panel.animation.speed') }), rateOut), rate, h('div', { class: 'ticks', 'aria-hidden': 'true' }, h('span', { text: t('panel.animation.slow') }), h('span', { text: t('panel.animation.fast') }))),
+    h('div', { class: 'field', 'data-guide': 'rate' }, h('div', { class: 'field__head' }, h('label', { htmlFor: 'rate', text: t('panel.animation.speed') }), rateOut), rate, h('div', { class: 'ticks', 'aria-hidden': 'true' }, h('span', { text: t('panel.animation.slow') }), h('span', { text: t('panel.animation.fast') }))),
     rateNote,
     h('p', { class: 'note', text: t('panel.animation.siderealNote') }),
   );

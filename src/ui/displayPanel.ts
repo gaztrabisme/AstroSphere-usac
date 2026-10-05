@@ -137,10 +137,10 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
   const extras: Record<string, HTMLElement[]> = {
     riseSet: [legend],
     extra: [
-      h('div', { class: 'field' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
-      h('div', { class: 'chips' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
+      h('div', { class: 'field', 'data-guide': 'sunDate' }, h('label', { htmlFor: 'sun-date', text: t('panel.display.sunDate') }), dateInput),
+      h('div', { class: 'chips', 'data-guide': 'sunDate' }, seasonBtn('vernal', '03-20'), seasonBtn('summer', '06-21'), seasonBtn('autumnal', '09-23'), seasonBtn('winter', '12-22')),
       sunInfo,
-      h('div', { class: 'row' }, button(t('panel.display.openCatalog'), () => window.dispatchEvent(new Event('open-catalog')), { cls: 'btn--small btn--ghost', title: t('panel.display.openCatalogTip') })),
+      h('div', { class: 'row' }, button(t('panel.display.openCatalog'), () => window.dispatchEvent(new Event('open-catalog')), { cls: 'btn--small btn--ghost', title: t('panel.display.openCatalogTip'), guide: 'catalog' })),
     ],
     labels: [h('div', { class: 'checks' }, master.el, h('div', { class: 'checks checks--indent' }, ...labelItems))],
   };
@@ -152,7 +152,7 @@ export function displayPanel(store: Store, actions: Actions): HTMLElement {
     ...DISPLAY_GROUPS.map((g, i) =>
       h(
         'details',
-        { class: 'sub', open: i === 0, 'data-group': g.id },
+        { class: 'sub', open: i === 0, 'data-group': g.id, 'data-guide': 'displayGroup' },
         h(
           'summary',
           null,

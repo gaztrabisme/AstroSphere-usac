@@ -5,7 +5,7 @@ import { catalogCount, catalogMagLimit } from '../data/catalog';
 import { constellationName, templateDescription, TEMPLATES } from '../data/constellations';
 import { t } from '../i18n';
 import { MAX_USER_STARS, type Actions, type Store, type TrailMode } from '../state';
-import { button, checkbox, clear, fieldset, h, newId } from './dom';
+import { button, checkbox, clear, fieldset, guide, h, newId } from './dom';
 
 export function starPanel(store: Store, actions: Actions): HTMLElement {
   const msg = h('p', { class: 'field-msg', role: 'status', 'aria-live': 'polite' });
@@ -82,38 +82,44 @@ export function starPanel(store: Store, actions: Actions): HTMLElement {
     'section',
     { class: 'panel', id: 'panel-stars', 'aria-labelledby': 'h-stars' },
     h('h2', { id: 'h-stars', class: 'panel__title', text: t('panel.stars.title') }),
-    fieldset(t('panel.stars.templates'), h('div', { class: 'row' }, tplSelect, addTpl), tplNote, figureChips),
-    fieldset(
-      t('panel.stars.addStars'),
-      h(
-        'div',
-        { class: 'row row--wrap' },
-        button(t('panel.stars.random1'), () => (actions.addRandomStars(1) ? say(t('panel.stars.addedRandom', { n: 1 })) : say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err'))),
-        button(t('panel.stars.random10'), () => (actions.addRandomStars(10) ? say(t('panel.stars.addedRandom', { n: 10 })) : say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err'))),
+    guide('templates', fieldset(t('panel.stars.templates'), h('div', { class: 'row' }, tplSelect, addTpl), tplNote, figureChips)),
+    guide(
+      'addStars',
+      fieldset(
+        t('panel.stars.addStars'),
+        h(
+          'div',
+          { class: 'row row--wrap' },
+          button(t('panel.stars.random1'), () => (actions.addRandomStars(1) ? say(t('panel.stars.addedRandom', { n: 1 })) : say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err'))),
+          button(t('panel.stars.random10'), () => (actions.addRandomStars(10) ? say(t('panel.stars.addedRandom', { n: 10 })) : say(t('panel.stars.tooMany', { n: MAX_USER_STARS }), 'err'))),
+        ),
+        h(
+          'div',
+          { class: 'manual' },
+          h('label', { htmlFor: raId, text: t('panel.stars.ra') }),
+          raInput,
+          h('label', { htmlFor: decId, text: t('panel.stars.dec') }),
+          decInput,
+          h('label', { htmlFor: nameId, text: t('panel.stars.name') }),
+          nameInput,
+        ),
+        h('p', { class: 'hint', text: t('panel.stars.manualHint') }),
+        h('div', { class: 'row' }, button(t('panel.stars.addManual'), addManual, { cls: 'btn--primary' }), button(t('panel.stars.clear'), () => {
+          actions.clearStars();
+          say(t('panel.stars.cleared'));
+        }, { cls: 'btn--danger' })),
+        msg,
+        count,
       ),
-      h(
-        'div',
-        { class: 'manual' },
-        h('label', { htmlFor: raId, text: t('panel.stars.ra') }),
-        raInput,
-        h('label', { htmlFor: decId, text: t('panel.stars.dec') }),
-        decInput,
-        h('label', { htmlFor: nameId, text: t('panel.stars.name') }),
-        nameInput,
-      ),
-      h('p', { class: 'hint', text: t('panel.stars.manualHint') }),
-      h('div', { class: 'row' }, button(t('panel.stars.addManual'), addManual, { cls: 'btn--primary' }), button(t('panel.stars.clear'), () => {
-        actions.clearStars();
-        say(t('panel.stars.cleared'));
-      }, { cls: 'btn--danger' })),
-      msg,
-      count,
     ),
-    fieldset(t('panel.stars.realSky'), h('div', { class: 'checks' }, catalogCb.el, linesCb.el)),
-    fieldset(
-      t('panel.stars.trails'),
-      h('div', { class: 'radios', role: 'radiogroup', 'aria-label': t('panel.stars.trails') }, ...trailRadios.map((r) => r.el)),
-      h('div', { class: 'row' }, button(t('panel.stars.resetTrails'), () => actions.resetTrails())),
+    guide('realSky', fieldset(t('panel.stars.realSky'), h('div', { class: 'checks' }, catalogCb.el, linesCb.el))),
+    guide(
+      'trails',
+      fieldset(
+        t('panel.stars.trails'),
+        h('div', { class: 'radios', role: 'radiogroup', 'aria-label': t('panel.stars.trails') }, ...trailRadios.map((r) => r.el)),
+        h('div', { class: 'row' }, button(t('panel.stars.resetTrails'), () => actions.resetTrails())),
+      ),
     ),
   );
 

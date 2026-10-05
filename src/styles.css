@@ -3197,3 +3197,448 @@ body.mode-simple .lbl--allsky {
     gap: 6px;
   }
 }
+
+/* ===== Usui-chan guide (redesign-2 G) ===== */
+/* Người hướng dẫn Usui-chan (docs/redesign-2/guide.md). Chân dung tròn ở góc; lời chào một lần; chế độ giải thích.
+   Bề mặt tối, viền mảnh, Arial. Cam chỉ dành cho nút bấm và vòng sáng "đang giải thích" của chân dung. Mọi màu
+   lấy từ token trong :root. Hoạt ảnh chỉ khai báo trong prefers-reduced-motion: no-preference (giảm chuyển động =
+   mọi thứ hiện ngay). */
+
+/* --- Chân dung: máy tính → góc dưới phải màn hình (không che công cụ khung nhìn, thẻ Polaris hay số liệu) */
+.guide-avatar {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 34; /* dưới tấm đáy (35) và ngăn Ôn tập (40) */
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 2px solid var(--border-control);
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  cursor: pointer;
+}
+
+.guide-avatar__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.guide-avatar:hover {
+  border-color: var(--accent-hi);
+}
+
+.guide-avatar:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+/* Đang giải thích: vòng cam (trạng thái của một nút bấm, đúng quy tắc thương hiệu) */
+.guide-avatar[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+}
+
+/* --- Lời chào lần đầu: bong bóng phía trên chân dung, đuôi chỉ xuống chân dung */
+.guide-hello {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--space-4) + 56px + var(--space-3));
+  z-index: 36;
+  width: min(320px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-4);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: var(--shadow-pop);
+  transform-origin: calc(100% - 28px) 100%;
+}
+
+.guide-hello::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  border: solid var(--border-control);
+  border-width: 0 1px 1px 0;
+  background: var(--surface-2);
+  transform: rotate(45deg);
+}
+
+.guide-hello__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.guide-hello__face {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+/* Ảnh toàn thân (chỉ màn hình rộng, chế độ Cơ bản): đứng trên một "đốm sáng" nhẹ để cờ và váy đen tách khỏi nền */
+.guide-hello--pose .guide-hello__head {
+  align-items: flex-end;
+}
+
+.guide-hello__pose {
+  flex: none;
+  width: 120px;
+  height: auto;
+  margin: calc(-1 * var(--space-2)) 0 0 calc(-1 * var(--space-2));
+  border-radius: var(--radius);
+  background: radial-gradient(ellipse at 50% 55%, var(--surface-3) 0%, var(--surface-3) 45%, transparent 72%);
+}
+
+.guide-hello__title {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.guide-hello__body {
+  margin: 0 0 var(--space-3);
+}
+
+.guide-hello__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.guide-hello__actions .btn {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+
+/* Đầy đủ, màn hình rộng: lời chào nằm ngang bên trái chân dung (trên dải số liệu), đuôi chỉ sang phải */
+.guide-hello--wide {
+  right: calc(var(--space-4) + 56px + var(--space-3));
+  bottom: var(--space-4);
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas: 'head head actions' 'body body actions';
+  column-gap: var(--space-4);
+  width: min(800px, calc(100vw - 2 * var(--space-4) - 56px - var(--space-3)));
+  padding: var(--space-3) var(--space-4);
+  transform-origin: 100% calc(100% - 28px);
+}
+
+.guide-hello--wide .guide-hello__head {
+  grid-area: head;
+  margin-bottom: 2px;
+}
+
+.guide-hello--wide .guide-hello__face {
+  width: 32px;
+  height: 32px;
+}
+
+.guide-hello--wide .guide-hello__body {
+  grid-area: body;
+  margin: 0;
+}
+
+.guide-hello--wide .guide-hello__actions {
+  grid-area: actions;
+  align-self: center;
+  flex-wrap: nowrap;
+}
+
+.guide-hello--wide::after {
+  right: -7px;
+  bottom: 22px;
+  border-width: 1px 1px 0 0;
+}
+
+/* Lời chào đang mở: dòng gợi ý "kéo để xoay" chờ tới lượt (mỗi lúc chỉ một lời nhắn cho người mới) */
+body.guide-hello-open .view__hint.is-new {
+  visibility: hidden;
+}
+
+/* --- Dải thông báo chế độ giải thích: cạnh chân dung */
+.guide-banner {
+  position: fixed;
+  right: calc(var(--space-4) + 56px + var(--space-3));
+  bottom: calc(var(--space-4) + 6px);
+  z-index: 36;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: calc(100vw - 2 * var(--space-4) - 56px - var(--space-3));
+  padding: 4px 4px 4px var(--space-4);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  box-shadow: var(--shadow-pop);
+}
+
+.guide-banner[hidden] {
+  display: none;
+}
+
+.guide-banner__text {
+  margin: 0;
+}
+
+.guide-banner__close {
+  flex: none;
+  border-radius: var(--radius-pill);
+}
+
+/* Điều khiển đang được giải thích, và gợi ý "rê vào đây được" — viền xám, không dùng cam */
+body.guide-explain [data-guide]:hover {
+  cursor: help;
+}
+
+body.guide-explain [data-guide-on] {
+  outline: 2px dashed var(--muted);
+  outline-offset: 2px;
+}
+
+/* --- Bong bóng lời giải thích: neo cạnh điều khiển (JS đặt left/top và --arrow-x) */
+.guide-tip {
+  position: fixed;
+  z-index: var(--z-toast);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  width: min(340px, calc(100vw - 2 * var(--space-2)));
+  padding: var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: var(--shadow-pop);
+}
+
+.guide-tip[hidden] {
+  display: none;
+}
+
+.guide-tip::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--arrow-x, 50%) - 6px);
+  width: 12px;
+  height: 12px;
+  border: solid var(--border-control);
+  border-width: 0;
+  background: var(--surface-2);
+  transform: rotate(45deg);
+}
+
+.guide-tip[data-side='below']::before {
+  top: -7px;
+  border-width: 1px 0 0 1px;
+}
+
+.guide-tip[data-side='above']::before {
+  bottom: -7px;
+  border-width: 0 1px 1px 0;
+}
+
+.guide-tip[data-side='inside']::before {
+  display: none;
+}
+
+.guide-tip__face {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.guide-tip__text {
+  margin: 0;
+}
+
+.guide-tip__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.guide-tip__actions:not(:has(> :not([hidden]))) {
+  display: none;
+}
+
+.guide-tip__actions > [hidden] {
+  display: none;
+}
+
+.guide-tip__codex {
+  min-height: 32px;
+  font-size: 14px;
+}
+
+.guide-tip__close {
+  margin: -4px -4px 0 0;
+}
+
+/* --- Chuyển động: chân dung gật một lần (kích hoạt) → bong bóng vào từ phía chân dung (theo sau, 120 ms) */
+@keyframes guide-nod {
+  0% {
+    transform: none;
+  }
+  35% {
+    transform: translateY(-4px) rotate(-5deg);
+  }
+  70% {
+    transform: translateY(0) rotate(2deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes guide-pop {
+  from {
+    opacity: 0;
+    transform: translate(6px, 8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guide-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .guide-avatar.is-greeting {
+    animation: guide-nod 420ms ease-out 1;
+  }
+
+  .guide-hello.is-in {
+    animation: guide-pop 180ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+  }
+
+  .guide-banner.is-in,
+  .guide-tip.is-in {
+    animation: guide-pop 140ms ease-out both;
+  }
+}
+
+/* --- Trình chiếu: không có Usui-chan */
+body.present .guide-avatar,
+body.present .guide-hello,
+body.present .guide-banner,
+body.present .guide-tip {
+  display: none;
+}
+
+/* --- Máy tính bảng và điện thoại: chân dung vào góc trên trái của khung nhìn (bầu trời trống ở đó; công cụ khung
+   nhìn ở góc phải, thẻ thông tin ở đáy), nên không bao giờ che điều khiển khi trang cuộn. Lời chào và dải thông báo
+   thành tấm đáy màn hình, không che bầu trời. */
+@media (max-width: 900px) {
+  .guide-avatar {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    right: auto;
+    bottom: auto;
+    z-index: 6;
+    width: 48px;
+    height: 48px;
+    box-shadow: none;
+  }
+
+  .guide-hello,
+  .guide-banner {
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: var(--space-2);
+    width: auto;
+    max-width: 480px;
+    margin-inline: auto;
+    transform-origin: 50% 100%;
+  }
+
+  .guide-hello {
+    font-size: 16px;
+  }
+
+  .guide-hello::after {
+    display: none;
+  }
+
+  .guide-hello__actions .btn {
+    flex: 1 1 auto;
+    min-height: var(--tap);
+  }
+
+  .guide-banner {
+    justify-content: space-between;
+    border-radius: var(--radius-lg);
+    font-size: 15px;
+    padding: 6px 6px 6px var(--space-3);
+  }
+
+  .guide-banner__close {
+    min-height: var(--tap);
+    min-width: var(--tap);
+    border-radius: var(--radius);
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .guide-hello.is-in {
+    animation-name: guide-rise;
+  }
+}
+
+/* Điện thoại hẹp: bong bóng giải thích là tấm đáy, nằm trên dải thông báo (JS bỏ left/top neo) */
+@media (max-width: 600px) {
+  .guide-tip--sheet {
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: calc(var(--space-2) + 56px + var(--space-2));
+    width: auto;
+    font-size: 16px;
+  }
+
+  .guide-tip--sheet::before {
+    display: none;
+  }
+
+  .guide-tip--sheet .btn,
+  .guide-tip--sheet .icon-btn,
+  .guide-tip--sheet .guide-tip__codex {
+    min-height: var(--tap);
+    min-width: var(--tap);
+  }
+
+  .guide-tip--sheet .guide-tip__close {
+    margin: -8px -8px 0 0;
+  }
+}
