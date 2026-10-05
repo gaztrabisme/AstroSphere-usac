@@ -80,7 +80,16 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
     const cs = getComputedStyle(el);
     return { weight: cs.fontWeight, line: cs.textDecorationLine, color: cs.textDecorationColor };
   });
-  check('(4) linked value is bold with an orange (--accent) underline', Number(style.weight) >= 700 && style.line.includes('underline') && style.color === 'rgb(242, 101, 34)', JSON.stringify(style));
+  // review-3 F2: gạch chân mang màu của hình đang tô sáng (trục xanh #4f9dff cho độ cao thiên cực), không phải cam.
+  check('(4) linked value is bold with an axis-blue (#4f9dff, emphasised geometry) underline', Number(style.weight) >= 700 && style.line.includes('underline') && style.color === 'rgb(79, 157, 255)', JSON.stringify(style));
+  await page.mouse.move(720, 20);
+  await page.locator('.databar [data-emphasis=incl]').hover();
+  await page.waitForFunction(() => window.__app.store.state.emphasis === 'incl', null, { timeout: 5000 }).catch(() => {});
+  const inclStyle = await page.locator('.databar [data-emphasis=incl] .data__v').evaluate((el) => getComputedStyle(el).textDecorationColor);
+  check('(4) the equator-angle cell underlines in the angle yellow (#fde047)', inclStyle === 'rgb(253, 224, 71)', inclStyle);
+  await page.mouse.move(720, 20);
+  await page.locator(POLE_CELL).hover();
+  await page.waitForFunction(() => window.__app.store.state.emphasis === 'pole', null, { timeout: 5000 }).catch(() => {});
   await page.screenshot({ path: `${SHOTS}highlight-pole-1440.png` });
 
   // (2) Rời chuột → hết tô sáng

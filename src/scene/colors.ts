@@ -5,7 +5,9 @@ export const COLORS = {
   equator: '#ffd54f',
   axis: '#4f9dff',
   horizon: '#4caf50',
-  ground: '#1f5e2a',
+  // Mặt đất: cùng họ xanh lá của chân trời, nhưng độ bão hòa (OKLCH C 0,105 → 0,063) và độ đục (0,92 → 0,55) giảm
+  // ~40 % để đĩa không nặng hơn bài học — viền chân trời (horizon) vẫn sáng (review-3 B2).
+  ground: '#37593b',
   hourCircle: '#a3a3a3',
   meridian: '#e2e8f0',
   zenith: '#ffffff',

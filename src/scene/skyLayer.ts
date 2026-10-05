@@ -28,6 +28,11 @@ import type { EmphasisFx } from './emphasis';
 import { makeLabel } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
 
+/** Cỡ sprite vòng chọn (đơn vị cảnh ở khoảng cách 1, không co theo khoảng cách) và bán kính ngoài của vòng trong
+ *  ảnh vòng (ringTexture: bán kính 24 + nửa nét 2,5 trên ảnh 64 px). View dùng để đặt tên ra ngoài vòng. */
+export const SEL_RING_SCALE = 0.06;
+export const SEL_RING_OUTER = 26.5 / 64;
+
 type ZoneKey = 'circumpolar' | 'riseSet' | 'neverRise';
 
 export class SkyLayer {
@@ -108,7 +113,7 @@ export class SkyLayer {
     this.fixed.add(this.equatorPlane);
 
     const axisLen = R * 1.15;
-    const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 2.4 });
+    const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 3 });
     axisLine.userData.tip = 'axis';
     this.axisLine = axisLine;
     this.axis.add(axisLine);
@@ -200,7 +205,7 @@ export class SkyLayer {
     this.rot.add(this.sunPath);
 
     this.selRing = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture('#ffffff'), depthWrite: false, depthTest: false, sizeAttenuation: false }));
-    this.selRing.scale.setScalar(0.06);
+    this.selRing.scale.setScalar(SEL_RING_SCALE);
     this.selRing.renderOrder = 10;
     this.rot.add(this.selRing);
   }

@@ -4,9 +4,10 @@
 // Ba nguồn có thể cùng muốn tô sáng: con trỏ trên một ô, con trỏ trên một hình 3D, tiêu điểm bàn phím. Ưu tiên
 // theo thứ tự đó, để rời chuột khỏi một ô không xóa tô sáng của ô đang có tiêu điểm bàn phím.
 
-import { emphasisForUi, uiLinked, type EmphasisKey } from '../emphasis';
+import { emphasisForUi, emphasisGroup, uiLinked, type EmphasisKey } from '../emphasis';
 import { t } from '../i18n';
-import type { Actions, Store } from '../state';
+import { COLORS } from '../scene/colors';
+import type { Actions, AppState, Store } from '../state';
 import { h } from './dom';
 
 export type EmphasisSource = 'hover' | 'scene' | 'focus';
@@ -33,13 +34,39 @@ function ensureHint(): void {
   document.body.append(h('p', { id: HINT_ID, class: 'sr-only', text: t('emphasis.hint') }));
 }
 
-function sync(e: EmphasisKey | null): void {
+/**
+ * Màu gạch chân của con số đang liên kết = màu ngữ nghĩa của hình đang tô sáng trong cảnh (review-3 F2, màu cầu nối
+ * của color-theory): trục xanh cho độ cao thiên cực, vàng của góc, xanh lơ của cung A, hồng của cung h… thay cho
+ * cam thương hiệu. Nhóm là kết quả của emphasisGroup (vùng tách theo loại: zone_circumpolar…).
+ */
+export const LINK_COLORS: Readonly<Record<string, string>> = {
+  pole: COLORS.axis,
+  incl: COLORS.angle,
+  az: COLORS.azimuth,
+  alt: COLORS.vertical,
+  altaz: COLORS.vertical,
+  meridian: COLORS.meridian,
+  zone_circumpolar: COLORS.circumpolar,
+  zone_riseSet: COLORS.riseSet,
+  zone_neverRise: COLORS.neverRise,
+};
+
+export function linkColor(group: string | null): string | null {
+  return (group && LINK_COLORS[group]) || null;
+}
+
+function sync(s: AppState): void {
+  const e = s.emphasis;
+  const color = linkColor(emphasisGroup(s));
   for (const b of bound) {
     const on = uiLinked(b.key, e);
     if (on !== b.linked) {
       b.linked = on;
       b.el.classList.toggle('is-linked', on);
     }
+    // Biến CSS --link-color (CSS không được chứa mã màu thô ngoài :root): đặt từ COLORS khi ô đang liên kết.
+    if (on && color) b.el.style.setProperty('--link-color', color);
+    else b.el.style.removeProperty('--link-color');
   }
 }
 
@@ -54,7 +81,7 @@ export function bindEmphasis(el: HTMLElement, store: Store, actions: Actions): v
   if (!subscribed) {
     subscribed = true;
     store.subscribe((s, prev) => {
-      if (s.emphasis !== prev.emphasis) sync(s.emphasis);
+      if (s.emphasis !== prev.emphasis) sync(s);
     });
   }
   ensureHint();
@@ -82,5 +109,5 @@ export function bindEmphasis(el: HTMLElement, store: Store, actions: Actions): v
   el.addEventListener('blur', () => {
     if (sources.focus === k) setEmphasisSource(actions, 'focus', null);
   });
-  sync(store.state.emphasis);
+  sync(store.state);
 }

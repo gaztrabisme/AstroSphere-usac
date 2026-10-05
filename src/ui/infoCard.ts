@@ -66,6 +66,8 @@ export function infoCard(store: Store, actions: Actions) {
   const kindText = h('span');
   const magText = h('span', { class: 'infocard__mag' });
   const kind = h('p', { class: 'infocard__kind' }, kindText, magText);
+  // Điện thoại, thẻ thu gọn: một dòng mảnh "tên · A …, h …" (review-3 B4) — chạm để mở đầy đủ.
+  const brief = h('span', { class: 'infocard__brief' });
   const collapseBtn = h('button', {
     type: 'button',
     class: 'icon-btn',
@@ -137,6 +139,7 @@ export function infoCard(store: Store, actions: Actions) {
       { class: 'infocard__head' },
       dot,
       title,
+      brief,
       collapseBtn,
       h('button', { type: 'button', class: 'icon-btn infocard__close', 'aria-label': t('info.close'), title: t('info.close'), text: '×', onclick: () => actions.select(null) }),
     ),
@@ -176,9 +179,10 @@ export function infoCard(store: Store, actions: Actions) {
   const endDrag = () => (drag = null);
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
-  // Màn hình rộng: bấm vào thanh tiêu đề (không phải nút, không phải kéo) cũng mở/thu gọn thẻ (review-2 B2).
+  // Bấm vào thanh tiêu đề (không phải nút, không phải kéo) cũng mở/thu gọn thẻ (review-2 B2).
   head.addEventListener('click', (e) => {
-    if (dragged || (e.target as HTMLElement).closest('button') || !isWide() || el.classList.contains('is-empty')) return;
+    // Điện thoại: chạm vào dòng mảnh của thẻ thu gọn cũng mở thẻ ra (review-3 B4).
+    if (dragged || (e.target as HTMLElement).closest('button') || el.classList.contains('is-empty')) return;
     setCollapsed(!el.classList.contains('is-collapsed'));
   });
 
@@ -265,6 +269,7 @@ export function infoCard(store: Store, actions: Actions) {
     setRow(r.ha, fmtHMS(ha, { signed: true }), ha >= 0 ? t('info.haWest') : t('info.haEast'));
     setRow(r.az, Number.isFinite(az) ? fmtDeg(az, 2) : '—', compassName(az));
     setRow(r.alt, fmtDegSigned(alt, 2), alt >= 0 ? t('info.above') : t('info.below'));
+    setText(brief, `A\u00a0${Number.isFinite(az) ? fmtDeg(az, 1) : '—'} · h\u00a0${fmtDegSigned(alt, 1)}`);
   };
 
   /** "Đặt lại": về trạng thái lần đầu vào trang (thẻ thu gọn, lựa chọn mặc định không tự mở thẻ). */
@@ -292,6 +297,16 @@ export const DATA_CELLS = [
   { key: 'selected', tip: false, end: false },
 ] as const;
 export type DataKey = (typeof DATA_CELLS)[number]['key'];
+
+const NB = '\u00a0';
+
+/** Giá trị ô "Đối tượng đang chọn": hai dòng (ngắt bằng \n, CSS white-space: pre-line), cặp ký hiệu–giá trị không ngắt. */
+export function selectedValueText(name: string, ra: number, dec: number, az: number, alt: number): string {
+  const nb = (x: string) => x.replace(/ /g, NB);
+  const raText = nb(fmtHMS(ra, { seconds: false }));
+  const azText = Number.isFinite(az) ? fmtDeg(az, 1) : '—';
+  return `${name.split(' (')[0]}: α${NB}${raText}, δ${NB}${fmtDegSigned(dec, 1)}\nA${NB}${azText}, h${NB}${fmtDegSigned(alt, 1)}`;
+}
 
 export function dataBar(store: Store, actions: Actions) {
   const items = {} as Record<DataKey, HTMLElement>;
@@ -331,7 +346,9 @@ export function dataBar(store: Store, actions: Actions) {
     const obj = resolveSelection(s);
     if (obj) {
       const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lst);
-      setText(items.selected, `${obj.name.split(' (')[0]}: α ${fmtHMS(obj.ra, { seconds: false })}, δ ${fmtDegSigned(obj.dec, 1)} │ A ${fmtDeg(az, 1)}, h ${fmtDegSigned(alt, 1)}`);
+      // Hai dòng có chủ ý (review-3 D2): "tên: α …, δ …" rồi "A …, h …". Trong mỗi cặp "ký hiệu giá trị" dùng khoảng
+      // trắng không ngắt (U+00A0), nên dòng chỉ có thể xuống sau dấu phẩy, không bao giờ giữa "h" và "+20,9°".
+      setText(items.selected, selectedValueText(obj.name, obj.ra, obj.dec, az, alt));
     } else setText(items.selected, t('data.selectedNone'));
   };
   return { el, update };

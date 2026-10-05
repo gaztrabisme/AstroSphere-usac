@@ -33,6 +33,13 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   const page = await openPage(375, 812);
   const canvases = await page.evaluate(() => document.querySelectorAll('.view__canvas canvas').length);
   check('375: both 3D canvases exist', canvases >= 2, `canvases=${canvases}`);
+  // AGENTS.md: vùng chạm ≥ 44 px trên điện thoại — đo hộp của MỌI nút đang hiện trên thanh trên cùng (review-3 D2).
+  const topBtns = await page.evaluate(() =>
+    [...document.querySelectorAll('.topbar button')]
+      .filter((b) => getComputedStyle(b).display !== 'none')
+      .map((b) => { const r = b.getBoundingClientRect(); return { name: b.getAttribute('aria-label') || b.textContent.trim(), w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10 }; }),
+  );
+  check('375: every visible top-bar button is ≥ 44 × 44 px', topBtns.length >= 4 && topBtns.every((b) => b.w >= 44 && b.h >= 44), JSON.stringify(topBtns));
   const tabs = page.locator('.paneltabs [role=tab]');
   const n = await tabs.count();
   for (let i = 0; i < n; i++) {
@@ -62,6 +69,18 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
   await page.waitForTimeout(200);
   const d = await noHScroll(page);
   check('375: no horizontal scroll with Ôn tập drawer open', d.sw <= d.iw, `scrollWidth=${d.sw} innerWidth=${d.iw}`);
+  await page.close();
+}
+
+// ------------------------------------------------------------------ Máy tính bảng dọc 768×1024 (≤ 900 px: nút chỉ biểu tượng)
+{
+  const page = await openPage(768, 1024);
+  const topBtns = await page.evaluate(() =>
+    [...document.querySelectorAll('.topbar button')]
+      .filter((b) => getComputedStyle(b).display !== 'none')
+      .map((b) => { const r = b.getBoundingClientRect(); return { w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10 }; }),
+  );
+  check('768: every visible top-bar button is ≥ 44 × 44 px', topBtns.length >= 5 && topBtns.every((b) => b.w >= 44 && b.h >= 44), JSON.stringify(topBtns));
   await page.close();
 }
 

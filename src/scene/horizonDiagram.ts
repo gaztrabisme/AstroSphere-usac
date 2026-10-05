@@ -11,6 +11,11 @@ import { SKY_RADIUS, View } from './view';
 const NIGHT = new THREE.Color('#050913');
 const TWILIGHT = new THREE.Color('#141f3d');
 const DAY = new THREE.Color('#1d4374');
+/** Độ đục của đĩa chân trời (review-3 B2: 0,92 → 0,55): mặt đất lùi về sau, thiên cực, trục, cung h/A nổi lên. */
+const GROUND_OPACITY = 0.55;
+/** Góc nhìn ngang (độ) của giản đồ chân trời trong khung dọc. */
+const PORTRAIT_HFOV = 46;
+const DEG = Math.PI / 180;
 
 export class HorizonDiagramView extends View {
   private ground: THREE.Mesh;
@@ -37,7 +42,7 @@ export class HorizonDiagramView extends View {
     this.scene.background = new THREE.Color().copy(NIGHT);
 
     // Mặt phẳng chân trời
-    this.groundMat = new THREE.MeshBasicMaterial({ color: COLORS.ground, transparent: true, opacity: 0.92, side: THREE.DoubleSide });
+    this.groundMat = new THREE.MeshBasicMaterial({ color: COLORS.ground, transparent: true, opacity: GROUND_OPACITY, side: THREE.DoubleSide });
     this.ground = new THREE.Mesh(new THREE.CircleGeometry(R, 128), this.groundMat);
     this.ground.rotation.x = -Math.PI / 2;
     this.ground.renderOrder = -1;
@@ -57,7 +62,7 @@ export class HorizonDiagramView extends View {
       for (let a = 0; a <= 360; a += 4) pts.push(horVec(0, a, rr).setY(0.01));
       polylineToSegments(pts, seg);
     }
-    const marks = thinSegments(seg, '#a7d7a9', 0.45);
+    const marks = thinSegments(seg, '#a7d7a9', 0.32);
     this.scene.add(marks);
 
     // Người quan sát (hình nhân đơn giản)
@@ -92,7 +97,7 @@ export class HorizonDiagramView extends View {
     const under = s.toggles.underside;
     const planes = under ? this.noPlanes : this.clipPlanes;
     if (this.renderer.clippingPlanes !== planes) this.renderer.clippingPlanes = planes;
-    this.groundMat.opacity = under ? 0.42 : this.firstPerson ? 1 : 0.92;
+    this.groundMat.opacity = under ? 0.42 : this.firstPerson ? 1 : GROUND_OPACITY;
     this.groundMat.depthWrite = !under;
     this.sky.setBelowDim(under ? 0.45 : 1);
 
@@ -117,7 +122,10 @@ export class HorizonDiagramView extends View {
     // Khung ngang rộng (màn hình máy tính): thu hẹp góc nhìn để vòm trời và đĩa chân trời lấp khung — khung chân
     // trời là tiêu điểm của trang (review-2 B2, color-theory T1).
     if (this.firstPerson) return 75;
-    return aspect >= 1.2 ? 37 : super.preferredFov(aspect);
+    if (aspect >= 1.2) return 37;
+    // Khung dọc (điện thoại, review-3 B4): bề ngang là giới hạn — chọn góc nhìn dọc sao cho góc nhìn NGANG cố định
+    // (~46°, vòm và đĩa lấp bề ngang, còn chỗ cho chữ T/Đ), thay vì góc dọc cố định để lại trời trống phía trên.
+    return Math.min(62, Math.max(37, (2 * Math.atan(Math.tan((PORTRAIT_HFOV / 2) * DEG) / aspect)) / DEG));
   }
 
   isFirstPerson(): boolean {

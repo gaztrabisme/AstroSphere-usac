@@ -14,7 +14,7 @@ import { setFatLineStyle } from './geom';
 import { HorizonLayer } from './horizonLayer';
 import { declutter, LabelBoxes } from './declutter';
 import type { Label, LabelData } from './labels';
-import { SkyLayer } from './skyLayer';
+import { SEL_RING_OUTER, SEL_RING_SCALE, SkyLayer } from './skyLayer';
 import { TrailLayer } from './trails';
 
 export const SKY_RADIUS = 10;
@@ -327,19 +327,28 @@ export abstract class View implements QualityTarget {
       lbl.visible = vis;
       if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
-    // Nhãn số đo của nhóm đang tô sáng giữ chỗ đầu tiên, rồi đối tượng đang chọn, rồi các nhãn khác theo hạng.
+    // Thứ tự giữ chỗ (review-3 D2): chữ hướng B/N/Đ/T trước tiên — không bao giờ bị che; rồi nhãn số đo của nhóm
+    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi đối tượng đang
+    // chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      if (lbl.userData.group === 'directions' && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
+    }
     const em = this.emGroup;
     if (em !== null) {
       for (let i = 0; i < list.length; i++) {
         const lbl = list[i];
-        if (lbl.userData.emph === em && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
+        if (lbl.userData.emph !== em || !lbl.visible || !ancestorsVisible(lbl)) continue;
+        const k = this.pushBox(lbl, W, H, true, 0, FOCUS_PAD);
+        if (k >= 0) boxes.must[k] = 1;
       }
     }
-    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true);
+    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
-      if (lbl === sel || !lbl.visible || (em !== null && lbl.userData.emph === em) || !ancestorsVisible(lbl)) continue;
-      this.pushBox(lbl, W, H, lbl.userData.rank < 20);
+      const ud = lbl.userData;
+      if (lbl === sel || !lbl.visible || ud.group === 'directions' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
+      this.pushBox(lbl, W, H, ud.rank < 20);
     }
     declutter(boxes, W, H);
     for (let k = 0; k < boxes.n; k++) {
@@ -351,15 +360,28 @@ export abstract class View implements QualityTarget {
       const ud = lbl.userData;
       const w = ud.w || estimateWidth(lbl);
       const h = ud.h || EST_H;
-      if (boxes.dx[k] !== 0) lbl.center.x = ud.cx0 - boxes.dx[k] / w;
+      const sx = boxes.dx[k] + boxes.ox[k];
+      if (sx !== 0) lbl.center.x = ud.cx0 - sx / w;
       if (boxes.dy[k] !== 0) lbl.center.y = ud.cy0 - boxes.dy[k] / h;
     }
   }
 
-  /** Chiếu nhãn ra hộp màn hình và đưa vào danh sách gỡ chồng chéo (bỏ qua nhãn nằm sau camera). */
-  private pushBox(lbl: Label, W: number, H: number, canNudge: boolean): void {
+  /**
+   * Bán kính ngoài (px) của vòng chọn quanh đối tượng đang chọn (sprite không co theo khoảng cách, SkyLayer):
+   * nhãn tên đặt ra ngoài vòng này thay vì cắt qua nó (review-3 I1.1).
+   */
+  private selRingPx(): number {
+    return SEL_RING_SCALE * this.camera.projectionMatrix.elements[5] * (this.height / 2) * SEL_RING_OUTER;
+  }
+
+  /**
+   * Chiếu nhãn ra hộp màn hình và đưa vào danh sách gỡ chồng chéo (bỏ qua nhãn nằm sau camera). `gapPx` > 0: nhãn
+   * neo bên phải điểm của nó bắt đầu cách điểm ít nhất chừng ấy px. `pad`: vùng đệm quanh nhãn (declutter.ts).
+   * Trả về chỉ số hộp, −1 nếu bỏ qua.
+   */
+  private pushBox(lbl: Label, W: number, H: number, canNudge: boolean, gapPx = 0, pad = 0): number {
     _p.setFromMatrixPosition(lbl.matrixWorld).project(this.camera);
-    if (_p.z < -1 || _p.z > 1) return;
+    if (_p.z < -1 || _p.z > 1) return -1;
     const ud = lbl.userData;
     if (ud.w === 0) this.needMeasure = true;
     const w = ud.w || estimateWidth(lbl);
@@ -368,8 +390,31 @@ export abstract class View implements QualityTarget {
     const sy = ((1 - _p.y) / 2) * H;
     // Chỉ đẩy vào trong khi điểm neo còn nằm trong khung; điểm ở ngoài khung thì nhãn bị ẩn.
     const inside = sx >= 0 && sx <= W && sy >= 0 && sy <= H;
-    this.boxLabel[this.boxes.n] = lbl;
-    this.boxes.push(sx - ud.cx0 * w, sy - ud.cy0 * h, w, h, canNudge && inside);
+    // Nhãn neo bên phải (cx0 < 0,5): mép trái hiện cách điểm −cx0·w px; đẩy thêm cho đủ gapPx.
+    const ox = gapPx > 0 && ud.cx0 < 0.5 ? Math.max(0, gapPx + ud.cx0 * w) : 0;
+    const boxes = this.boxes;
+    const k = boxes.n;
+    this.boxLabel[k] = lbl;
+    boxes.push(sx - ud.cx0 * w + ox, sy - ud.cy0 * h, w, h, canNudge && inside);
+    boxes.ox[k] = ox;
+    boxes.pad[k] = pad;
+    if (ox > 0) {
+      // Tên đối tượng đang chọn: bên phải vòng chọn là chỗ gốc; bị chiếm (vd. chữ hướng B ngay cạnh thiên cực) thì
+      // thử bên trái vòng, rồi phía trên và phía dưới vòng — luôn ngoài vòng.
+      boxes.addAlt(k, sx - gapPx - w, sy - h / 2);
+      boxes.addAlt(k, sx - w / 2, sy - gapPx - h);
+      boxes.addAlt(k, sx - w / 2, sy + gapPx);
+    }
+    const alts = ud.alts;
+    if (alts !== null && lbl.parent) {
+      const m = lbl.parent.matrixWorld;
+      for (let a = 0; a < alts.length; a++) {
+        _p.copy(alts[a]).applyMatrix4(m).project(this.camera);
+        if (_p.z < -1 || _p.z > 1) continue;
+        boxes.addAlt(k, ((_p.x + 1) / 2) * W - ud.cx0 * w, ((1 - _p.y) / 2) * H - ud.cy0 * h);
+      }
+    }
+    return k;
   }
 
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
@@ -511,6 +556,9 @@ export abstract class View implements QualityTarget {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
 }
+
+/** Vùng đệm (px) quanh nhãn số đo đang tô sáng và nhãn đối tượng đang chọn: tên hạng thấp không chen sát. */
+const FOCUS_PAD = 8;
 
 /** Chiều cao ước lượng của nhãn chưa đo (px). */
 const EST_H = 16;

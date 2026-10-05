@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { declutter, EDGE, LabelBoxes } from './declutter';
+import { declutter, EDGE, GAP, LabelBoxes, MAX_ALTS } from './declutter';
 
 function boxes(list: [number, number, number, number, boolean?][]): LabelBoxes {
   const b = new LabelBoxes();
@@ -71,5 +71,57 @@ describe('declutter', () => {
     b.push(0, 0, 1, 1, false);
     b.reset();
     expect(b.n).toBe(0);
+  });
+
+  // review-3 D2: nhãn số đo đang tô sáng nhường chỗ cho chữ hướng (B/N/Đ/T) bằng cách dời dọc theo cung.
+  it('a box whose place is taken moves to its first free alternate position instead of hiding', () => {
+    const b = boxes([
+      [100, 100, 20, 18, true], // chữ hướng "B", giữ chỗ trước
+      [90, 95, 200, 18, true], // nhãn số đo chồng lên "B"
+    ]);
+    b.addAlt(1, 95, 105); // vẫn chồng
+    b.addAlt(1, 80, 140); // trống
+    b.addAlt(1, 80, 200); // trống nhưng đứng sau
+    declutter(b, 800, 600);
+    expect([...b.keep.slice(0, 2)]).toEqual([1, 1]);
+    expect(b.x[0]).toBe(100); // chữ hướng không bị dời, không bị ẩn
+    expect([b.x[1], b.y[1]]).toEqual([80, 140]);
+    expect([b.dx[1], b.dy[1]]).toEqual([-10, 45]);
+  });
+
+  it('a must box with no free place stays at its own place; a plain box is hidden', () => {
+    const b = boxes([
+      [100, 100, 20, 18, true],
+      [90, 95, 200, 18, true],
+      [90, 95, 200, 18, true],
+    ]);
+    b.must[1] = 1;
+    b.addAlt(1, 95, 105);
+    declutter(b, 800, 600);
+    expect(b.keep[1]).toBe(1);
+    expect([b.dx[1], b.dy[1]]).toEqual([0, 0]);
+    expect(b.keep[2]).toBe(0);
+  });
+
+  it('padding around a kept box clears lower-priority neighbours further away', () => {
+    const near = GAP + 6; // ngoài khoảng GAP thường, trong vùng đệm 10 px
+    const b = boxes([
+      [100, 100, 60, 16, true],
+      [160 + near, 100, 40, 16],
+    ]);
+    declutter(b, 800, 600);
+    expect(b.keep[1]).toBe(1);
+    b.reset();
+    b.push(100, 100, 60, 16, true);
+    b.pad[0] = 10;
+    b.push(160 + near, 100, 40, 16, false);
+    declutter(b, 800, 600);
+    expect(b.keep[1]).toBe(0);
+  });
+
+  it('ignores alternates beyond MAX_ALTS', () => {
+    const b = boxes([[0, 0, 1, 1]]);
+    for (let k = 0; k < MAX_ALTS + 3; k++) b.addAlt(0, k, k);
+    expect(b.altN[0]).toBe(MAX_ALTS);
   });
 });

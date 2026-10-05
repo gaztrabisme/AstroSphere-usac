@@ -188,6 +188,26 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
         h: Math.round(c.getBoundingClientRect().height),
       };
     });
+  const selLines = await page.evaluate(() => {
+    const v = document.querySelector('.databar [data-emphasis=selected] .data__v');
+    const range = document.createRange();
+    range.selectNodeContents(v);
+    return { text: v.textContent, lines: [...new Set([...range.getClientRects()].map((r) => Math.round(r.top)))].length };
+  });
+  check('1440: selected-object value renders as exactly two lines (α, δ / A, h)', selLines.lines === 2 && /\nA\u00a0/.test(selLines.text), JSON.stringify(selLines));
+  // review-3 G3: gợi ý mẫu trong ô nhập đọc như gợi ý (nghiêng, màu phụ), khác chữ đã nhập.
+  const ph = await page.evaluate(() => {
+    const i = document.querySelector('#panel-stars input[placeholder="6h45m"]');
+    const p = getComputedStyle(i, '::placeholder');
+    return { color: p.color, style: p.fontStyle, value: getComputedStyle(i).color };
+  });
+  check('1440: input placeholders are italic and dimmer than typed values', ph.style === 'italic' && ph.color !== ph.value, JSON.stringify(ph));
+  // review-3 D1: tiêu đề "Thiên cầu" là số hai nhưng không trông như bị vô hiệu: cùng màu chữ và độ đậm, nhỏ hơn.
+  const titles = await page.evaluate(() => {
+    const st = (sel) => { const cs = getComputedStyle(document.querySelector(sel)); return { color: cs.color, weight: Number(cs.fontWeight), size: parseFloat(cs.fontSize) }; };
+    return { horizon: st('#view-horizon .view__head h2'), sphere: st('#view-sphere .view__head h2') };
+  });
+  check('1440: "Thiên cầu" title has the same colour and weight as the horizon title, one step smaller', titles.sphere.color === titles.horizon.color && titles.sphere.weight === titles.horizon.weight && titles.sphere.size < titles.horizon.size, JSON.stringify(titles));
   const first = await state();
   check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');
@@ -216,6 +236,37 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   check('375: default view tab is the horizon diagram', defView === 'Giản đồ chân trời', defView ?? '');
   const collapsed = await page.evaluate(() => document.querySelector('.infocard').classList.contains('is-collapsed'));
   check('375: info card starts collapsed', collapsed);
+  // review-3 B4: dòng cốt lõi nằm trong màn hình đầu; thẻ thu gọn là MỘT dòng mảnh có tên và A/h; chạm để mở.
+  const first = await page.evaluate(() => {
+    const key = document.querySelector('#view-horizon .view__key');
+    const k = key.getBoundingClientRect();
+    const c = document.querySelector('.infocard');
+    const r = c.getBoundingClientRect();
+    return {
+      keyText: key.textContent,
+      keyTop: Math.round(k.top),
+      keyBottom: Math.round(k.bottom),
+      keyVisible: getComputedStyle(key).visibility !== 'hidden' && k.height > 0,
+      card: { h: Math.round(r.height), text: c.querySelector('.infocard__head').textContent },
+    };
+  });
+  check('375: key formula line "φ = … · Độ cao thiên cực …" is inside the first 812 px', first.keyVisible && /^φ = .*Độ cao thiên cực/.test(first.keyText) && first.keyTop >= 0 && first.keyBottom <= 812, JSON.stringify(first));
+  check('375: collapsed info card is one slim row (≤ 52 px) with the name and A/h', first.card.h <= 52 && /Polaris/.test(first.card.text) && /A\u00a0[\d,]+°/.test(first.card.text) && /h\u00a0[+−-][\d,]+°/.test(first.card.text), JSON.stringify(first.card));
+  // review-3 D2: giá trị đối tượng đang chọn là hai dòng có chủ ý, không ngắt giữa "h" và giá trị.
+  const selLines = await page.evaluate(() => {
+    const v = document.querySelector('.databar [data-emphasis=selected] .data__v');
+    const range = document.createRange();
+    range.selectNodeContents(v);
+    const tops = [...new Set([...range.getClientRects()].map((r) => Math.round(r.top)))];
+    return { text: v.textContent, lines: tops.length };
+  });
+  check('375: selected-object value renders as exactly two lines (α, δ / A, h)', selLines.lines === 2 && /\nA\u00a0/.test(selLines.text), JSON.stringify(selLines));
+  await page.locator('.infocard__title').click();
+  await page.waitForTimeout(200);
+  const opened = await page.evaluate(() => ({ collapsed: document.querySelector('.infocard').classList.contains('is-collapsed'), h: Math.round(document.querySelector('.infocard').getBoundingClientRect().height) }));
+  check('375: tapping the slim row expands the info card', !opened.collapsed && opened.h > 52, JSON.stringify(opened));
+  await page.locator('.infocard__title').click();
+  await page.waitForTimeout(200);
   await page.screenshot({ path: `${SHOTS}ux-after-375.png` });
   const tabs = page.locator('.paneltabs [role=tab]');
   const n = await tabs.count();

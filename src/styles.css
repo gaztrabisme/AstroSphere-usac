@@ -49,6 +49,7 @@
   --scrim: #000000b3; /* nền mờ sau hộp thoại */
   --veil: #ffffff14; /* lớp phủ sáng nhẹ khi rê chuột */
   --label-halo: #000; /* viền chữ cho nhãn trong cảnh 3D */
+  --label-pill: #0a0a0aa6; /* nền viên thuốc mờ sau mọi nhãn cảnh: đường kẻ đi dưới nhãn không cắt nét chữ */
   --scene-label-dim: #d4d4d4; /* tên sao danh mục: 13,4:1 trên nền trời, 5,26:1 trên mặt đất xanh (cả khi không có viền) */
 
   /* Màu ngữ nghĩa của cảnh 3D (trùng scene/colors.ts) — không đổi theo thương hiệu. */
@@ -340,10 +341,11 @@ body.learn-open .layout {
   font-size: 15px;
 }
 
-/* Thiên cầu là "số hai" (review-2 B2): tiêu đề nhẹ hơn, màu phụ — giản đồ chân trời đọc là số một. */
+/* Thiên cầu là "số hai" (review-2 B2) nhưng không được trông như bị vô hiệu (review-3 D1): cùng độ đậm tiêu đề,
+   màu --text, chỉ nhỏ hơn một bậc — thứ bậc nằm ở cỡ chữ và độ rộng khung, không ở màu xám. */
 #view-sphere .view__head h2 {
-  font-weight: 500;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text);
 }
 
 .view__sub {
@@ -430,6 +432,11 @@ body.learn-open .layout {
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
+  /* Mọi nhãn cảnh có viên thuốc tối mờ như nhãn "A = …" (review-3 D2/I1.1): đường xích đạo, trục, vòng chọn đi
+     ngang qua nhãn bị che dưới nền này thay vì cắt ngang chữ. Viền chữ bên dưới vẫn giữ cho phần nền mờ. */
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--label-pill);
   /* Viền chữ tối (review-2 D2): bốn bóng cứng 1 px tạo viền liền quanh nét chữ, thêm hai lớp mờ — nhãn đọc được
      cả khi nằm trên đường kẻ, chòm sao hay bề mặt Trái Đất. */
   text-shadow:
@@ -600,7 +607,8 @@ body.learn-open .layout {
 
 .data__item:last-child .data__v {
   font-size: 15px;
-  white-space: normal;
+  /* Hai dòng có chủ ý "α …, δ …" / "A …, h …" (review-3 D2); chỉ ngắt thêm sau dấu phẩy. */
+  white-space: pre-line;
 }
 
 /* ------------------------------------------------------------------ Thẻ thông tin */
@@ -643,6 +651,11 @@ body.learn-open .layout {
   flex: 1;
   margin: 0;
   font-size: 15px;
+}
+
+/* Dòng tóm tắt "A …, h …" chỉ dùng cho thẻ thu gọn trên điện thoại (xem @media max-width 900px). */
+.infocard__brief {
+  display: none;
 }
 
 .infocard.is-collapsed .infocard__body,
@@ -878,6 +891,14 @@ input[type='date'] {
 
 input[type='date'] {
   color-scheme: dark;
+}
+
+/* Gợi ý mẫu ("6h45m", "−16,7") đọc như gợi ý, không như giá trị đã nhập (review-3 G3): chữ nghiêng, màu --subtle
+   (5,89:1 trên --bg, vẫn đạt AA) so với chữ nhập màu --text. */
+input::placeholder {
+  color: var(--subtle);
+  font-style: italic;
+  opacity: 1;
 }
 
 input.num {
@@ -1572,6 +1593,10 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
+body.present #view-sphere .view__head h2 {
+  font-size: 18px;
+}
+
 /* Máy chiếu (review-2 H1): bỏ phần vỏ cỡ máy tính — phụ đề khung, nút nhỏ trong khung (phím C vẫn đặt lại góc
    nhìn) và cả thẻ thông tin (chữ ~13 px không đọc được từ cuối phòng). Hai khung nhìn chia hết bề ngang. */
 body.present .view__sub,
@@ -1688,10 +1713,13 @@ body.present .swatch--line {
     display: none;
   }
 
+  /* Nút chỉ có biểu tượng: vùng chạm 44 × 44 px và viền mảnh cho thấy đúng vùng chạm đó (review-3 D2 — trước
+     đây viền trong suốt, mắt chỉ thấy vòng tròn biểu tượng 20 px nên tưởng nút chỉ ~30 px). */
   .btn--top {
     padding: 4px;
     min-width: var(--tap);
-    border-color: transparent;
+    min-height: var(--tap);
+    border-color: var(--border);
   }
 
   /* Vùng chạm ≥ 44 px trên điện thoại */
@@ -1756,10 +1784,11 @@ body.present .swatch--line {
   }
 
   /* Điện thoại: cảnh 3D cao hơn (review-1 B4) — dải số liệu ở ngay dưới, dòng cốt lõi nằm trong khung. */
+  /* review-3 B4: khung vừa với cảnh (vòm + đĩa rộng hơn cao), không còn dải trời trống phía trên vòm; dòng cốt lõi
+     "φ = … · Độ cao thiên cực …" và đầu dải số liệu nằm trong màn hình đầu 375 × 812. */
   .views {
     grid-template-columns: 1fr;
-    height: 70svh;
-    min-height: 360px;
+    height: clamp(360px, calc(100vw + 80px), 70svh);
   }
 
   .views[data-active='sphere'] #view-horizon,
@@ -1772,7 +1801,12 @@ body.present .swatch--line {
     display: none;
   }
 
+  /* Nút công cụ của khung nổi trên góc trên của cảnh (vùng trời trống phía trên vòm), không chiếm một hàng riêng. */
   .view__head {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
     justify-content: flex-end;
     padding: 4px 6px;
   }
@@ -1803,6 +1837,43 @@ body.present .swatch--line {
 
   .infocard__head {
     cursor: default;
+  }
+
+  /* Thu gọn trên điện thoại (review-3 B4): MỘT dòng mảnh — chấm màu, tên, "A …, h …", nút mở/đóng 44 px — thay cho
+     một thẻ lớn gần như trống. Chạm vào dòng để mở đầy đủ. */
+  .infocard.is-collapsed {
+    padding: 0 2px 0 10px;
+  }
+
+  .infocard.is-collapsed .infocard__head {
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .infocard.is-collapsed .infocard__dot {
+    margin-top: 0;
+  }
+
+  .infocard.is-collapsed .infocard__title {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .infocard.is-collapsed:not(.is-empty) .infocard__brief {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
   }
 
   .infocard[style] {
@@ -1947,6 +2018,10 @@ body.present .swatch--line {
   .view__head h2 {
     font-size: 17px;
   }
+
+  #view-sphere .view__head h2 {
+    font-size: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2037,7 +2112,9 @@ body.present .kv__note {
 .pole-line.is-linked {
   font-weight: 700;
   text-decoration-line: underline;
-  text-decoration-color: var(--accent);
+  /* Màu của hình đang tô sáng (ui/emphasis.ts đặt --link-color từ scene/colors.ts, review-3 F2); chữ đậm là tín hiệu
+     không dựa vào màu. */
+  text-decoration-color: var(--link-color, var(--accent));
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }

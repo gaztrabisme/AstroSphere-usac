@@ -2,6 +2,7 @@
 // Mỗi nhãn mang hạng ưu tiên tĩnh (`rank`) và kích thước hộp đã đo (`w`, `h`) để khung nhìn gỡ chồng chéo
 // trong không gian màn hình mà không gọi getBoundingClientRect mỗi khung hình (xem declutter.ts, view.ts).
 
+import type { Vector3 } from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import type { LabelToggles } from '../state';
 
@@ -28,6 +29,12 @@ export interface LabelData {
   selIdx: number;
   /** Nhóm tô sáng liên kết mà nhãn này thuộc về ('' = không): khi nhóm đang tô sáng, nhãn được xét trước tiên. */
   emph: string;
+  /**
+   * Vị trí thay thế (tọa độ cục bộ như `position`), thử theo thứ tự khi vị trí gốc chồng lên nhãn ưu tiên hơn —
+   * vd. các điểm dọc theo cung của nhãn số đo, để nhãn nhường chỗ cho chữ hướng B/N/Đ/T (review-3 D2). Mảng cố
+   * định, chỉ ghi lại các vector khi vĩ độ đổi (không cấp phát mỗi khung hình).
+   */
+  alts: Vector3[] | null;
 }
 
 export interface Label extends CSS2DObject {
@@ -84,6 +91,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     selId: sel?.kind === 'user' ? sel.id : '',
     selIdx: sel?.kind === 'catalog' ? sel.index : -1,
     emph: opts.emph ?? '',
+    alts: null,
   };
   return obj;
 }
