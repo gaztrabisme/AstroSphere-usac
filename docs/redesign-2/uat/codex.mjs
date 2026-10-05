@@ -61,6 +61,9 @@ const ctx = await newContext(1440, 900);
   check('(1) Codex button in the top bar, before Trợ giúp', order.indexOf('Codex') >= 0 && order.indexOf('Codex') === order.indexOf('Trợ giúp') - 1, order.join(' | '));
   const b0 = await badge(page);
   check('(1) first visit: badge shows the 3 entries already on screen (sky dome, horizon, Polaris)', b0 === 3, `badge=${b0}`);
+  // fix-2 #10: con số trên huy hiệu được giải thích — tên truy cập (bắt đầu bằng chữ nhìn thấy "Codex") và tooltip.
+  const named = await page.evaluate(() => { const b = document.querySelector('.btn--codex'); return { name: b.getAttribute('aria-label'), title: b.title }; });
+  check('(fix-2 #10) the badge is explained: name "Codex: 3 mục mới chưa đọc", tooltip "3 mục mới trong Codex: bấm để đọc"', named.name === 'Codex: 3 mục mới chưa đọc' && named.title === '3 mục mới trong Codex: bấm để đọc', JSON.stringify(named));
   const focusBefore = await page.evaluate(() => document.activeElement?.tagName);
 
   // (2) Mở hộp thoại; danh mục và mục hiện ra.

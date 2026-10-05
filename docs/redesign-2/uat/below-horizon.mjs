@@ -15,6 +15,37 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+/** Đĩa quả địa cầu trên màn hình (px của trang), đo độc lập: chiếu tâm và một điểm trên vành bóng của Trái Đất. */
+const GLOBE = async () => {
+  const THREE = await import('/node_modules/.vite/deps/three.js').catch(() => null);
+  if (!THREE) return null;
+  const v = window.__app.sphere;
+  const host = document.querySelector('#view-sphere .view__canvas').getBoundingClientRect();
+  const toPx = (p) => ({ x: host.left + ((p.x + 1) / 2) * host.width, y: host.top + ((1 - p.y) / 2) * host.height });
+  const c = toPx(new THREE.Vector3(0, 0, 0).project(v.camera));
+  const side = new THREE.Vector3().setFromMatrixColumn(v.camera.matrixWorld, 0).multiplyScalar(v.earthR);
+  const e = toPx(side.project(v.camera));
+  return { x: c.x, y: c.y, r: Math.hypot(e.x - c.x, e.y - c.y) };
+};
+/** Tên chòm sao đang hiện trong khung thiên cầu có hộp chạm đĩa quả địa cầu. */
+const onGlobe = async (page) =>
+  page.evaluate(async (src) => {
+    const g = await (0, eval)(`(${src})`)();
+    if (!g) return { g: null, hits: ['three not importable'] };
+    const hits = [];
+    let shown = 0;
+    for (const el of document.querySelectorAll('#view-sphere .lbl--constellation')) {
+      if (el.style.display === 'none' || getComputedStyle(el).visibility === 'hidden') continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width) continue;
+      shown++;
+      const px = Math.min(Math.max(g.x, r.left), r.right);
+      const py = Math.min(Math.max(g.y, r.top), r.bottom);
+      if (Math.hypot(px - g.x, py - g.y) < g.r - 1) hits.push(el.textContent);
+    }
+    return { g, hits, shown };
+  }, GLOBE.toString());
+
 async function open(width, height, seed = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   await ctx.addInitScript((kv) => {
@@ -113,6 +144,26 @@ async function at(page, lst) {
   const n0 = await at(page, near);
   check('sát chân trời: "h = −0,5°" (một chữ số thập phân, dấu phẩy)', n0.shown && /\(h = −0,[45]°\)$/.test(n0.text), n0.text);
 
+  // fix-2 #11: gần thiên để (LST 281,3° → h ≈ −85,7°) vòng "bóng" chiếu ra ngoài/sát mép dưới canvas — kẹp vào trong
+  // khung, kèm mũi tên chỉ xuống; nhãn vẫn trong khung.
+  const low = await at(page, 281.3);
+  const clamp = await page.evaluate(async () => {
+    const THREE = await import('/node_modules/.vite/deps/three.js').catch(() => null);
+    const v = window.__app.horizon;
+    const hl = v.horizon;
+    const host = document.querySelector('#view-horizon .view__canvas').getBoundingClientRect();
+    const pr = (p) => { const q = p.clone().project(v.camera); return { x: ((q.x + 1) / 2) * host.width, y: ((1 - q.y) / 2) * host.height }; };
+    const real = THREE ? pr(hl.ghostStar) : null;
+    const ring = THREE ? pr(hl.ghostRing.position) : null;
+    const arrow = THREE ? pr(hl.ghostArrow.position) : null;
+    return { clamped: hl.ghostClamped, arrowOn: hl.ghostArrow.visible, rot: hl.ghostArrow.material.rotation, real, ring, arrow, W: host.width, H: host.height };
+  });
+  const inFrame = (p, m) => !!p && p.x >= m && p.x <= clamp.W - m && p.y >= m && p.y <= clamp.H - m;
+  check('fix-2 #11: Sirius ở h ≈ −86° chiếu sát/ra ngoài mép dưới canvas', low.alt < -84 && !!clamp.real && clamp.real.y > clamp.H - 40, `h = ${low.alt.toFixed(1)}°, y thật = ${clamp.real && Math.round(clamp.real.y)} / H = ${clamp.H}`);
+  check('fix-2 #11: vòng "bóng" được kẹp trọn trong khung (cách mép ≥ 10 px)', clamp.clamped && inFrame(clamp.ring, 10), JSON.stringify({ ring: clamp.ring, W: clamp.W, H: clamp.H }));
+  check('fix-2 #11: mũi tên mép khung hiện, trong khung, giữa vòng và mép dưới, chỉ xuống', clamp.arrowOn && inFrame(clamp.arrow, 0) && clamp.arrow.y > clamp.ring.y && Math.abs(clamp.rot) < 0.8, JSON.stringify({ arrow: clamp.arrow, rot: clamp.rot }));
+  check('fix-2 #11: nhãn dưới chân trời vẫn hiện, trong khung', low.shown && low.inside, low.text);
+
   // Sao mọc: nhãn và lượt vẽ "bóng" biến mất.
   const up = await at(page, 101.3);
   check('Sirius trên chân trời ở LST 101,3° (qua kinh tuyến)', up.alt > 50, `h = ${up.alt.toFixed(2)}°`);
@@ -146,6 +197,29 @@ async function at(page, lst) {
   const sw = await page.evaluate(() => document.documentElement.scrollWidth);
   check('375: không cuộn ngang', sw <= 375, `scrollWidth ${sw}`);
   check('không có lỗi trang (375)', errors.length === 0, errors.join(' | '));
+  await ctx.close();
+}
+
+// --- fix-2 #1, #3: 1440 × 900, Đầy đủ (hai khung chia đôi) ----------------------------------------------------------
+{
+  const { ctx, page, errors } = await open(1440, 900, { 'astrosphere.mode.v1': JSON.stringify('full') });
+  await at(page, 264);
+  await page.waitForTimeout(800);
+  const z = await page.evaluate(() => {
+    const zen = [...document.querySelectorAll('#view-horizon .lbl')].find((e) => e.textContent === 'Thiên đỉnh' && e.style.display !== 'none');
+    const zr = zen?.getBoundingClientRect();
+    const tools = [...document.querySelectorAll('#view-horizon .view-tool, #view-sphere .view-tool')].map((b) => {
+      const r = b.getBoundingClientRect();
+      return { name: b.getAttribute('aria-label'), title: b.title, text: getComputedStyle(b.querySelector('.view-tool__text')).display, x: r.left, y: r.top, r: r.right, b: r.bottom };
+    });
+    return { zen: zr ? { x: zr.left, y: zr.top, r: zr.right, b: zr.bottom } : null, tools };
+  });
+  const hitTool = z.zen ? z.tools.filter((t) => z.zen.x < t.r && t.x < z.zen.r && z.zen.y < t.b && t.y < z.zen.b) : [];
+  check('fix-2 #1, Full 1440: "Thiên đỉnh" hiện và không chồng lên nút .view-tool nào', !!z.zen && hitTool.length === 0, JSON.stringify({ zen: z.zen, hit: hitTool.map((t) => t.name) }));
+  check('fix-2 #1, Full 1440: nút công cụ chỉ còn biểu tượng, vẫn có tên truy cập và tooltip', z.tools.length === 3 && z.tools.every((t) => t.text === 'none' && t.name && t.title), JSON.stringify(z.tools.map((t) => [t.name, t.text])));
+  const og = await onGlobe(page);
+  check('fix-2 #3, Full 1440: không tên chòm sao nào in lên quả địa cầu (khung thiên cầu)', !!og.g && og.hits.length === 0 && og.shown > 0, JSON.stringify(og));
+  check('không có lỗi trang (Full 1440)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }
 
@@ -193,6 +267,8 @@ async function at(page, lst) {
   const near = (r, b, rad) => r && b && b.left < r.x + rad && b.right > r.x - rad && b.top < r.y + rad && b.bottom > r.y - rad;
   check('1920 trình chiếu: chữ B hiện và không chạm vòng chọn quanh Polaris (khung thiên cầu)', !!g.B && !!g.ring && !near(g.ring, g.B, 26), JSON.stringify({ ring: g.ring, B: g.B && [g.B.left, g.B.top] }));
   check('1920 trình chiếu: "Thiên cực Bắc" vẫn hiện', !!g.ncp);
+  const og = await onGlobe(page);
+  check('fix-2 #3, 1920 trình chiếu: không tên chòm sao nào in lên quả địa cầu', !!og.g && og.hits.length === 0 && og.shown > 0, JSON.stringify(og));
   const gapTZ = g.T && g.zen ? Math.max(g.zen.left - g.T.right, g.T.left - g.zen.right, g.zen.top - g.T.bottom, g.T.top - g.zen.bottom) : -1;
   check('1920 trình chiếu: "Thiên đỉnh" cách "T" ≥ 24 px', !!g.zen && gapTZ >= 24, `${Math.round(gapTZ)} px`);
   const obs = await page.evaluate(async () => {

@@ -341,6 +341,23 @@ try {
     names: [...document.querySelectorAll('.topbar__actions button')].filter((b) => b.getClientRects().length).map((b) => b.getAttribute('aria-label') || b.textContent.trim()),
   }));
   check('fix-1 #1/#8, 375: the card stays a chip in the view; every icon-only top-bar button has an accessible name', phoneCard.inViews && phoneCard.names.every((n) => n && n.length > 1), JSON.stringify(phoneCard));
+  // fix-2 #8: nút mở/thu gọn thẻ là chevron (SVG) có tên "Chi tiết" / "Thu gọn", không còn "+" (đọc thành "thêm").
+  const fold = () => page.evaluate(() => {
+    const b = document.querySelector('.infocard__fold');
+    const r = b.getBoundingClientRect();
+    return { name: b.getAttribute('aria-label'), title: b.title, expanded: b.getAttribute('aria-expanded'), svg: !!b.querySelector('svg'), text: b.textContent.trim(), w: Math.round(r.width), h: Math.round(r.height) };
+  });
+  const f0 = await fold();
+  check('fix-2 #8, 375: collapsed card: chevron named and titled "Chi tiết", aria-expanded=false, no "+" text, ≥ 44 px', f0.name === 'Chi tiết' && f0.title === 'Chi tiết' && f0.expanded === 'false' && f0.svg && f0.text === '' && f0.w >= 44 && f0.h >= 44, JSON.stringify(f0));
+  await page.locator('.infocard__fold').click();
+  await page.waitForTimeout(200);
+  const f1 = await fold();
+  check('fix-2 #8, 375: after a tap the chevron is named "Thu gọn", aria-expanded=true', f1.name === 'Thu gọn' && f1.title === 'Thu gọn' && f1.expanded === 'true', JSON.stringify(f1));
+  await page.locator('.infocard__fold').click();
+  await page.waitForTimeout(200);
+  // fix-2 #7: khoảng trống rõ giữa thẻ đang chọn và dòng φ.
+  const gap = await page.evaluate(() => Math.round(document.querySelector('.view__key').getBoundingClientRect().top - document.querySelector('.infocard').getBoundingClientRect().bottom));
+  check('fix-2 #7, 375: ≥ 20 px between the selection chip and the φ line', gap >= 20, `${gap} px`);
   await page.screenshot({ path: `${SHOTS}simple-375.png`, fullPage: true });
   await page.close();
   await phone.close();

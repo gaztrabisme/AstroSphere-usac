@@ -101,6 +101,10 @@ const dragSky = async (page) => {
       focus: document.activeElement === document.body || !el.contains(document.activeElement),
       stored: localStorage.getItem('astrosphere.guide.v1'),
       hint: (() => { const h = document.querySelector('.view__hint.is-new'); return h ? getComputedStyle(h).visibility : 'none'; })(),
+      star: el.querySelector('.guide-hello__star')?.textContent ?? '',
+      explainBg: getComputedStyle([...el.querySelectorAll('button')].find((b) => b.textContent === 'Giải thích các nút')).backgroundColor,
+      accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+      pose: el.classList.contains('guide-hello--pose'),
     };
   });
   check('(hello) a fresh context shows the hello in Simple mode', (await helloCount(page)) === 1 && (await st(page)).uiMode === 'simple');
@@ -108,7 +112,12 @@ const dragSky = async (page) => {
   check('(hello) two buttons: "Giải thích các nút" and "Để sau"', hello.buttons.join('|') === 'Giải thích các nút|Để sau', hello.buttons.join('|'));
   check('(hello) does not steal focus', hello.focus);
   check(`(hello) ${KEY} = {"hello":true} is stored as soon as it shows`, hello.stored === '{"hello":true}', hello.stored);
-  check('(hello) the first-visit hint caption waits while the hello is open (one message at a time)', hello.hint === 'hidden' || hello.hint === 'none', hello.hint);
+  // fix-2 #2 (thay cho kiểm tra cũ "dòng gợi ý chờ tới khi lời chào đóng"): dòng gợi ý hiện ngay từ lần đầu.
+  check('(fix-2 #2) the first-visit hint caption "Kéo để xoay · bấm vào một ngôi sao" shows while the hello is open', hello.hint === 'visible', hello.hint);
+  check('(fix-2 #2) the hello invites a star click: "Thử bấm vào một ngôi sao trên bầu trời nhé!"', hello.star === 'Thử bấm vào một ngôi sao trên bầu trời nhé!', hello.star);
+  const hex = (c) => { const m = c.match(/\d+/g); return m ? '#' + m.slice(0, 3).map((x) => Number(x).toString(16).padStart(2, '0')).join('') : c; };
+  check('(fix-2 #2) "Giải thích các nút" is a secondary button, not filled orange', hex(hello.explainBg).toLowerCase() !== hello.accent.toLowerCase() && !/rgb\(242, 101, 34\)/.test(hello.explainBg), `${hello.explainBg} vs ${hello.accent}`);
+  check('(fix-2 #9) 1440 × 900: the full-figure hello is used (it fits under the card)', hello.pose);
   const av = await page.evaluate(() => { const b = document.querySelector('.guide-avatar'); const r = b.getBoundingClientRect(); return { name: b.getAttribute('aria-label'), w: r.width, h: r.height }; });
   check('(avatar) accessible name "Usui-chan: giải thích các nút", ≥ 44 px', av.name === 'Usui-chan: giải thích các nút' && av.w >= 44 && av.h >= 44, JSON.stringify(av));
   check('(avatar) does not cover view tools, the info card (Polaris chip) or Simple controls', (await avatarClear(page)).length === 0, (await avatarClear(page)).join(', '));
@@ -116,7 +125,17 @@ const dragSky = async (page) => {
   const sky = await rect(page, '#view-horizon .view__canvas');
   check('(hello) does not cover the horizon sky in Simple', !overlaps(hr, sky), JSON.stringify(hr));
   const under = (await textBoxes(page, SIMPLE_TEXT)).filter((b) => overlaps(hr, b)).map((b) => b.cls);
-  check('(fix-1 #7) the hello overlaps no visible text (panel footer and docked card give way while it is open)', under.length === 0, under.join(', '));
+  check('(fix-1 #7) the hello overlaps no visible text (panel footer gives way while it is open)', under.length === 0, under.join(', '));
+  // fix-2 #9 (thay cho "thẻ nhường chỗ"): thẻ đang chọn (Polaris) vẫn hiện, và lời chào nằm dưới nó.
+  const dockCard = await page.evaluate(() => {
+    const c = document.querySelector('.simple__dock .infocard');
+    if (!c) return null;
+    const r = c.getBoundingClientRect();
+    let vis = r.width > 0;
+    for (let a = c; a && vis; a = a.parentElement) if (getComputedStyle(a).visibility === 'hidden') vis = false;
+    return { vis, bottom: r.bottom, title: c.querySelector('.infocard__title').textContent };
+  });
+  check('(fix-2 #9) the docked selection card stays visible while the hello is open, and the hello sits below it', !!dockCard && dockCard.vis && dockCard.title === 'Polaris' && hr.y >= dockCard.bottom, JSON.stringify({ dockCard, helloTop: hr.y }));
   const cue0 = await page.evaluate(() => getComputedStyle(document.querySelector('.simple__cue')).display);
   check('(fix-1 #4) the hello replaces the first-action cue: the cue is not shown while the hello is open', cue0 === 'none', cue0);
   await page.screenshot({ path: `${SHOTS}guide-hello-1440.png` });
@@ -310,6 +329,8 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   const hit = [];
   for (const sel of ['#view-horizon .view__canvas', '#view-sphere .view__canvas', '.infocard', '.view-tool']) if (overlaps(hr, await rect(page, sel))) hit.push(sel);
   check('(full) the wide hello covers neither sky nor the Polaris chip', hit.length === 0, hit.join(', ') || JSON.stringify(hr));
+  const wideStar = await page.evaluate(() => document.querySelector('.guide-hello__star')?.textContent ?? '');
+  check('(fix-2 #2, full) the wide hello carries the star invitation too', wideStar === 'Thử bấm vào một ngôi sao trên bầu trời nhé!', wideStar);
   await ctx.close();
 }
 
@@ -421,6 +442,21 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   await page.locator('.guide-hello__go').tap();
   await waitExplain(page, true).catch(() => {});
   check('(fix-1 #3, 375) tapping the toast enters explain mode', (await explaining(page)) && (await helloCount(page)) === 0);
+  await ctx.close();
+}
+
+// ================================================================== fix-2 #2/#9: máy tính thấp 1280×800, Cơ bản
+{
+  const ctx = await context({ width: 1280, height: 800 });
+  const page = await open(ctx);
+  await waitHello(page);
+  const kind = await page.evaluate(() => document.querySelector('.guide-hello').className);
+  check('(fix-2 #9, 1280×800) no room for the full figure under the card → the slim hello is used', /guide-hello--toast/.test(kind), kind);
+  const hr = await rect(page, '.guide-hello');
+  const hit = [];
+  for (const sel of ['#view-horizon .view__canvas', '.simple__dock .infocard', '.view__hint', '.view__key', '.guide-avatar']) if (overlaps(hr, await rect(page, sel))) hit.push(sel);
+  check('(fix-2 #2/#9, 1280×800) the slim hello covers neither the sky, the selection card, the hint caption nor the avatar', hit.length === 0, hit.join(', ') || JSON.stringify(hr));
+  check('(fix-2 #2, 1280×800) the hint caption is visible on the first visit', (await rect(page, '.view__hint'))?.vis === true);
   await ctx.close();
 }
 
