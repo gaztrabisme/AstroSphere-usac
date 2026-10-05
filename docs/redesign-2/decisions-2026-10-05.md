@@ -123,3 +123,33 @@ Scope and precedence:
 - *Treat accessibility as a requirement, and render the actual artifact* (frontend, principles 4 and 6). The floor is enforced by a computed-style check across both modes and both widths, not by reading the CSS. The wrap side effects were measured and then looked at in renders.
 - *Real words affect space and layout* (ux, 798 · U2 · L05 · 01:55–03:03). The longest Vietnamese captions set the cost. I checked them in place instead of assuming that 1 px is harmless.
 - Contrast was not changed. These texts already use `--muted` or `--subtle` (≥ 4,6:1) or `--text`.
+
+## 5. Neutral colour for user stars (TODO "Random and manual star colours")
+
+**What changed:**
+- Random and manually added stars now take `USER_STAR_COLOR = COLORS.figure` (`#cfbb9a`, OKLCH L 0,80 · C 0,05 · H 80°). That is the same sand tone as user-added constellation figures, so everything the user adds shares one tone.
+- The nine-colour `STAR_COLORS` table is gone.
+- I chose the owner's first option, one tone, over a set of several neutrals. In the neutral, light region the scene already uses `hourCircle`, `meridian`, `dsoOther`, `groundMark` and `zenith`. A second neutral that stays ≥ 0,08 from all of them and from the sand tone would need more chroma or a lower lightness, so it would no longer be neutral, or it would be dim on the night sky.
+
+**Measured** (OKLab ΔE to the nearest semantic colour, from the color-theory skill's `checks.py oklab`):
+
+| Old colour | Nearest semantic colour | ΔE |
+|---|---|---|
+| `#fb923c` | ecliptic | **0,000** |
+| `#f472b6` | vertical circle | **0,000** |
+| `#e2e8f0` | meridian | **0,000** |
+| `#facc15` | Sun | 0,014 |
+| `#60a5fa` | axis | 0,030 |
+| `#22d3ee` | latitude | 0,067 |
+| `#4ade80` | alt-az grid | 0,081 |
+| `#f87171` | never-rise zone | 0,085 |
+| `#a78bfa` | axis | 0,107 |
+| **New `#cfbb9a`** | dsoOther | **0,098** |
+
+- Contrast on the night sky: 10,6:1 (polish.md).
+- Unit test `src/userStarColor.test.ts` checks ΔE ≥ 0,08 to every semantic colour in `scene/colors.ts`, and that random and manual stars both get the tone. `decisions.mjs` checks it in the browser.
+
+**Lessons applied:**
+- *Colour as a code* (color-theory, 5642 · U3 · L39 · 02:36–03:20). A pink user star read as "the vertical circle", and an orange one read as "the ecliptic". User content now stays out of the code.
+- *Fewer colours, better decisions* (color-theory, 1140 · U3 · L08 · 09:58–11:48), and *a bridge by family* (1140 · U3 · L09 · 05:00–06:14). User stars and user figures are one family, so the user's own additions are recognisable as such.
+- *Measure, don't eyeball* (color-theory science crosswalk). Distances are OKLab ΔE, not hue-wheel angles.

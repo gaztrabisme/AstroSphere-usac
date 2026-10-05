@@ -154,7 +154,13 @@ export const DEFAULT_LABELS: LabelToggles = {
   angles: true,
 };
 
-const STAR_COLORS = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#60a5fa', '#a78bfa', '#f472b6', '#e2e8f0'];
+/**
+ * Màu của sao ngẫu nhiên và sao nhập tay: tông cát trung tính của mọi thứ người dùng thêm vào (cùng màu hình chòm sao,
+ * COLORS.figure). Bảng chín màu cũ trùng màu ngữ nghĩa của cảnh (hồng = vòng thẳng đứng, cam = hoàng đạo, trắng xám =
+ * kinh tuyến: ΔE OKLab 0); tông này cách mọi màu ngữ nghĩa ≥ 0,098 (quyết định 2026-10-05, TODO "Random and manual
+ * star colours").
+ */
+export const USER_STAR_COLOR = COLORS.figure;
 
 export function todayIso(d = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0');
@@ -367,7 +373,7 @@ export class Actions {
         ra: Math.round(ra * 100) / 100,
         dec: Math.round(dec * 100) / 100,
         mag: 1.5,
-        color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
+        color: USER_STAR_COLOR,
         kind: 'random',
         labelled: false,
       });
@@ -383,7 +389,7 @@ export class Actions {
       ra: norm360(ra),
       dec: clamp(dec, -90, 90),
       mag: 1,
-      color: STAR_COLORS[(count * 3) % STAR_COLORS.length],
+      color: USER_STAR_COLOR,
       kind: 'manual',
       labelled: true,
     };
