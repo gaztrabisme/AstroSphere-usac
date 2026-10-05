@@ -371,7 +371,7 @@ export function dataBar(store: Store, actions: Actions) {
   const DATA_TERMS: Partial<Record<DataKey, string>> = { lat: 'latPole', pole: 'latPole', incl: 'eqAngle', lst: 'lst', gst: 'lst' };
   for (const [k, id] of Object.entries(DATA_TERMS)) appendTerm(cells[k as DataKey].querySelector('.data__k')!, termLink(id, t(`data.${k}`)));
   const sunCell = cells.solar;
-  const el = h('section', { class: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
+  const el = h('section', { class: 'databar', id: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
 
   const update = () => {
     const s: AppState = store.state;
