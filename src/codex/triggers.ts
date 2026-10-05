@@ -333,8 +333,21 @@ export function codexButton(store: Store, actions: Actions): HTMLButtonElement {
     h('span', { class: 'btn__text', text: t('codexUi.button') }),
     badge,
   );
+  // Game feel (2026-10-05): khi số mục mới TĂNG lúc người dùng đang ở mô phỏng, con số lóe sáng nhẹ một lần (~600 ms,
+  // chỉ bóng sáng, không dịch chuyển; giảm chuyển động = không có). Không cấp phát: một bộ đếm và một hàm gỡ dựng sẵn.
+  let last = unreadCount();
+  let glowTimer = 0;
+  const endGlow = () => badge.classList.remove('is-glow');
   const sync = () => {
     const n = unreadCount();
+    if (n > last && !isCodexOpen()) {
+      badge.classList.remove('is-glow');
+      void badge.offsetWidth; // khởi động lại hoạt ảnh nếu số tăng tiếp khi đang lóe
+      badge.classList.add('is-glow');
+      window.clearTimeout(glowTimer);
+      glowTimer = window.setTimeout(endGlow, 650);
+    }
+    last = n;
     badge.hidden = n === 0;
     badge.textContent = String(n);
     btn.setAttribute('aria-label', n ? t('codexUi.buttonAriaNew', { n }) : t('codexUi.button'));

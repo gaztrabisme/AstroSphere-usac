@@ -152,7 +152,7 @@ export function skyGroup(box: Box, opts: SkyOptions): string {
   // Nhãn tên sao: thử bên phải / trái, rồi lệch lên / xuống một dòng, để hai nhãn không chồng lên nhau.
   const placed: [number, number, number, number][] = [];
   const starLabel = (sx: number, sy: number, mag: number, name: string): string => {
-    const w = name.length * 6.4;
+    const w = name.length * 7;
     const gap = starRadius(mag) + 4;
     const preferRight = sx < box.x + box.w * 0.62;
     const tries: [boolean, number][] = [
