@@ -9,6 +9,10 @@ import type { EmphasisKey } from './emphasis';
 export type { EmphasisKey } from './emphasis';
 
 export type TrailMode = 'none' | 'short' | 'long';
+/** Chế độ giao diện (redesign-2 R2): Cơ bản cho người mới, Đầy đủ là giao diện trọn vẹn. Khác `AnimMode` (chế độ chạy hoạt ảnh). */
+export type UiMode = 'simple' | 'full';
+export const UI_MODES: readonly UiMode[] = ['simple', 'full'];
+export const isUiMode = (v: unknown): v is UiMode => v === 'simple' || v === 'full';
 export type AnimMode = 'continuous' | 'oneDay' | 'stepHour';
 
 export interface UserStar {
@@ -104,6 +108,8 @@ export interface AppState {
    * Hình tương ứng trong hai khung nhìn đậm lên; ô số tương ứng có lớp `is-linked`. null = không tô sáng.
    */
   emphasis: EmphasisKey | null;
+  /** Chế độ giao diện: Cơ bản (mặc định cho lần đầu) hoặc Đầy đủ. Lớp `body.mode-*` phản chiếu giá trị này. */
+  uiMode: UiMode;
 }
 
 export const TRAIL_LENGTH_DEG: Record<TrailMode, number> = { none: 0, short: 45, long: 359 };
@@ -244,6 +250,7 @@ export function createInitialState(): AppState {
     selected: null,
     sunDate: todayIso(now),
     emphasis: null,
+    uiMode: 'simple',
   };
   // Mặc định chỉ hiện sao thật cùng đường nối và tên chòm sao (tên quốc tế); các lớp khác người dùng tự bật.
   // Cảnh mở đầu chọn sẵn Polaris (HIP 11767) trong danh mục sao thật — tìm theo số Hipparcos, không theo tên.
@@ -429,7 +436,14 @@ export class Actions {
     this.store.set({ selected: sel });
   }
 
+  /** Đổi chế độ giao diện (cập nhật bất biến; không làm gì nếu không đổi). */
+  setUiMode(uiMode: UiMode): void {
+    if (!isUiMode(uiMode) || uiMode === this.s.uiMode) return;
+    this.store.set({ uiMode });
+  }
+
+  /** "Đặt lại" đưa mô phỏng về ban đầu nhưng giữ chế độ giao diện người dùng đã chọn. */
   resetAll(): void {
-    this.store.set(createInitialState());
+    this.store.set({ ...createInitialState(), uiMode: this.s.uiMode });
   }
 }
