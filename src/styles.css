@@ -705,8 +705,19 @@ body.learn-open .layout {
   font-size: 12px;
 }
 
+.kv--stack {
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.infocard__mag {
+  white-space: nowrap;
+}
+
 .status {
   display: inline-block;
+  white-space: nowrap;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;

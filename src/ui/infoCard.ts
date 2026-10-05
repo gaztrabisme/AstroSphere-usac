@@ -61,7 +61,11 @@ export function infoCard(store: Store, actions: Actions) {
   const dot = h('span', { class: 'infocard__dot', 'aria-hidden': 'true' });
   // Dòng phụ: tên tiếng Việt (nếu có) ngay dưới tên quốc tế (ux-brief §7).
   const viName = h('p', { class: 'infocard__vi', lang: 'vi', hidden: true });
-  const kind = h('p', { class: 'infocard__kind' });
+  // Dòng loại: ký hiệu · chòm sao · cấp sao. Cấp sao nằm trong span không ngắt dòng để "cấp sao 1,97" không bị
+  // tách thành dòng mồ côi (review-2 D2).
+  const kindText = h('span');
+  const magText = h('span', { class: 'infocard__mag' });
+  const kind = h('p', { class: 'infocard__kind' }, kindText, magText);
   const collapseBtn = h('button', {
     type: 'button',
     class: 'icon-btn',
@@ -98,7 +102,8 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
-  const statusRow = h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
+  // Hàng trạng thái xếp dọc (nhãn trên, viên trạng thái dưới) để viên "Cận cực (không bao giờ lặn)" nằm trọn một dòng.
+  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
   const body = h(
     'div',
     { class: 'infocard__body' },
@@ -233,8 +238,10 @@ export function infoCard(store: Store, actions: Actions) {
       setText(viName, obj.viName ?? '');
       setHidden(viName, !obj.viName);
       dot.style.background = obj.color;
-      const kindParts = [obj.designation, obj.kind, obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : undefined];
-      setText(kind, kindParts.filter(Boolean).join(' · '));
+      const kindHead = [obj.designation, obj.kind].filter(Boolean).join(' · ');
+      const mag = obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : '';
+      setText(kindText, kindHead && mag ? `${kindHead} · ` : kindHead);
+      setText(magText, mag);
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);
       setRow(r.dec, fmtDMS(obj.dec), `(${fmtDegSigned(obj.dec)})`);
       status.className = `status status--${rs.visibility}`;
