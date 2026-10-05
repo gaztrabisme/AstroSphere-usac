@@ -1,7 +1,6 @@
 // Khung nhìn phải: giản đồ chân trời — người quan sát đứng ở tâm mặt phẳng chân trời.
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { equatorialToHorizontal, sunPosition } from '../astro';
 import { sunJd } from '../selection';
 import { lstOf, type AppState, type Store } from '../state';
@@ -19,6 +18,8 @@ const PORTRAIT_HFOV = 46;
 /** Khung dọc: dời cảnh lên (tỉ lệ chiều cao khung). */
 const PORTRAIT_SHIFT = 0.06;
 const DEG = Math.PI / 180;
+/** Hạn chờ tối đa cho lần rảnh trước khi tải mô hình người quan sát. */
+const IDLE_OPTS: IdleRequestOptions = { timeout: 4000 };
 
 export class HorizonDiagramView extends View {
   private ground: THREE.Mesh;
@@ -34,6 +35,10 @@ export class HorizonDiagramView extends View {
   private sunKey = '';
   private sunRa = 0;
   private sunDec = 0;
+  /** Mô hình người quan sát (usui-chan.glb, 2,3 MB): 0 = chưa hẹn tải, 1 = đã hẹn/đang tải (xem frame()). */
+  private modelState = 0;
+  /** Hàm hẹn tải dựng sẵn một lần — frame() không tạo closure. */
+  private readonly startModelLoad = (): void => this.loadObserverModel();
 
   constructor(container: HTMLElement, store: Store) {
     const R = SKY_RADIUS;
@@ -96,7 +101,8 @@ export class HorizonDiagramView extends View {
     key.position.set(0.4, 0.8, 1);
     this.camera.add(key);
     this.scene.add(this.camera);
-    this.loadObserverModel();
+    // Mô hình glTF KHÔNG tải ở đây: hoãn tới sau khung hình đầu tiên và một lần rảnh của trình duyệt (frame()),
+    // để 2,3 MB không tranh băng thông/CPU với lần vẽ đầu. Trong lúc chờ: hình nhân đơn giản ở trên.
 
     this.update(store.state);
   }
@@ -108,45 +114,66 @@ export class HorizonDiagramView extends View {
    */
   private loadObserverModel(): void {
     const url = `${import.meta.env.BASE_URL}models/usui-chan.glb`;
-    new GLTFLoader().load(
-      url,
-      (gltf) => {
-        const model = gltf.scene;
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const height = this.R * 0.2;
-        const k = height / Math.max(size.y, 1e-6);
-        model.scale.setScalar(k);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.set(-center.x * k, -box.min.y * k, -center.z * k);
-        // Nâng nhẹ khỏi mặt đất để đáy bệ không trùng mặt phẳng chân trời (tránh nhấp nháy z-fighting).
-        model.position.y += this.R * 0.004;
-        model.traverse((o) => {
-          const mesh = o as THREE.Mesh;
-          if (!mesh.isMesh) return;
-          mesh.userData.tip = 'observer';
-          // Lưới có xương (VRoid) có khối bao sai so với tư thế thật → bị loại khỏi khung nhìn ở vài góc. Tắt cắt xén.
-          mesh.frustumCulled = false;
-          // VRoid xuất mọi vật liệu ở chế độ BLEND (trong suốt, không ghi chiều sâu) nên khi xoay, các phần
-          // tóc/mặt/thân đè nhau sai thứ tự. Chuyển sang chế độ cắt alpha: vẽ như vật đặc, vẫn giữ viền tóc, mi mắt.
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const m of mats) {
-            if (!m.transparent) continue;
-            m.transparent = false;
-            m.alphaTest = Math.max(m.alphaTest, 0.5);
-            m.depthWrite = true;
-            m.needsUpdate = true;
-          }
-        });
-        this.person.clear();
-        this.person.add(model);
-        this.dirty = true;
-      },
-      undefined,
+    // GLTFLoader cũng tải động (khối riêng): không nằm trong khối khởi tạo cảnh.
+    import('three/addons/loaders/GLTFLoader.js').then(
+      ({ GLTFLoader }) =>
+        new GLTFLoader().load(
+          url,
+          (gltf) => {
+            const model = gltf.scene;
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const height = this.R * 0.2;
+            const k = height / Math.max(size.y, 1e-6);
+            model.scale.setScalar(k);
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.set(-center.x * k, -box.min.y * k, -center.z * k);
+            // Nâng nhẹ khỏi mặt đất để đáy bệ không trùng mặt phẳng chân trời (tránh nhấp nháy z-fighting).
+            model.position.y += this.R * 0.004;
+            model.traverse((o) => {
+              const mesh = o as THREE.Mesh;
+              if (!mesh.isMesh) return;
+              mesh.userData.tip = 'observer';
+              // Lưới có xương (VRoid) có khối bao sai so với tư thế thật → bị loại khỏi khung nhìn ở vài góc. Tắt cắt xén.
+              mesh.frustumCulled = false;
+              // VRoid xuất mọi vật liệu ở chế độ BLEND (trong suốt, không ghi chiều sâu) nên khi xoay, các phần
+              // tóc/mặt/thân đè nhau sai thứ tự. Chuyển sang chế độ cắt alpha: vẽ như vật đặc, vẫn giữ viền tóc, mi mắt.
+              const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              for (const m of mats) {
+                if (!m.transparent) continue;
+                m.transparent = false;
+                m.alphaTest = Math.max(m.alphaTest, 0.5);
+                m.depthWrite = true;
+                m.needsUpdate = true;
+              }
+            });
+            this.person.clear();
+            this.person.add(model);
+            this.dirty = true;
+          },
+          undefined,
+          () => {
+            /* Chưa có mô hình: giữ hình nhân đơn giản */
+          },
+        ),
       () => {
-        /* Chưa có mô hình: giữ hình nhân đơn giản */
+        /* Không tải được bộ nạp: giữ hình nhân đơn giản */
       },
     );
+  }
+
+  /**
+   * Sau khung hình đầu tiên đã vẽ, hẹn tải mô hình người quan sát vào lúc trình duyệt rảnh (requestIdleCallback,
+   * tối đa 4 s; trình duyệt không có thì setTimeout). Chỉ chạy một lần; không cấp phát mỗi khung hình.
+   */
+  frame(): boolean {
+    const drew = super.frame();
+    if (drew && this.modelState === 0) {
+      this.modelState = 1;
+      if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(this.startModelLoad, IDLE_OPTS);
+      else window.setTimeout(this.startModelLoad, 500);
+    }
+    return drew;
   }
 
   protected clipBelow(s: AppState): boolean {
