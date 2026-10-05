@@ -4,6 +4,7 @@ import {
   angleDiff,
   classify,
   equatorialToHorizontal,
+  equatorialToHorizontalInto,
   equatorialToHorizontalViaMatrix,
   equatorialToHorizonMatrix,
   equatorInclination,
@@ -122,6 +123,21 @@ describe('Hệ xích đạo ↔ hệ chân trời', () => {
     }
     // Hệ (Bắc, Đông, Thiên đỉnh) là hệ tay trái nên định thức = −1; phép ánh xạ sang 3D bù lại dấu này.
     expect(mat3Det(equatorialToHorizonMatrix(21.03, 123))).toBeCloseTo(-1, 12);
+  });
+
+  it('equatorialToHorizontalInto trùng equatorialToHorizontal và ghi vào cùng đối tượng', () => {
+    const r = rng(11);
+    const out = { alt: 0, az: 0 };
+    for (let i = 0; i < 300; i++) {
+      const ra = r() * 360;
+      const dec = r() * 180 - 90;
+      const lat = r() * 180 - 90;
+      const lst = r() * 360;
+      const a = equatorialToHorizontal(ra, dec, lat, lst);
+      expect(equatorialToHorizontalInto(ra, dec, lat, lst, out)).toBe(out);
+      expect(out.alt).toBe(a.alt);
+      expect(out.az).toBe(a.az);
+    }
   });
 
   it('Tiêu chí 5: sai số A, h so với astronomy-engine < 0,1°', () => {

@@ -4,10 +4,10 @@
 
 import * as THREE from 'three';
 import type { Line2 } from 'three/addons/lines/Line2.js';
-import { equatorialToHorizontal, equatorInclination, fmtDeg, poleAltitude, sunPosition } from '../astro';
+import { equatorialToHorizontalInto, equatorInclination, fmtDeg, fmtDegSigned, poleAltitude, sunPosition, type Horizontal } from '../astro';
 import { t } from '../i18n';
 import { catalogArrays } from '../data/catalog';
-import { sunJd } from '../selection';
+import { resolveSelection, sunJd } from '../selection';
 import { lstOf, type AppState, type Selection } from '../state';
 import { horizonFrameMatrix, horVec, type ViewKind } from './frames';
 import {
@@ -16,6 +16,7 @@ import {
   fatLine,
   greatArcInto,
   polylineToSegments,
+  ringTexture,
   sectorGeometry,
   thinSegments,
   translucent,
@@ -23,6 +24,7 @@ import {
 } from './geom';
 import type { EmphasisFx } from './emphasis';
 import { makeLabel, setLabelText, type Label } from './labels';
+import { SEL_RING_SCALE } from './skyLayer';
 
 /** Số điểm tối đa của các cung động (cung phương vị: 0…360° mỗi 3° → 121 điểm). */
 const MAX_ARC_POINTS = 121;
@@ -32,6 +34,9 @@ const _foot = new THREE.Vector3();
 const _zen = new THREE.Vector3();
 const _a = new THREE.Vector3();
 const _radec = { ra: 0, dec: 0 };
+const _hor: Horizontal = { alt: 0, az: 0 };
+/** Độ mờ của dấu "bóng" (vòng đứt nét, chấm, cung h) khi đối tượng chọn khuất dưới mặt đất. */
+const GHOST_OPACITY = 0.8;
 
 export class HorizonLayer {
   readonly group = new THREE.Group();
@@ -64,6 +69,27 @@ export class HorizonLayer {
   private vKeyAlt = NaN;
   private vKeyAz = NaN;
   private vKeyOn = false;
+  /**
+   * Đối tượng đang chọn nằm dưới chân trời mà mặt dưới bị cắt (giản đồ chân trời, fix-1 #2): dấu "bóng" vẽ xuyên qua
+   * mặt đất trong một lượt vẽ riêng không có mặt phẳng cắt (View.frame) — vòng chọn đứt nét, chấm sao và cung độ cao
+   * h đứt nét, mờ. Dựng một lần; mỗi lần cập nhật chỉ đổi vị trí và ghi lại cung tại chỗ (writeFatLine).
+   */
+  readonly ghost = new THREE.Scene();
+  /** Lượt vẽ "bóng" cần chạy (View.frame đọc mỗi khung hình). */
+  ghostOn = false;
+  private ghostRing: THREE.Sprite | null = null;
+  private ghostDot: THREE.Mesh | null = null;
+  private ghostArc: Line2 | null = null;
+  /** Nhãn "Sirius đang ở dưới chân trời (h = −73°)" — trong cảnh chính (nhãn CSS không bị cắt). */
+  private under = new THREE.Group();
+  private underLabel: Label | null = null;
+  private underSel: Selection | undefined = undefined;
+  private underStars: AppState['stars'] | null = null;
+  private underName = '';
+  private underKey = NaN;
+  private uKeyAlt = NaN;
+  private uKeyAz = NaN;
+  private uKeyV = false;
   private sunKey = '';
   private sunRa = 0;
   private sunDec = 0;
@@ -89,7 +115,11 @@ export class HorizonLayer {
     ];
     for (const [key, az] of dirs) {
       const lbl = makeLabel(t(key), 'directions', { cls: 'lbl--dir', hideBelowHorizon: false });
-      lbl.position.copy(horVec(0, az, R * (view === 'horizon' ? 1.1 : 1.07)));
+      const rr = R * (view === 'horizon' ? 1.1 : 1.07);
+      lbl.position.copy(horVec(0, az, rr));
+      // Vị trí thay thế dọc theo đường chân trời (fix-1 G1): chữ B không đè lên vòng chọn quanh Polaris ở khung thiên
+      // cầu — dời sang bên cạnh, vẫn sát điểm hướng của nó. Cố định trong khung chân trời, dựng một lần.
+      lbl.userData.alts = [horVec(0, az + 7, rr), horVec(0, az - 7, rr), horVec(0, az + 14, rr), horVec(0, az - 14, rr), horVec(0, az, rr * 1.12)];
       this.ring.add(lbl);
     }
     this.group.add(this.ring);
@@ -114,6 +144,9 @@ export class HorizonLayer {
       this.zenith.add(dot);
       const lbl = makeLabel(t(sign > 0 ? 'scene.zenith' : 'scene.nadir'), 'poles', { color: '#f8fafc' });
       lbl.position.set(0, sign * R * 1.07, 0);
+      // Vị trí thay thế dọc theo đường thiên đỉnh (fix-1 G1): khi quá sát chữ hướng (khung thiên cầu: "Thiên đỉnh"
+      // ngay cạnh "T"), nhãn lùi vào trong theo đường đứt nét thay vì chen sát.
+      lbl.userData.alts = [new THREE.Vector3(0, sign * R * 0.9, 0), new THREE.Vector3(0, sign * R * 0.78, 0), new THREE.Vector3(0, sign * R * 1.2, 0)];
       this.zenith.add(lbl);
     }
     const zLine = fatLine([new THREE.Vector3(0, view === 'horizon' ? 0 : 0.3 * R, 0), new THREE.Vector3(0, R, 0)], COLORS.zenith, {
@@ -159,10 +192,53 @@ export class HorizonLayer {
     this.azArc.userData.tip = 'azimuthArc';
     this.altLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.vertical });
     this.azLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.azimuth, hideBelowHorizon: false });
+    // Vị trí thay thế (ghi lại khi A đổi): nhãn "A = …" né hình người quan sát (vật cản, fix-1 G1) — sang hai bên
+    // cung, rồi xa hơn theo hướng giữa cung.
+    this.azLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.azGroup.add(this.azArc, this.azLabel);
     this.azGroup.visible = view === 'horizon';
     this.vertical.add(this.verticalLine, this.altArc, this.altLabel, this.azGroup);
     this.group.add(this.vertical);
+
+    if (view === 'horizon') {
+      // Dấu "bóng" của đối tượng chọn khuất dưới mặt đất (fix-1 #2): không kiểm tra chiều sâu — vẽ xuyên qua đĩa.
+      const ring = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: ringTexture('#ffffff', true),
+          transparent: true,
+          opacity: GHOST_OPACITY,
+          depthTest: false,
+          depthWrite: false,
+          sizeAttenuation: false,
+        }),
+      );
+      ring.scale.setScalar(SEL_RING_SCALE);
+      ring.renderOrder = 2;
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(R * 0.012, 10, 8),
+        new THREE.MeshBasicMaterial({ color: COLORS.zenith, transparent: true, opacity: GHOST_OPACITY, depthTest: false, depthWrite: false }),
+      );
+      dot.renderOrder = 1;
+      const arc = dynamicFatLine(46, COLORS.vertical, {
+        width: 3,
+        opacity: GHOST_OPACITY,
+        dashed: true,
+        dashSize: R * 0.025,
+        gapSize: R * 0.025,
+        depthTest: false,
+        boundsRadius: bounds,
+      });
+      this.ghost.add(arc, dot, ring);
+      this.ghostRing = ring;
+      this.ghostDot = dot;
+      this.ghostArc = arc;
+      const lbl = makeLabel('', 'angles', { cls: 'lbl--under', edge: COLORS.vertical, anchor: [-0.1, 0.5], hideBelowHorizon: false, rank: 1, must: true });
+      lbl.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+      this.underLabel = lbl;
+      this.under.add(lbl);
+      this.under.visible = false;
+      this.group.add(this.under);
+    }
 
     // Góc giữa xích đạo trời và chân trời (trong mặt phẳng kinh tuyến)
     this.angleSector = new THREE.Mesh(new THREE.BufferGeometry(), translucent(COLORS.angle, 0.28));
@@ -253,7 +329,66 @@ export class HorizonLayer {
     this.grid.visible = tg.altAzGrid;
     this.angle.visible = isHorizon && (tg.angle || emphasis === 'incl');
     this.poleAlt.visible = isHorizon && (tg.poleAltitude || emphasis === 'pole');
-    this.updateVertical(s, emphasis === 'az' || emphasis === 'alt' || emphasis === 'altaz');
+    const obj = this.selectedRaDec(s);
+    const hor = obj ? equatorialToHorizontalInto(obj.ra, obj.dec, s.lat, lstOf(s), _hor) : null;
+    this.updateVertical(s, hor, emphasis === 'az' || emphasis === 'alt' || emphasis === 'altaz');
+    this.updateUnder(s, hor);
+  }
+
+  /**
+   * Đối tượng chọn dưới chân trời khi mặt dưới bị cắt (fix-1 #2): dấu "bóng" và nhãn cảnh báo. Không cấp phát mỗi
+   * lần gọi: tên chỉ tra lại khi lựa chọn đổi; chữ nhãn chỉ dựng lại khi số độ nguyên của h đổi.
+   */
+  private updateUnder(s: AppState, hor: Horizontal | null): void {
+    const lbl = this.underLabel;
+    if (!lbl) return;
+    const on = !!hor && hor.alt < 0 && !s.toggles.underside;
+    this.ghostOn = on;
+    this.under.visible = on;
+    if (!on || !hor) {
+      this.uKeyAlt = NaN;
+      return;
+    }
+    const R = this.R;
+    const { alt, az } = hor;
+    // Bỏ qua khi không có gì đổi đáng kể (0,001°, như đường thẳng đứng): đối tượng chọn, h, A, hộp kiểm đường thẳng đứng.
+    const altK = Math.round(alt * 1000);
+    const azK = Math.round(az * 1000);
+    const vOn = s.toggles.verticalCircle;
+    if (altK === this.uKeyAlt && azK === this.uKeyAz && vOn === this.uKeyV && s.selected === this.underSel && s.stars === this.underStars) return;
+    this.uKeyAlt = altK;
+    this.uKeyAz = azK;
+    this.uKeyV = vOn;
+    const star = horVec(alt, az, R, _star);
+    this.ghostRing!.position.copy(star);
+    this.ghostDot!.position.copy(star);
+    // Cung h đứt nét: chỉ khi đường thẳng đứng đang bật (cùng hộp kiểm với cung h liền nét phía trên chân trời).
+    const arc = this.ghostArc!;
+    arc.visible = vOn;
+    if (arc.visible) {
+      const foot = horVec(0, az, 1, _foot);
+      writeFatLine(arc, _pts, greatArcInto(foot, horVec(alt, az, 1, _a), R * 1.002, Math.max(4, Math.ceil(-alt / 2)), _pts));
+    }
+    // Nhãn: cạnh dấu bóng; thay thế ở chân cung trên đường chân trời (trong và ngoài vành), rồi giữa cung.
+    lbl.position.copy(star);
+    const alts = lbl.userData.alts!;
+    horVec(0, az, R * 0.86, alts[0]);
+    horVec(0, az, R * 1.14, alts[1]);
+    horVec(alt / 2, az, R, alts[2]);
+    if (s.selected !== this.underSel || s.stars !== this.underStars) {
+      this.underSel = s.selected;
+      this.underStars = s.stars;
+      this.underName = resolveSelection(s)?.name ?? '';
+      this.underKey = NaN;
+    }
+    // Khóa chữ: số độ nguyên của h; sát chân trời (|h| < 0,95°) dùng một chữ số thập phân để không ghi "h = 0°" (và
+    // không nhỏ hơn 0,1° để dấu âm luôn hiện).
+    const near = alt > -0.95;
+    const key = near ? 1000 + Math.round(alt * 10) : Math.round(alt);
+    if (key !== this.underKey) {
+      this.underKey = key;
+      setLabelText(lbl, t('scene.belowHorizon', { name: this.underName, h: near ? fmtDegSigned(Math.min(alt, -0.1), 1) : fmtDegSigned(key, 0) }));
+    }
   }
 
   /**
@@ -294,15 +429,14 @@ export class HorizonLayer {
   }
 
   /** Cập nhật đường thẳng đứng theo vị trí hiện tại của đối tượng đang chọn. */
-  updateVertical(s: AppState, preview = false): void {
+  private updateVertical(s: AppState, hor: Horizontal | null, preview = false): void {
     const on = s.toggles.verticalCircle || preview;
-    const obj = on ? this.selectedRaDec(s) : null;
-    this.vertical.visible = !!obj;
-    if (!obj) {
+    this.vertical.visible = on && !!hor;
+    if (!on || !hor) {
       this.vKeyOn = false;
       return;
     }
-    const { alt, az } = equatorialToHorizontal(obj.ra, obj.dec, s.lat, lstOf(s));
+    const { alt, az } = hor;
     // Bỏ qua khi không có gì đổi đáng kể (0,001°): selection, danh sách sao, h, A, bật/tắt.
     const altK = Math.round(alt * 1000);
     const azK = Math.round(az * 1000);
@@ -333,7 +467,13 @@ export class HorizonLayer {
       _pts[i * 3 + 2] = _a.z;
     }
     writeFatLine(this.azArc, _pts, steps + 1);
-    horVec(0, az / 2, rr * (this.view === 'horizon' ? 1.25 : 1.05), this.azLabel.position);
+    const rl = rr * (this.view === 'horizon' ? 1.25 : 1.05);
+    horVec(0, az / 2, rl, this.azLabel.position);
+    const aAlts = this.azLabel.userData.alts!;
+    horVec(0, az / 2 + 30, rl, aAlts[0]);
+    horVec(0, az / 2 - 30, rl, aAlts[1]);
+    horVec(0, az / 2, rl * 1.6, aAlts[2]);
+    horVec(0, az / 2 + 180, rl * 0.6, aAlts[3]);
     setLabelText(this.azLabel, `A = ${fmtDeg(az, 1)}`);
   }
 

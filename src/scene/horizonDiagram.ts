@@ -6,7 +6,7 @@ import { sunJd } from '../selection';
 import { lstOf, type AppState, type Store } from '../state';
 import { horVec } from './frames';
 import { COLORS, polylineToSegments, thinSegments } from './geom';
-import { SKY_RADIUS, View } from './view';
+import { SKY_RADIUS, View, type KeepOutBox } from './view';
 
 const NIGHT = new THREE.Color('#050913');
 const TWILIGHT = new THREE.Color('#141f3d');
@@ -20,6 +20,16 @@ const PORTRAIT_SHIFT = 0.06;
 const DEG = Math.PI / 180;
 /** Hạn chờ tối đa cho lần rảnh trước khi tải mô hình người quan sát. */
 const IDLE_OPTS: IdleRequestOptions = { timeout: 4000 };
+/** Chiều cao (phần R) của hình nhân đơn giản và của mô hình glTF — đỉnh vùng giữ trống quanh người quan sát. */
+const FIGURE_TOP = 0.095;
+const MODEL_TOP = 0.21;
+/**
+ * Bề rộng vùng giữ trống theo chiều cao hình người quan sát trên màn hình: mô hình cầm kính và tấm biển chìa ra hai
+ * bên ~0,6 chiều cao (đo trên ảnh 1440 và 1920); hướng quay của mô hình đổi theo bán cầu nên vùng đối xứng.
+ */
+const KEEP_OUT_W = 1.2;
+const _kb = new THREE.Vector3();
+const _kt = new THREE.Vector3();
 
 export class HorizonDiagramView extends View {
   private ground: THREE.Mesh;
@@ -41,6 +51,8 @@ export class HorizonDiagramView extends View {
   private modelVersion = 0;
   /** Hàm hẹn tải dựng sẵn một lần — frame() không tạo closure. */
   private readonly startModelLoad = (): void => this.loadObserverModel();
+  /** Đỉnh hình người quan sát (đơn vị cảnh) — đổi khi mô hình glTF thay hình nhân. */
+  private personTop = FIGURE_TOP * SKY_RADIUS;
 
   constructor(container: HTMLElement, store: Store) {
     const R = SKY_RADIUS;
@@ -151,6 +163,7 @@ export class HorizonDiagramView extends View {
             });
             this.person.clear();
             this.person.add(model);
+            this.personTop = MODEL_TOP * this.R;
             // Đích rê chuột được giữ sẵn theo phiên bản cấu trúc: tăng để danh sách lấy lưới của mô hình mới.
             this.modelVersion++;
             this.dirty = true;
@@ -178,6 +191,27 @@ export class HorizonDiagramView extends View {
       else window.setTimeout(this.startModelLoad, 500);
     }
     return drew;
+  }
+
+  /**
+   * Vùng giữ trống quanh hình người quan sát (fix-1 G1): nhãn "A = …" của sao gần hướng Bắc (Polaris, A ≈ 0,6°) từng
+   * nằm đè lên người. Chiếu chân và đỉnh đầu ra màn hình; không cấp phát.
+   */
+  protected keepOut(out: KeepOutBox, W: number, H: number): boolean {
+    if (!this.person.visible) return false;
+    _kb.set(0, 0, 0).project(this.camera);
+    _kt.set(0, this.personTop, 0).project(this.camera);
+    if (_kb.z > 1 || _kt.z > 1) return false;
+    const bx = ((_kb.x + 1) / 2) * W;
+    const by = ((1 - _kb.y) / 2) * H;
+    const ty = ((1 - _kt.y) / 2) * H;
+    const h = Math.max(8, by - ty);
+    const w = Math.max(16, h * KEEP_OUT_W);
+    out.x = bx - w / 2;
+    out.y = ty;
+    out.w = w;
+    out.h = h;
+    return true;
   }
 
   protected clipBelow(s: AppState): boolean {

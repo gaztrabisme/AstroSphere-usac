@@ -286,10 +286,33 @@ export abstract class View implements QualityTarget {
     this.scene.updateMatrixWorld();
     this.updateLabels(s);
     this.renderer.render(this.scene, this.camera);
+    if (this.horizon.ghostOn) this.renderGhost();
     this.labelRenderer.render(this.scene, this.camera);
     this.dirty = false;
     this.measureLabels();
     return true;
+  }
+
+  /**
+   * Lượt vẽ thứ hai cho dấu "bóng" của đối tượng chọn khuất dưới chân trời (HorizonLayer.ghost, fix-1 #2): không
+   * mặt phẳng cắt, không xóa khung. Cảnh "bóng" chỉ có ba đối tượng không kiểm tra chiều sâu; không cấp phát.
+   */
+  private renderGhost(): void {
+    const r = this.renderer;
+    const planes = r.clippingPlanes;
+    r.clippingPlanes = NO_PLANES;
+    r.autoClear = false;
+    r.render(this.horizon.ghost, this.camera);
+    r.autoClear = true;
+    r.clippingPlanes = planes;
+  }
+
+  /**
+   * Vùng giữ trống (px, góc trên trái) mà nhãn phải né — lớp con ghi vào `out` và trả về true (giản đồ chân trời:
+   * hình người quan sát, fix-1 G1). Mặc định không có.
+   */
+  protected keepOut(_out: KeepOutBox, _W: number, _H: number): boolean {
+    return false;
   }
 
   /**
@@ -315,9 +338,9 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      // +1: chỗ cho vật cản vòng chọn (pushObstacle).
-      this.boxLabel.length = list.length + 1;
-      this.boxes.ensure(list.length + 1);
+      // +2: chỗ cho vật cản vòng chọn (pushObstacle) và vùng giữ trống (keepOut).
+      this.boxLabel.length = list.length + 2;
+      this.boxes.ensure(list.length + 2);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
@@ -347,12 +370,26 @@ export abstract class View implements QualityTarget {
       lbl.visible = vis;
       if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
-    // Thứ tự giữ chỗ (review-3 D2): chữ hướng B/N/Đ/T trước tiên — không bao giờ bị che; rồi nhãn số đo của nhóm
-    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi thiên cực/thiên
-    // đỉnh (review-4 D2); rồi đối tượng đang chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
+    // Thứ tự giữ chỗ (review-3 D2, fix-1 G1): trước tiên là các vật cản — vòng chọn và hình người quan sát; rồi chữ
+    // hướng B/N/Đ/T — không bao giờ bị ẩn, nhưng né vật cản bằng các vị trí thay thế dọc chân trời (chữ B không đè vòng
+    // quanh Polaris) và đòi một vùng đệm để nhãn khác không chen sát ("Thiên đỉnh" cạnh "T"); rồi nhãn số đo của nhóm
+    // đang tô sáng (dời dọc theo cung nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi thiên cực/thiên đỉnh
+    // (review-4 D2); rồi đối tượng đang chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng. Nhãn tự neo quanh
+    // vòng chọn (tô sáng, thiên cực, đối tượng chọn) là `soft`: không né vật cản.
+    if (this.sky.selRingWorld(_v)) this.pushObstacle(_v, this.selRingPx(), W, H);
+    if (this.keepOut(_ko, W, H)) {
+      const k = boxes.n;
+      this.boxLabel[k] = null;
+      boxes.push(_ko.x, _ko.y, _ko.w, _ko.h, false);
+      boxes.must[k] = 1;
+      boxes.solid[k] = 1;
+    }
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
-      if (lbl.userData.group === 'directions' && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
+      if (lbl.userData.group !== 'directions' || !lbl.visible || !ancestorsVisible(lbl)) continue;
+      const h = lbl.userData.h || EST_H;
+      const k = this.pushBox(lbl, W, H, true, 0, Math.round(h * DIR_PAD_K));
+      if (k >= 0) boxes.must[k] = 1;
     }
     const em = this.emGroup;
     if (em !== null) {
@@ -360,7 +397,10 @@ export abstract class View implements QualityTarget {
         const lbl = list[i];
         if (lbl.userData.emph !== em || !lbl.visible || !ancestorsVisible(lbl)) continue;
         const k = this.pushBox(lbl, W, H, true, 0, FOCUS_PAD);
-        if (k >= 0) boxes.must[k] = 1;
+        if (k >= 0) {
+          boxes.must[k] = 1;
+          boxes.soft[k] = 1;
+        }
       }
     }
     // Tên thiên cực / thiên đỉnh (nhóm poles) giữ chỗ trước tên đối tượng đang chọn: khi đối tượng chọn là Polaris,
@@ -369,22 +409,27 @@ export abstract class View implements QualityTarget {
       const lbl = list[i];
       const ud = lbl.userData;
       if (ud.group !== 'poles' || lbl === sel || !lbl.visible || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
-      this.pushBox(lbl, W, H, true);
+      const k = this.pushBox(lbl, W, H, true);
+      if (k >= 0) boxes.soft[k] = 1;
     }
-    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
-    // Vòng chọn là vật cản cho nhãn hạng ≥ 20 (tên vòng, tên sao, tên chòm): không nhãn nào chen vào vòng quanh đối
-    // tượng đang chọn — thường là thiên cực, nơi đường nối chòm sao và tên dày nhất (review-4 D2). Đặt sau nhãn hạng
-    // cao (chữ hướng, thiên đỉnh, thiên cực) để vòng không bao giờ đẩy chúng đi.
-    let ringDone = !this.sky.selRingWorld(_v);
+    if (sel && !(em !== null && sel.userData.emph === em)) {
+      const k = this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+      if (k >= 0) boxes.soft[k] = 1;
+    }
+    // Các nhãn còn lại theo hạng; vòng chọn (đã đặt ở trên) là vật cản cho chúng — không nhãn nào chen vào vòng quanh
+    // đối tượng đang chọn, thường là thiên cực, nơi đường nối chòm sao và tên dày nhất (review-4 D2).
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       const ud = lbl.userData;
       if (lbl === sel || !lbl.visible || ud.group === 'directions' || ud.group === 'poles' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
-      if (!ringDone && ud.rank >= 20) {
-        ringDone = true;
-        this.pushObstacle(_v, this.selRingPx(), W, H);
+      // Nhãn `must` (cảnh báo "dưới chân trời", neo vào dấu bóng của đối tượng chọn): đặt ra ngoài vòng như tên đối
+      // tượng chọn — bên phải, trái, trên, dưới vòng, rồi các vị trí thay thế của nó.
+      const must = ud.must;
+      const k = this.pushBox(lbl, W, H, ud.rank < 20, must ? this.selRingPx() : 0, ud.clear);
+      if (k >= 0 && must) {
+        boxes.must[k] = 1;
+        boxes.soft[k] = 1;
       }
-      this.pushBox(lbl, W, H, ud.rank < 20, 0, ud.clear);
     }
     declutter(boxes, W, H);
     for (let k = 0; k < boxes.n; k++) {
@@ -468,6 +513,7 @@ export abstract class View implements QualityTarget {
     this.boxLabel[k] = null;
     boxes.push(sx - r, sy - r, 2 * r, 2 * r, false);
     boxes.must[k] = 1;
+    boxes.solid[k] = 1;
   }
 
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
@@ -626,6 +672,24 @@ export abstract class View implements QualityTarget {
 /** Trình chiếu: hệ số độ dài nét và khe của đường đứt nét (nét 1,6×, khe 0,5× → tỉ lệ nét/khe tăng ~3 lần). */
 const PRESENT_DASH_K = 1.6;
 const PRESENT_GAP_K = 0.5;
+
+/** Mặt phẳng cắt rỗng cho lượt vẽ "bóng" (gán lại cùng tham chiếu, không cấp phát). */
+const NO_PLANES: THREE.Plane[] = [];
+
+/** Hộp vùng giữ trống (px, góc trên trái). */
+export interface KeepOutBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const _ko: KeepOutBox = { x: 0, y: 0, w: 0, h: 0 };
+
+/**
+ * Vùng đệm quanh chữ hướng B/N/Đ/T, theo chiều cao chữ (fix-1 G1): ở khung thiên cầu "Thiên đỉnh" từng nằm ngay
+ * cạnh "T" và đọc thành một cụm "T Thiên đỉnh". Một nửa chiều cao chữ ≈ 10 px thường, ≈ 20 px khi trình chiếu.
+ */
+const DIR_PAD_K = 0.4;
 
 /** Vùng đệm (px) quanh nhãn số đo đang tô sáng và nhãn đối tượng đang chọn: tên hạng thấp không chen sát. */
 const FOCUS_PAD = 8;

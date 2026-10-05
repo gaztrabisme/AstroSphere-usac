@@ -414,6 +414,7 @@
     "galactic": "Xích đạo thiên hà",
     "galacticCenter": "Galactic Center",
     "sun": "Sun",
+    "belowHorizon": "{name} đang ở dưới chân trời (h = {h})",
     "dirN": "B",
     "dirE": "Đ",
     "dirS": "N",
