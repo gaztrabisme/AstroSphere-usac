@@ -97,6 +97,83 @@ const ctx = await newContext(1440, 900);
   check('formulas render with KaTeX; diagram present', (await page.locator('.cdx-page .katex').count()) > 0 && (await page.locator('.cdx-page svg.cdx-svg').count()) === 1);
   await page.screenshot({ path: `${SHOTS}codex-1440.png` });
 
+  // fix-1 (review-1 #6): ba trạng thái có dấu riêng, không dựa vào màu.
+  const marks = await page.evaluate(() => {
+    const st = (s) => [...document.querySelectorAll(`.cdx-item[data-state=${s}]`)];
+    const shape = (el) => el?.querySelector('.cdx-item__mark svg')?.innerHTML.replace(/\s+/g, ' ') ?? '';
+    const locked = st('locked');
+    return {
+      locked: locked.length,
+      newer: st('new').length,
+      read: st('read').length,
+      all: document.querySelectorAll('.cdx-item[data-state]').length,
+      shapes: new Set([shape(locked[0]), shape(st('new')[0]), shape(st('read')[0])]).size,
+      lockedText: locked[0]?.querySelector('.cdx-item__state')?.textContent,
+      newText: st('new')[0]?.querySelector('.cdx-item__state')?.textContent,
+      newVisible: st('new')[0] ? getComputedStyle(st('new')[0].querySelector('.cdx-item__state')).width !== '1px' : false,
+      lockIcon: !!locked[0]?.querySelector('.cdx-item__mark svg rect'),
+    };
+  });
+  check('fix-1: every entry carries data-state; locked, new and read all present', marks.all === dom.items && marks.locked > 30 && marks.newer >= 1 && marks.read >= 2, JSON.stringify(marks));
+  check('fix-1: the three states use three different glyphs (lock, filled dot, check)', marks.shapes === 3 && marks.lockIcon, `shapes=${marks.shapes}`);
+  check('fix-1: undiscovered entries say "chưa khám phá" to assistive tech; new entries show "mới"', marks.lockedText === 'chưa khám phá' && marks.newText === 'mới' && marks.newVisible, JSON.stringify({ l: marks.lockedText, n: marks.newText, v: marks.newVisible }));
+
+  // fix-1: "mới" và thanh tiến độ không dùng cam (cam chỉ cho thứ bấm được); tương phản ≥ 4,5:1.
+  const colours = await page.evaluate(() => {
+    const lum = (c) => {
+      const [r, g, b] = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map((v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (a, b) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const tag = document.querySelector('.cdx-item[data-state=new] .cdx-item__state');
+    const dot = document.querySelector('.cdx-item[data-state=new] .cdx-item__mark');
+    const ts = getComputedStyle(tag);
+    const navBg = getComputedStyle(document.querySelector('.cdx-nav')).backgroundColor;
+    const fill = getComputedStyle(document.querySelector('.cdx-progress__bar'), '::before').backgroundColor;
+    return {
+      list: [ts.color, ts.borderTopColor, ts.backgroundColor, getComputedStyle(dot).color, fill, getComputedStyle(document.querySelector('.cdx-progress__text')).color],
+      tagContrast: ratio(ts.color, navBg),
+      lockedContrast: ratio(getComputedStyle(document.querySelector('.cdx-item[data-state=locked]')).color, navBg),
+    };
+  });
+  check('fix-1: no orange on the "mới" tag, its dot or the progress bar', !colours.list.some((c) => c.replace(/\s/g, '').startsWith('rgb(242,101,34') || c.replace(/\s/g, '').startsWith('rgba(242,101,34')), colours.list.join(' | '));
+  check('fix-1: "mới" tag and dimmed entries keep ≥ 4,5:1 contrast', colours.tagContrast >= 4.5 && colours.lockedContrast >= 4.5, `mới ${colours.tagContrast.toFixed(2)}:1, locked ${colours.lockedContrast.toFixed(2)}:1`);
+
+  // fix-1: mọi mục có hình đầu trang (sơ đồ khái niệm hoặc ảnh bầu trời từ dữ liệu thật).
+  const visuals = {};
+  for (const id of ['sphere', 'meridian', 'latPole', 'magnitude', 'deepSky', 'constellations', 'canopus', 'cru', 'm42', 'ori']) {
+    await page.evaluate((id) => document.querySelector(`.cdx-item[data-entry=${id}]`).click(), id);
+    visuals[id] = await page.evaluate(() => {
+      const svg = document.querySelector('.cdx-page .cdx-figure svg[role=img]');
+      return svg ? { label: (svg.getAttribute('aria-label') ?? '').length, marks: svg.querySelectorAll('circle, path, line, ellipse').length } : null;
+    });
+  }
+  const missing = Object.entries(visuals).filter(([, v]) => !v || v.label < 20 || v.marks < 3);
+  check('fix-1: header visual with an accessible name on concept, star, constellation and deep-sky entries', missing.length === 0, missing.length ? JSON.stringify(missing) : Object.keys(visuals).join(', '));
+  const sky = await page.evaluate(() => document.querySelectorAll('.cdx-figure .cdx-svg__field circle').length);
+  check('fix-1: star-pattern thumbnails draw real catalogue stars', sky > 15, `field stars in the last thumbnail: ${sky}`);
+
+  // fix-1: cột số liệu bên phải trên màn hình rộng. (Vega, không phải Sirius: bước (3) cần Sirius chưa đọc.)
+  await page.locator('.cdx-item[data-entry=vega]').click();
+  await page.waitForTimeout(300);
+  const layout = await page.evaluate(() => {
+    const r = (sel) => document.querySelector(sel)?.getBoundingClientRect();
+    const main = r('.cdx-page__main');
+    const aside = r('.cdx-page__aside');
+    const facts = [...document.querySelectorAll('.cdx-facts dt')].map((e) => e.textContent);
+    const sim = r('.cdx-page__aside .cdx-page__sim .btn');
+    return { mainRight: main.right, asideLeft: aside.left, asideTop: aside.top, mainTop: main.top, facts, sim: !!sim && sim.left >= aside.left };
+  });
+  check('fix-1: wide screens put the facts column to the right of the text', layout.asideLeft >= layout.mainRight && layout.asideTop <= layout.mainTop, JSON.stringify({ mainRight: layout.mainRight, asideLeft: layout.asideLeft }));
+  check('fix-1: star facts list α, δ, magnitude, colour index, constellation and Vietnamese name; the action sits in the column', ['Xích kinh α', 'Xích vĩ δ', 'Cấp sao m', 'Chòm sao', 'Tên tiếng Việt'].every((f) => layout.facts.includes(f)) && layout.sim, layout.facts.join(' · '));
+  await page.screenshot({ path: `${SHOTS}codex-1440-star.png` });
+
   // (7) Esc đóng Codex trước, không bỏ chọn.
   await page.keyboard.press('Escape');
   const afterEsc = await page.evaluate(() => ({ open: document.getElementById('dlg-codex').open, sel: window.__app.store.state.selected }));
@@ -183,6 +260,23 @@ await ctx.close();
   check('375: no horizontal scroll while reading an entry', h2.sw <= h2.iw && reading.pw <= reading.cw + 1, JSON.stringify({ ...h2, pw: reading.pw, cw: reading.cw }));
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOTS}codex-375.png` });
+  // fix-1: một cột ở 375 px — hình đầu trang trước câu dẫn, số liệu sau bài; không cuộn ngang.
+  await page.locator('.cdx-page__back').click();
+  await page.locator('.cdx-item[data-entry=betelgeuse]').click();
+  await page.waitForTimeout(300);
+  const one = await page.evaluate(() => {
+    const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+    const fig = r('.cdx-figure');
+    const lede = r('.cdx-page__lede');
+    const facts = r('.cdx-facts');
+    const body = r('.cdx-page__body');
+    return { figAboveLede: fig.bottom <= lede.top, factsBelowBody: facts.top >= body.bottom, sameColumn: Math.abs(fig.left - lede.left) < 2 && Math.abs(facts.left - lede.left) < 2, sw: document.documentElement.scrollWidth, iw: innerWidth, pw: document.querySelector('.cdx-page').scrollWidth, cw: document.querySelector('.cdx-page').clientWidth };
+  });
+  check('375: one column — header visual above the lede, facts after the text', one.figAboveLede && one.factsBelowBody && one.sameColumn, JSON.stringify(one));
+  check('375: no horizontal scroll on a star entry with facts', one.sw <= one.iw && one.pw <= one.cw + 1, JSON.stringify(one));
+  await page.screenshot({ path: `${SHOTS}codex-375-star.png`, fullPage: false });
+  await page.locator('.cdx-page__back').click();
+  await page.locator('.cdx-item[data-entry=altaz]').click();
   await page.locator('.cdx-page__back').click();
   const back = await page.evaluate(() => ({ nav: getComputedStyle(document.querySelector('.cdx-nav')).display, focus: document.activeElement?.dataset.entry }));
   check('375: back returns to the list and focuses the entry', back.nav !== 'none' && back.focus === 'altaz', JSON.stringify(back));

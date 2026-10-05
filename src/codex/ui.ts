@@ -8,9 +8,12 @@ import content from '../i18n/codex.vi.json';
 import { t } from '../i18n';
 import { h } from '../ui/dom';
 import { renderLines, renderMath } from '../ui/dialogs';
-import { diagramSvg, type DiagramLabels } from './diagrams';
+import { sunEquatorial } from '../selection';
+import type { DiagramEnv, DiagramLabels } from './diagrams';
+import { categoryGlyph, stateGlyph, type EntryState } from './glyphs';
 import { SIM } from './sim';
 import { isDiscovered, isNew, markRead, onCodexChange, type CodexContext } from './triggers';
+import { entryFacts, entryVisual, formulaLines } from './visual';
 
 export interface CodexEntry {
   title: string;
@@ -21,6 +24,14 @@ export interface CodexEntry {
   sim?: string;
   figure?: string;
 }
+
+/** Trạng thái hiển thị: chưa khám phá (ổ khóa) · mới (chấm đặc + "mới") · đã đọc (dấu tích). */
+export function entryState(id: string): EntryState {
+  return !isDiscovered(id) ? 'locked' : isNew(id) ? 'new' : 'read';
+}
+
+const STATE_TEXT = (s: EntryState): string =>
+  s === 'locked' ? t('codexUi.stateLocked') : s === 'new' ? t('codexUi.stateNew') : content.ui.stateRead;
 
 export interface CodexCategory {
   id: string;
@@ -65,11 +76,18 @@ function labels(): DiagramLabels {
 
 function syncMarkers(u: Ui): void {
   for (const [id, btn] of u.items) {
-    const found = isDiscovered(id);
-    btn.classList.toggle('is-locked', !found);
-    btn.classList.toggle('is-new', isNew(id));
-    const state = btn.querySelector<HTMLElement>('.cdx-item__state')!;
-    state.textContent = !found ? t('codexUi.stateLocked') : isNew(id) ? t('codexUi.stateNew') : '';
+    const state = entryState(id);
+    if (btn.dataset.state === state) continue;
+    btn.dataset.state = state;
+    btn.classList.toggle('is-locked', state === 'locked');
+    btn.classList.toggle('is-new', state === 'new');
+    btn.querySelector('.cdx-item__mark')!.innerHTML = stateGlyph(state);
+    btn.querySelector<HTMLElement>('.cdx-item__state')!.textContent = STATE_TEXT(state);
+  }
+  for (const rel of u.page.querySelectorAll<HTMLElement>('.cdx-rel[data-entry]')) {
+    const state = entryState(rel.dataset.entry!);
+    rel.dataset.state = state;
+    rel.classList.toggle('is-locked', state === 'locked');
   }
   for (const c of CATEGORIES) {
     const n = c.entries.filter(isDiscovered).length;
@@ -100,7 +118,11 @@ function build(ctx: CodexContext): Ui {
       return h(
         'section',
         { class: 'cdx-cat', 'aria-labelledby': `cdx-cat-${c.id}` },
-        h('h3', { class: 'cdx-cat__title', id: `cdx-cat-${c.id}` }, h('span', { text: c.title }), count),
+        (() => {
+          const name = h('span', { class: 'cdx-cat__name', text: c.title });
+          name.insertAdjacentHTML('afterbegin', categoryGlyph(c.id));
+          return h('h3', { class: 'cdx-cat__title', id: `cdx-cat-${c.id}` }, name, count);
+        })(),
         h(
           'ul',
           { class: 'cdx-list', role: 'list' },
@@ -177,21 +199,48 @@ function build(ctx: CodexContext): Ui {
       if (k === id) b.setAttribute('aria-current', 'true');
       else b.removeAttribute('aria-current');
     }
-    const found = isDiscovered(id);
+    const state = entryState(id);
+    const found = state !== 'locked';
     const title = h('h3', {
       class: 'cdx-page__title',
       id: 'cdx-page-title',
       tabindex: '-1',
       text: e.title,
     });
-    const figure = e.figure ? diagramSvg(id, labels(), ctx.store.state.lat, e.figure) : null;
-    const fig = figure
+    const s = ctx.store.state;
+    const env: DiagramEnv = { lat: s.lat, sun: sunEquatorial(s), sunDate: s.sunDate };
+    const visual = entryVisual(id, e.figure, labels(), env);
+    const fig = visual
       ? (() => {
-          const f = h('figure', { class: 'cdx-figure' }, h('figcaption', { text: e.figure }));
-          f.insertAdjacentHTML('afterbegin', figure);
+          const f = h('figure', { class: 'cdx-figure', 'data-visual': id }, h('figcaption', { text: visual.caption }));
+          f.insertAdjacentHTML('afterbegin', visual.svg);
           return f;
         })()
       : null;
+    const facts = entryFacts(id, env);
+    const formulas = formulaLines(e.body);
+    const factsBox = facts.length
+      ? h(
+          'section',
+          { class: 'cdx-facts', 'aria-labelledby': 'cdx-facts-h' },
+          h('h4', { class: 'cdx-aside__h', id: 'cdx-facts-h', text: content.ui.factsTitle }),
+          h('dl', null, ...facts.flatMap((f) => [h('dt', { text: f.label }), h('dd', { text: f.value })])),
+          h('p', { class: 'cdx-facts__src', text: id === 'sun' ? content.ui.factsSourceSun : content.ui.factsSource }),
+        )
+      : formulas.length
+        ? (() => {
+            // Thẻ công thức: tóm tắt nhanh ở cột bên trên màn hình rộng. Thân bài vẫn giữ công thức đúng chỗ của
+            // nó trong lời giải thích, nên trên màn hình hẹp thẻ này ẩn đi (không lặp lại).
+            const box = renderLines(formulas);
+            box.className = 'cdx-formulas__body';
+            return h(
+              'section',
+              { class: 'cdx-facts cdx-facts--formula', 'aria-labelledby': 'cdx-facts-h' },
+              h('h4', { class: 'cdx-aside__h', id: 'cdx-facts-h', text: content.ui.formulaTitle }),
+              box,
+            );
+          })()
+        : null;
     const simFn = SIM[id];
     const back = h('button', {
       type: 'button',
@@ -202,23 +251,26 @@ function build(ctx: CodexContext): Ui {
         items.get(id)?.focus();
       },
     });
-    const parts: (Node | null)[] = [
-      back,
-      h('p', { class: 'cdx-page__kicker', text: cat.title }),
-      title,
-      e.aka ? h('p', { class: 'cdx-page__aka', text: e.aka }) : null,
-      h('p', {
-        class: `cdx-page__state${found ? '' : ' is-locked'}`,
-        text: found ? (wasNew ? t('codexUi.pageNew') : t('codexUi.pageFound')) : t('codexUi.pageLocked'),
-      }),
+    const stateLine = h('p', { class: `cdx-page__state${found ? '' : ' is-locked'}`, 'data-state': state });
+    stateLine.insertAdjacentHTML('afterbegin', stateGlyph(state));
+    stateLine.append(h('span', { text: found ? (wasNew ? t('codexUi.pageNew') : t('codexUi.pageFound')) : t('codexUi.pageLocked') }));
+    const kicker = h('p', { class: 'cdx-page__kicker' }, h('span', { text: cat.title }));
+    kicker.insertAdjacentHTML('afterbegin', categoryGlyph(cat.id));
+    const head = h('header', { class: 'cdx-page__head' }, back, kicker, title, e.aka ? h('p', { class: 'cdx-page__aka', text: e.aka }) : null, stateLine);
+    const main = h(
+      'div',
+      { class: 'cdx-page__main' },
       h('p', { class: 'cdx-page__lede', text: e.lede }),
       h('hr', { class: 'cdx-page__rule' }),
-      fig,
       (() => {
         const body = renderLines(e.body);
         body.className = 'cdx-page__body';
         return body;
       })(),
+    );
+    const asideParts: (Node | null)[] = [
+      fig,
+      factsBox,
       simFn
         ? h(
             'div',
@@ -247,27 +299,34 @@ function build(ctx: CodexContext): Ui {
         ? h(
             'section',
             { class: 'cdx-page__related', 'aria-labelledby': 'cdx-related-h' },
-            h('h4', { id: 'cdx-related-h', text: t('codexUi.related') }),
+            h('h4', { class: 'cdx-aside__h', id: 'cdx-related-h', text: t('codexUi.related') }),
             h(
               'ul',
               { role: 'list' },
-              ...e.related.map((r) =>
-                h(
-                  'li',
-                  null,
-                  h('button', {
+              ...e.related.map((r) => {
+                const rs = entryState(r);
+                const b = h(
+                  'button',
+                  {
                     type: 'button',
-                    class: `cdx-rel${isDiscovered(r) ? '' : ' is-locked'}`,
-                    text: ENTRIES[r]?.title ?? r,
+                    class: `cdx-rel${rs === 'locked' ? ' is-locked' : ''}`,
+                    'data-entry': r,
+                    'data-state': rs,
                     onclick: () => show(r, { focus: 'page' }),
-                  }),
-                ),
-              ),
+                  },
+                  h('span', { class: 'cdx-rel__mark', 'aria-hidden': 'true' }),
+                  h('span', { text: ENTRIES[r]?.title ?? r }),
+                  h('span', { class: 'sr-only', text: `, ${STATE_TEXT(rs)}` }),
+                );
+                b.firstElementChild!.innerHTML = stateGlyph(rs);
+                return h('li', null, b);
+              }),
             ),
           )
         : null,
     ];
-    page.replaceChildren(...parts.filter((p): p is Node => p !== null));
+    const aside = h('aside', { class: 'cdx-page__aside', 'aria-label': content.ui.asideTitle }, ...asideParts.filter((p): p is Node => p !== null));
+    page.replaceChildren(h('div', { class: 'cdx-page__in' }, head, main, aside));
     page.setAttribute('aria-labelledby', 'cdx-page-title');
     renderMath(page);
     page.scrollTop = 0;

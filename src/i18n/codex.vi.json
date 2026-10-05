@@ -54,7 +54,51 @@
     "vernal": "γ",
     "circumpolar": "Không bao giờ lặn",
     "riseSet": "Mọc và lặn",
-    "neverRise": "Không bao giờ mọc"
+    "neverRise": "Không bao giờ mọc",
+    "nadir": "Thiên để",
+    "poleN": "Thiên cực Bắc",
+    "poleS": "Thiên cực Nam",
+    "meridian": "Kinh tuyến",
+    "diurnalNote": "Mọc ở Đông, lặn ở Tây",
+    "rise": "Mọc",
+    "set": "Lặn",
+    "toStar": "Tới sao xa",
+    "toSun": "Tới Mặt Trời",
+    "siderealDay": "Ngày thiên văn (so với sao): 23h 56m 04s",
+    "solarDay": "Ngày Mặt Trời: 24h",
+    "galacticCenter": "Tâm Ngân Hà",
+    "milkyWay": "Ngân Hà",
+    "brighter": "Sáng hơn",
+    "fainter": "Mờ hơn",
+    "hotter": "Nóng, xanh",
+    "cooler": "Nguội, đỏ",
+    "sun": "Mặt Trời",
+    "galaxy": "Thiên hà",
+    "nebula": "Tinh vân",
+    "cluster": "Cụm sao",
+    "summer": "≈ 21/6",
+    "equinox": "≈ 20/3 · 23/9",
+    "winter": "≈ 22/12"
+  },
+  "ui": {
+    "factsTitle": "Số liệu",
+    "formulaTitle": "Công thức",
+    "mag": "Cấp sao m",
+    "bv": "Chỉ số màu B − V",
+    "type": "Loại",
+    "date": "Ngày đang chọn",
+    "code": "Mã IAU",
+    "figStars": "Số sao trong hình",
+    "brightest": "Sao sáng nhất",
+    "decRange": "Dải xích vĩ",
+    "stateRead": "đã đọc",
+    "capStar": "{name} (vòng tròn) giữa các sao sáng lân cận, nhìn như khi ngẩng lên trời: Bắc ở trên, Đông bên trái. Chấm càng to sao càng sáng; màu chấm theo chỉ số màu B − V.",
+    "capFigure": "Nét nối là hình chòm {con}.",
+    "capConstellation": "Hình chòm {con} vẽ từ vị trí thật của các sao, nhìn như khi ngẩng lên trời: Bắc ở trên, Đông bên trái. Chấm càng to sao càng sáng.",
+    "capDso": "{name} (vòng tròn, đúng kích thước biểu kiến) giữa các sao sáng lân cận: Bắc ở trên, Đông bên trái. Chấm càng to sao càng sáng.",
+    "asideTitle": "Hình minh họa và số liệu",
+    "factsSource": "Nguồn: danh mục sao của mô phỏng (HYG, Hipparcos); số liệu có thể lệch chút ít so với số làm tròn trong bài.",
+    "factsSourceSun": "Vị trí tính cho ngày đang chọn trong mô phỏng."
   },
   "entries": {
     "sphere": {
@@ -67,7 +111,8 @@
         "Trong khung **Thiên cầu**, Trái Đất được vẽ to hơn thực tế rất nhiều để bạn thấy người quan sát đứng ở đâu. Thực ra so với thiên cầu, Trái Đất chỉ là một điểm."
       ],
       "related": ["horizon", "pole", "equator", "diurnal"],
-      "sim": "Bật chân trời, xích đạo trời và trục thiên cực trên thiên cầu."
+      "sim": "Bật chân trời, xích đạo trời và trục thiên cực trên thiên cầu.",
+      "figure": "Thiên cầu quanh bạn: chân trời (xanh lá), xích đạo trời (vàng) và trục thiên cực (xanh dương). Nửa sau quả cầu vẽ nét đứt."
     },
     "horizon": {
       "title": "Chân trời",
@@ -79,7 +124,8 @@
         "Bật **Mặt dưới chân trời** để mặt đất trở nên trong suốt: các sao vẫn tiếp tục đi dưới chân bạn, chỉ là bạn không thấy chúng."
       ],
       "related": ["zenith", "altaz", "sphere", "riseSetZone"],
-      "sim": "Bật chân trời trên thiên cầu và cho mặt đất trong suốt."
+      "sim": "Bật chân trời trên thiên cầu và cho mặt đất trong suốt.",
+      "figure": "Mặt phẳng chân trời (xanh lá) chia thiên cầu thành nửa trên nhìn thấy được và nửa dưới bị mặt đất che; thiên đỉnh ở ngay trên đầu. B, Đ, N, T là bốn hướng chính."
     },
     "zenith": {
       "title": "Thiên đỉnh và thiên để",
@@ -91,7 +137,8 @@
         "Ở xích đạo Trái Đất, xích đạo trời đi qua thiên đỉnh. Ở Bắc Cực, thiên đỉnh trùng với thiên cực Bắc."
       ],
       "related": ["horizon", "altaz", "meridian"],
-      "sim": "Bật thiên đỉnh và thiên để."
+      "sim": "Bật thiên đỉnh và thiên để.",
+      "figure": "Thiên đỉnh (h = +90°) ở ngay trên đầu, thiên để (h = −90°) ở ngay dưới chân; đường nối hai điểm vuông góc với chân trời."
     },
     "pole": {
       "title": "Thiên cực",
@@ -103,7 +150,8 @@
         "Một ngôi sao càng gần thiên cực thì vòng tròn nó vạch ra mỗi ngày càng nhỏ. Sao nằm đúng thiên cực thì gần như đứng yên."
       ],
       "related": ["latPole", "polaris", "diurnal", "equator"],
-      "sim": "Bật trục thiên cực và làm nổi bật độ cao thiên cực."
+      "sim": "Bật trục thiên cực và làm nổi bật độ cao thiên cực.",
+      "figure": "Trục thiên cực (xanh dương) đi qua chỗ bạn đứng, cắt thiên cầu ở thiên cực Bắc và thiên cực Nam; bầu trời quay quanh trục này."
     },
     "equator": {
       "title": "Xích đạo trời",
@@ -115,7 +163,8 @@
         "Trong mô phỏng, xích đạo trời có màu vàng. Mặt phẳng chứa nó nghiêng so với chân trời một góc \\(90^\\circ - |\\varphi|\\)."
       ],
       "related": ["radec", "eqAngle", "pole", "ori"],
-      "sim": "Bật xích đạo trời và mặt phẳng của nó."
+      "sim": "Bật xích đạo trời và mặt phẳng của nó.",
+      "figure": "Xích đạo trời (vàng, δ = 0°) là vòng lớn vuông góc với trục thiên cực (xanh dương), cách đều hai thiên cực."
     },
     "meridian": {
       "title": "Kinh tuyến thiên cầu",
@@ -127,7 +176,8 @@
         "Mặt Trời qua kinh tuyến trên lúc **giữa trưa** theo giờ Mặt Trời địa phương. Chữ \"meridian\" trong tiếng Latin nghĩa là \"giữa ngày\"."
       ],
       "related": ["transit", "hourAngle", "lst", "zenith"],
-      "sim": "Bật kinh tuyến và làm nổi bật nó."
+      "sim": "Bật kinh tuyến và làm nổi bật nó.",
+      "figure": "Kinh tuyến thiên cầu (trắng) đi qua điểm Bắc, thiên cực, thiên đỉnh và điểm Nam trên chân trời."
     },
     "diurnal": {
       "title": "Chuyển động nhật động",
@@ -139,7 +189,8 @@
         "Trong chuyển động này, mỗi sao giữ nguyên xích vĩ, nên nó đi trên một vòng tròn song song với xích đạo trời. Bật **vết sao** để thấy những vòng tròn đó."
       ],
       "related": ["pole", "siderealDay", "riseSetZone", "lst"],
-      "sim": "Chạy hoạt ảnh và vẽ vết sao dài cả vòng."
+      "sim": "Chạy hoạt ảnh và vẽ vết sao dài cả vòng.",
+      "figure": "Mỗi sao vạch một vòng song song với xích đạo trời quanh trục thiên cực; mũi tên chỉ chiều quay: mọc ở Đông, lặn ở Tây."
     },
     "altaz": {
       "title": "Hệ tọa độ chân trời",
@@ -178,7 +229,8 @@
         "Vì tuế sai, γ trượt dần về phía Tây khoảng 50″ mỗi năm. Hơn 2000 năm trước nó nằm trong chòm Aries; nay đã ở trong chòm Pisces."
       ],
       "related": ["radec", "ecliptic", "seasons", "lst"],
-      "sim": "Bật vòng giờ 0h và hoàng đạo."
+      "sim": "Bật vòng giờ 0h và hoàng đạo.",
+      "figure": "Điểm xuân phân γ là giao điểm của xích đạo trời (vàng) và hoàng đạo (cam, nét đứt); vòng giờ qua γ (xám) là mốc α = 0h."
     },
     "hourAngle": {
       "title": "Góc giờ H",
@@ -190,7 +242,8 @@
         "Góc giờ là chiếc cầu nối hai hệ tọa độ: biết vĩ độ \\(\\varphi\\), xích vĩ \\(\\delta\\) và góc giờ \\(H\\), ta tính được phương vị A và độ cao h. Góc giờ tăng đều 1 giờ sau mỗi giờ thiên văn."
       ],
       "related": ["lst", "meridian", "radec", "altaz"],
-      "sim": "Bật kinh tuyến và làm nổi bật góc giờ của sao đang chọn."
+      "sim": "Bật kinh tuyến và làm nổi bật góc giờ của sao đang chọn.",
+      "figure": "Góc giờ H (dải vàng) đo dọc xích đạo trời, từ kinh tuyến (trắng) về phía Tây tới vòng giờ (xám) đi qua sao."
     },
     "lst": {
       "title": "Giờ thiên văn LST và GST",
@@ -203,7 +256,8 @@
         "Đổi kinh độ chỉ dời giờ, không đổi dáng bầu trời; đổi vĩ độ mới làm bầu trời nghiêng khác đi."
       ],
       "related": ["hourAngle", "siderealDay", "meridian", "vernal"],
-      "sim": "Bật kinh tuyến và vòng giờ 0h, làm nổi bật LST."
+      "sim": "Bật kinh tuyến và vòng giờ 0h, làm nổi bật LST.",
+      "figure": "Giờ thiên văn địa phương LST (dải vàng) là góc giờ của điểm γ: đo dọc xích đạo trời từ kinh tuyến (trắng) tới vòng giờ 0h (xám)."
     },
     "latPole": {
       "title": "Độ cao thiên cực = vĩ độ",
@@ -229,7 +283,8 @@
         "Ở Việt Nam, góc này khoảng 67°–81°, nên các sao mọc lên khá dốc. Góc này cũng là độ cao của Mặt Trời lúc giữa trưa vào ngày xuân phân hoặc thu phân."
       ],
       "related": ["latPole", "equator", "seasons"],
-      "sim": "Bật góc giữa xích đạo trời và chân trời, làm nổi bật nó."
+      "sim": "Bật góc giữa xích đạo trời và chân trời, làm nổi bật nó.",
+      "figure": "Nhìn ngang mặt phẳng kinh tuyến, tại vĩ độ đang chọn: xích đạo trời (vàng) nghiêng θ = 90° − |φ| so với chân trời (xanh lá)."
     },
     "circumpolar": {
       "title": "Sao cận cực",
@@ -284,7 +339,8 @@
         "Sao cận cực còn qua kinh tuyến dưới (\\(H = 12\\text{h}\\)) mà vẫn ở trên chân trời; khi đó nó thấp nhất."
       ],
       "related": ["meridian", "hourAngle", "lst", "timeAbove"],
-      "sim": "Bật kinh tuyến cho sao đang chọn."
+      "sim": "Bật kinh tuyến cho sao đang chọn.",
+      "figure": "Mặt phẳng kinh tuyến tại vĩ độ đang chọn: vòng nhật động của một sao (nét đứt) lên cao nhất khi qua kinh tuyến; cung hồng là độ cao lớn nhất h."
     },
     "timeAbove": {
       "title": "Thời gian trên chân trời",
@@ -297,7 +353,8 @@
         "Sao trên xích đạo trời (\\(\\delta = 0\\)) luôn ở trên trời đúng 12 giờ thiên văn, ở mọi vĩ độ. Áp dụng cho Mặt Trời, công thức này cho ta **độ dài ban ngày** theo mùa."
       ],
       "related": ["riseSetZone", "seasons", "transit"],
-      "sim": "Bật vùng mọc – lặn, chạy hoạt ảnh với vết sao dài."
+      "sim": "Bật vùng mọc – lặn, chạy hoạt ảnh với vết sao dài.",
+      "figure": "Vòng nhật động của một sao (δ = +22°, φ = 40°): phần trên chân trời (xanh ngọc) kéo dài 2H₀, từ lúc mọc ở phía Đông tới lúc lặn ở phía Tây."
     },
     "ecliptic": {
       "title": "Hoàng đạo",
@@ -322,7 +379,8 @@
         "Ở Hà Nội và TP.HCM (nằm giữa hai chí tuyến), có hai ngày trong năm Mặt Trời đi qua đúng thiên đỉnh lúc giữa trưa: bóng của bạn biến mất dưới chân."
       ],
       "related": ["ecliptic", "sun", "timeAbove", "vernal"],
-      "sim": "Bật Mặt Trời theo ngày và chọn Mặt Trời."
+      "sim": "Bật Mặt Trời theo ngày và chọn Mặt Trời.",
+      "figure": "Đường đi trong ngày của Mặt Trời (vàng) vào hạ chí, xuân phân – thu phân và đông chí, tại vĩ độ đang chọn; chấm là vị trí lúc giữa trưa."
     },
     "siderealDay": {
       "title": "Ngày thiên văn",
@@ -334,7 +392,8 @@
         "Trong một năm, Trái Đất quay khoảng 366,24 vòng so với các sao nhưng chỉ 365,24 vòng so với Mặt Trời."
       ],
       "related": ["diurnal", "lst", "ecliptic"],
-      "sim": "Chạy hoạt ảnh đúng 1 ngày thiên văn rồi dừng."
+      "sim": "Chạy hoạt ảnh đúng 1 ngày thiên văn rồi dừng.",
+      "figure": "Trái Đất (xanh dương) ở hai ngày liên tiếp trên quỹ đạo, góc được phóng đại: quay đủ một vòng so với sao xa mất 23h 56m 04s, nhưng phải quay thêm khoảng 1° (gần 4 phút) mới lại hướng về Mặt Trời."
     },
     "milkyWay": {
       "title": "Ngân Hà và tâm thiên hà",
@@ -346,7 +405,8 @@
         "Ở Việt Nam, đoạn sáng nhất của Ngân Hà quanh tâm thiên hà dễ thấy vào các tối mùa hè, ở nơi trời tối, xa đèn thành phố."
       ],
       "related": ["deepSky", "sco", "constellations"],
-      "sim": "Bật xích đạo thiên hà."
+      "sim": "Bật xích đạo thiên hà.",
+      "figure": "Dải Ngân Hà (hồng tím) trên bản đồ xích kinh – xích vĩ, vẽ theo xích đạo thiên hà; chấm là tâm Ngân Hà trong chòm Sagittarius."
     },
     "magnitude": {
       "title": "Cấp sao",
@@ -359,7 +419,8 @@
         "Đây là độ sáng **biểu kiến**: một sao rất sáng nhưng ở xa có thể trông mờ hơn một sao yếu ở gần."
       ],
       "related": ["starColor", "sirius", "polaris"],
-      "sim": "Bật sao sáng thật."
+      "sim": "Bật sao sáng thật.",
+      "figure": "Thang cấp sao: chấm càng to sao càng sáng, cấp sao càng nhỏ càng sáng. Vạch dưới thang là cấp sao đo được của Sirius, Vega và Polaris."
     },
     "starColor": {
       "title": "Màu sao",
@@ -371,7 +432,8 @@
         "Màu sao trong mô phỏng được tính từ B − V của dữ liệu thật. Ngoài trời, mắt thường chỉ thấy rõ màu của những sao sáng."
       ],
       "related": ["betelgeuse", "rigel", "antares", "magnitude"],
-      "sim": "Chọn Betelgeuse, một sao khổng lồ đỏ."
+      "sim": "Chọn Betelgeuse, một sao khổng lồ đỏ.",
+      "figure": "Thang chỉ số màu B − V với màu hiển thị trong mô phỏng; mỗi chấm đặt theo B − V đo được của Rigel, Sirius, Mặt Trời và Betelgeuse."
     },
     "polaris": {
       "title": "Polaris",
@@ -426,7 +488,7 @@
       "aka": "α Ori · Sâm Tú Tứ",
       "lede": "Sao siêu khổng lồ đỏ ở vai chòm Orion, to đến mức có thể nuốt cả quỹ đạo Sao Hỏa.",
       "body": [
-        "Betelgeuse có màu cam đỏ rõ (B − V ≈ 1,85) vì bề mặt chỉ khoảng 3 500 K. Nó cách ta khoảng 550 năm ánh sáng, nhưng con số này còn khá bất định.",
+        "Betelgeuse có màu cam đỏ rõ (B − V khoảng 1,5 đến 1,85 tùy lần đo, vì độ sáng của nó thay đổi) vì bề mặt chỉ khoảng 3 500 K. Nó cách ta khoảng 550 năm ánh sáng, nhưng con số này còn khá bất định.",
         "Độ sáng của Betelgeuse thay đổi theo thời gian. Cuối năm 2019, nó mờ đi rõ rệt (\"Great Dimming\") do một đám bụi nó tự phun ra che bớt ánh sáng.",
         "Betelgeuse đang ở cuối đời và một ngày nào đó sẽ nổ thành **siêu tân tinh**, có thể trong vòng 100 000 năm tới."
       ],
@@ -467,7 +529,8 @@
         "**Không bao giờ nhìn thẳng vào Mặt Trời** bằng mắt thường hay qua ống nhòm, kính thiên văn không có kính lọc chuyên dụng."
       ],
       "related": ["seasons", "ecliptic", "siderealDay", "starColor"],
-      "sim": "Bật Mặt Trời theo ngày và chọn Mặt Trời."
+      "sim": "Bật Mặt Trời theo ngày và chọn Mặt Trời.",
+      "figure": "Mặt Trời trên hoàng đạo (cam, nét đứt) vào ngày đang chọn trong mô phỏng; mỗi ngày nó dịch khoảng 1° về phía Đông."
     },
     "constellations": {
       "title": "Chòm sao",
@@ -479,7 +542,8 @@
         "Trên bầu trời của mô phỏng, chòm sao được ghi theo tên quốc tế (Latin). Tên tiếng Việt, thường là tên Hán Việt, hiện khi bạn bấm vào một ngôi sao."
       ],
       "related": ["uma", "ori", "cru", "magnitude"],
-      "sim": "Bật đường nối và tên chòm sao."
+      "sim": "Bật đường nối và tên chòm sao.",
+      "figure": "Ba chòm sao vẽ từ vị trí thật của các sao: Ursa Major, Orion và Cassiopeia. Bắc ở trên, Đông bên trái; chấm càng to sao càng sáng."
     },
     "uma": {
       "title": "Ursa Major",
@@ -562,7 +626,8 @@
         "Trong mô phỏng, thiên thể sâu được vẽ bằng vòng tròn rỗng: hồng là thiên hà, xanh ngọc là tinh vân, vàng là cụm sao."
       ],
       "related": ["m31", "m42", "m45", "milkyWay"],
-      "sim": "Bật thiên thể sâu."
+      "sim": "Bật thiên thể sâu.",
+      "figure": "Ký hiệu thiên thể sâu trong mô phỏng: vòng tròn rỗng, màu theo loại — thiên hà (hồng), tinh vân (xanh ngọc), cụm sao (vàng nhạt)."
     },
     "m31": {
       "title": "M31",
