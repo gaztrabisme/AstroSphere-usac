@@ -59,3 +59,31 @@ How each check was done:
 - *Recovery* (ux, 798 · U3 · L09). The safe choice is the default: focus starts on "Hủy", and Esc and the backdrop both cancel. A mis-tap next to the mode switch on the phone is now harmless, which was the review-2 #6 risk.
 - *Prefer native semantics* (frontend). A native modal `<dialog>` gives the focus trap, the Esc cancel, `aria-modal` behaviour and an inert background for free.
 - *Orange marks only what you press* (brand, review-2 E1). Only the primary action is orange.
+
+## 3. Neutral status pill (review-2 #12)
+
+**What changed:**
+- The visibility pill in the info card ("Cận cực", "Mọc và lặn", "Không mọc") is now neutral:
+  - background `--surface-3`;
+  - normal text colour `--text`;
+  - a 1 px `--border-control` outline.
+- A 9 px dot before the word carries the zone colour (`--zone-*`, the same values as `COLORS.circumpolar`, `riseSet` and `neverRise` in `scene/colors.ts`).
+- The pill text went from 12 to 13 px (item 4).
+- The info card is the only place this pill appears. Simple mode's zone list already uses legend swatches.
+- The three old filled `.status--*` rules were removed in place. The new rules are in the "Owner decisions 2026-10-05" section at the end of `styles.css`.
+
+**Measured** (WCAG 2 relative luminance):
+
+| Pair | Ratio |
+|---|---|
+| Text `#f2f2f2` on `#242424` | 13,9:1 |
+| Circumpolar dot `#8b5cf6` on the pill | 3,7:1 |
+| Rise-set dot `#14b8a6` on the pill | 6,2:1 |
+| Never-rise dot `#ef4444` on the pill | 4,1:1 |
+
+All three dots pass the 3:1 non-text minimum. The state is also named in words, so colour is never the only cue.
+
+**Lessons applied:**
+- *Colour as a sign/code* (color-theory, 5642 · U3 · L39 · 02:36–03:20). The zone colours are a code with a legend. A teal fill while the zone layer is off and its legend is hidden borrowed the code out of context. As a small dot, the colour only marks the link to the zone layer, and the word carries the meaning.
+- *Fewer colours, better decisions* (color-theory, 1140 · U3 · L08 · 09:58–11:48). The info card now has no large coloured areas, so the scene's semantic colours stay the strongest colour in view.
+- *Pair hue with a word and a value* (color-theory, functional colour, stateful signal policy). The word is primary, and the dot is redundant.

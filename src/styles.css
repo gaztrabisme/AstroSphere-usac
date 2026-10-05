@@ -855,23 +855,8 @@ body.learn-open .layout {
   font-weight: 650;
 }
 
-.status--circumpolar {
-  background: color-mix(in srgb, var(--zone-circumpolar) 25%, transparent);
-  color: var(--text);
-  border: 1px solid var(--zone-circumpolar);
-}
-
-.status--riseSet {
-  background: color-mix(in srgb, var(--zone-riseset) 20%, transparent);
-  color: var(--text);
-  border: 1px solid var(--zone-riseset);
-}
-
-.status--neverRise {
-  background: color-mix(in srgb, var(--zone-neverrise) 20%, transparent);
-  color: var(--text);
-  border: 1px solid var(--zone-neverrise);
-}
+/* .status--circumpolar / --riseSet / --neverRise: viên trung tính với chấm màu vùng, xem mục
+   "Owner decisions 2026-10-05" ở cuối tệp (review-2 #12). */
 
 /* Màn hình rộng (review-2 B2/B3): thẻ bắt đầu thu gọn thành một dòng tên đối tượng, nổi ở góc dưới bên phải
    của thiên cầu (khung số hai; góc trên là chỗ của thiên cực Bắc và Polaris), và hai khung nhìn chia hết bề ngang. Khi người dùng mở thẻ (bấm vào sao hoặc thanh tiêu
@@ -4118,4 +4103,39 @@ body.present .guide-tip {
   min-height: var(--tap);
   min-width: 96px;
   padding: 8px 18px;
+}
+
+/* 3. Viên trạng thái "Cận cực / Mọc và lặn / Không mọc" (review-2 #12): nền bề mặt trung tính, chữ thường, và một chấm
+   9 px màu vùng (scene/colors.ts qua --zone-*). Màu chỉ đánh dấu, không tô nền: viên không còn mượn màu vùng khi lớp
+   vùng đang tắt và chú giải vùng không hiện. Chữ #f2f2f2 trên --surface-3: 13,9:1; chấm tím/lục lam/đỏ: 3,7 / 6,2 / 4,1:1. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 8px;
+  font-size: 13px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border-control);
+}
+
+.status::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-dot, var(--muted));
+}
+
+.status--circumpolar {
+  --status-dot: var(--zone-circumpolar);
+}
+
+.status--riseSet {
+  --status-dot: var(--zone-riseset);
+}
+
+.status--neverRise {
+  --status-dot: var(--zone-neverrise);
 }
