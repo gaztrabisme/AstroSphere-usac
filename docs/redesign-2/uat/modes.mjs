@@ -46,6 +46,8 @@ const errors = [];
 async function open(ctx, url = URL) {
   const page = await ctx.newPage();
   await page.addInitScript(DRAW_COUNTER);
+  // redesign-2 R4: Usui-chan đã chào (lời chào lần đầu không che ảnh chụp và các thao tác kiểm tra).
+  await page.addInitScript(() => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({ hello: true })));
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.goto(url);

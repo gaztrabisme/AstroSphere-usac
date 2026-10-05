@@ -10,6 +10,8 @@ const URL = process.env.UAT_URL ?? 'http://localhost:4186/?quality=fixed';
 const FULL_MODE = () => {
   try {
     localStorage.setItem('astrosphere.mode.v1', JSON.stringify('full'));
+    // redesign-2 R4: Usui-chan đã chào (lời chào lần đầu không che ảnh chụp và các thao tác kiểm tra).
+    localStorage.setItem('astrosphere.guide.v1', JSON.stringify({ hello: true }));
   } catch {
     /* storage blocked: the page falls back to Simple and the checks will say so */
   }
