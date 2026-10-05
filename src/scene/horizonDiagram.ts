@@ -74,9 +74,11 @@ export class HorizonDiagramView extends View {
 
     // Ánh sáng cho mô hình 3D người quan sát (các đối tượng khác dùng vật liệu không chịu sáng)
     this.scene.add(new THREE.HemisphereLight('#dbe6ff', '#2f4a2f', 2.2));
+    // Đèn chính gắn theo camera: nhìn từ hướng nào mô hình cũng được chiếu sáng phía trước.
     const key = new THREE.DirectionalLight('#ffffff', 2.4);
-    key.position.set(R * 0.6, R, R * 0.8);
-    this.scene.add(key);
+    key.position.set(0.4, 0.8, 1);
+    this.camera.add(key);
+    this.scene.add(this.camera);
     this.loadObserverModel();
 
     this.update(store.state);
@@ -84,7 +86,8 @@ export class HorizonDiagramView extends View {
 
   /**
    * Thay hình nhân mặc định bằng mô hình glTF (public/models/usui-chan.glb) nếu có.
-   * Mô hình được co giãn về chiều cao cố định, đặt chân lên mặt phẳng chân trời, quay mặt về hướng Nam (+Z).
+   * Mô hình được co giãn về chiều cao cố định, đặt chân lên mặt phẳng chân trời; hướng mặt do onUpdate đặt
+   * (luôn nhìn về thiên cực nằm trên chân trời).
    */
   private loadObserverModel(): void {
     const url = `${import.meta.env.BASE_URL}models/usui-chan.glb`;
@@ -118,6 +121,9 @@ export class HorizonDiagramView extends View {
   }
 
   protected onUpdate(s: AppState): void {
+    // Mô hình glTF mặc định nhìn về +Z (Nam). Quay 180° để nhìn về Bắc (−Z) — nơi có thiên cực Bắc — khi ở Bắc bán cầu;
+    // ở Nam bán cầu giữ hướng Nam để nhìn về thiên cực Nam.
+    this.person.rotation.y = s.lat >= 0 ? Math.PI : 0;
     const under = s.toggles.underside;
     this.renderer.clippingPlanes = under ? [] : [this.clipPlane];
     this.groundMat.opacity = under ? 0.42 : this.firstPerson ? 1 : 0.92;
