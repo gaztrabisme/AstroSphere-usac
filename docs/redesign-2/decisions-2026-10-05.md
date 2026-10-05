@@ -34,3 +34,28 @@ How each check was done:
 - *Not pushy* (owner rule). The feedback is a quiet acknowledgement, not a celebration: there is no text, no counter and no sound.
 
 **Left out:** below the horizon the horizon view draws the selection as the "ghost" marker (fix-1 #2), not the ring. The ghost does not pulse. The sphere view still pulses for such objects.
+
+## 2. Confirm before reset (review-2 #6)
+
+**What changed:**
+- "Đặt lại" in the top bar now opens a small native modal `<dialog>` (`src/ui/resetConfirm.ts`). It is the only reset entry point: Simple mode uses the same top-bar button, and no other control calls `resetAll()`.
+- **Title:** "Đặt lại mọi thứ?"
+- **Body** (two lines, so the reader can scan what changes and what stays):
+  - "**Sẽ đặt lại:** vị trí, thời gian, các lớp hiển thị, góc nhìn và ngôi sao đang chọn. Các sao và chòm sao bạn đã thêm sẽ bị xóa."
+  - "**Vẫn giữ:** chế độ Cơ bản hay Đầy đủ, tiến độ USACodex và Ôn tập."
+- **Buttons:** "Hủy" (secondary, first in reading order, focused by default) and "Đặt lại" (primary, orange, `--on-accent` text). Both are 44 px tall.
+- **Closing:** Esc and a click on the backdrop both cancel. Focus returns to the button that opened the dialog. The global Esc handler skips while the dialog is open, so Esc closes the dialog and does not also clear the selection.
+- The strings are in `vi.json › resetConfirm`. The two buttons carry `data-guide` keys (`resetCancel`, `resetConfirm`) with tips. The `reset` tip and the button tooltip now say that the app asks first.
+
+**The text is truthful.** I checked `Actions.resetAll()` and `resetAll()` in `main.ts`:
+- **They reset:** `createInitialState()`, which covers location, time and playback, display toggles and labels, trails, user stars and figures, and the selection (back to Polaris). They also reset both cameras and first-person view.
+- **They keep:** `uiMode`. The codex progress (`astrosphere.codex.v1`) and the learning progress (`thien-cau.hoc-tap.v1`) live in localStorage, and reset never touches them.
+
+**UATs:** `docs/redesign/uat/ux.mjs` now confirms through the dialog. It also checks that "Hủy" keeps the state: playback is still running after Đặt lại → Hủy. `decisions.mjs` covers Hủy, Đặt lại, Esc and focus return.
+
+**Lessons applied:**
+- *Write for the whole task: what is happening, what action is available, what comes next* (ux, 798 · U2 · L05 · 09:05–11:31). The title asks the question, the body says exactly what will be lost and what will not, and the buttons are verbs that repeat the action rather than "OK".
+- *A button label must not misstate its action* (ux anti-pattern). The primary button is "Đặt lại", the same word as the opener, so the confirmation does not introduce a second name for the action.
+- *Recovery* (ux, 798 · U3 · L09). The safe choice is the default: focus starts on "Hủy", and Esc and the backdrop both cancel. A mis-tap next to the mode switch on the phone is now harmless, which was the review-2 #6 risk.
+- *Prefer native semantics* (frontend). A native modal `<dialog>` gives the focus trap, the Esc cancel, `aria-modal` behaviour and an inert background for free.
+- *Orange marks only what you press* (brand, review-2 E1). Only the primary action is orange.
