@@ -90,6 +90,8 @@ export abstract class View implements QualityTarget {
   private emSunDate = '';
   private emGroup: string | null = null;
   private reducedMotion: MediaQueryList | null = null;
+  /** Lựa chọn đã thấy ở lần update() trước (undefined: chưa đồng bộ lần nào) — để biết khi nào chạy nhịp vòng chọn. */
+  private pulseSel: Selection | undefined = undefined;
   readonly container: HTMLElement;
   readonly kind: ViewKind;
   protected store: Store;
@@ -271,6 +273,13 @@ export abstract class View implements QualityTarget {
     this.horizon.update(s, group);
     this.trails.update(s);
     this.onUpdate(s, group);
+    // Nhịp "đã chọn" (quyết định 2026-10-05): khi lựa chọn đổi sang một đối tượng — trừ lần đồng bộ đầu tiên (lựa
+    // chọn mặc định lúc mở trang) và khi người dùng yêu cầu giảm chuyển động. So sánh tham chiếu, không cấp phát.
+    if (s.selected !== this.pulseSel) {
+      const first = this.pulseSel === undefined;
+      this.pulseSel = s.selected;
+      if (!first && s.selected && !(this.reducedMotion?.matches ?? false)) this.sky.startSelPulse(performance.now());
+    }
     this.dirty = true;
   }
 
@@ -320,6 +329,11 @@ export abstract class View implements QualityTarget {
     // Chuyển tô sáng: chỉ vẽ lại liên tục trong ~150 ms của lần chuyển.
     if (this.emphasis.running) {
       this.emphasis.step(performance.now());
+      this.dirty = true;
+    }
+    // Nhịp vòng chọn: chỉ vẽ lại liên tục trong ~300 ms của nhịp, rồi để vòng lặp đang dừng ngủ lại.
+    if (this.sky.pulsing) {
+      this.sky.stepSelPulse(performance.now());
       this.dirty = true;
     }
     if (!this.dirty || this.width === 0 || this.height === 0 || !this.onScreen || this.suspended) return false;
