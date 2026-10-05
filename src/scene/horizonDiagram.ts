@@ -37,6 +37,8 @@ export class HorizonDiagramView extends View {
   private sunDec = 0;
   /** Mô hình người quan sát (usui-chan.glb, 2,3 MB): 0 = chưa hẹn tải, 1 = đã hẹn/đang tải (xem frame()). */
   private modelState = 0;
+  /** Tăng khi mô hình thay hình nhân (cộng vào structureVersion để dựng lại danh sách đích rê chuột). */
+  private modelVersion = 0;
   /** Hàm hẹn tải dựng sẵn một lần — frame() không tạo closure. */
   private readonly startModelLoad = (): void => this.loadObserverModel();
 
@@ -149,6 +151,8 @@ export class HorizonDiagramView extends View {
             });
             this.person.clear();
             this.person.add(model);
+            // Đích rê chuột được giữ sẵn theo phiên bản cấu trúc: tăng để danh sách lấy lưới của mô hình mới.
+            this.modelVersion++;
             this.dirty = true;
           },
           undefined,
@@ -260,6 +264,10 @@ export class HorizonDiagramView extends View {
     this.controls.update();
     this.onUpdate(this.store.state);
     this.dirty = true;
+  }
+
+  protected structureVersion(): number {
+    return super.structureVersion() + this.modelVersion;
   }
 
   protected hoverTargets(): THREE.Object3D[] {
