@@ -5,7 +5,9 @@ import content from '../i18n/codex.vi.json';
 import { catalogIndexByHip } from '../data/catalog';
 import { DSOS } from '../data/deepSky';
 import { Actions, Store, createInitialState, type AppState } from '../state';
-import { hasDiagram } from './diagrams';
+import { hasDiagram, type DiagramLabels } from './diagrams';
+import { hasCategoryGlyph } from './glyphs';
+import { entryFacts, entryVisual, hasSkyVisual, hasVisual } from './visual';
 import { SIM } from './sim';
 import { CODEX_KEY, HIP_ENTRY, INITIAL_DISCOVERED, TOGGLE_ENTRY, discover, isCodexProgress, loadProgress, triggerIds } from './triggers';
 
@@ -74,8 +76,43 @@ describe('Nội dung Codex (codex.vi.json)', () => {
     for (const tex of formulas) expect(() => katex.renderToString(tex, { throwOnError: true }), tex).not.toThrow();
   });
 
-  it('mục có chú thích hình thì có sơ đồ, và ngược lại', () => {
-    for (const [id, e] of Object.entries(ENTRIES)) expect(!!e.figure, id).toBe(hasDiagram(id));
+  it('mục có chú thích hình thì có sơ đồ (hoặc ảnh nhiều chòm), và ngược lại', () => {
+    for (const [id, e] of Object.entries(ENTRIES)) expect(!!e.figure, id).toBe(hasDiagram(id) || id === 'constellations');
+  });
+
+  it('mọi mục có hình đầu trang; mọi danh mục có biểu tượng', () => {
+    expect(IDS.filter((id) => !hasVisual(id))).toEqual([]);
+    for (const c of content.categories) expect(hasCategoryGlyph(c.id), c.id).toBe(true);
+    // Mục khái niệm cần chú thích viết tay; ảnh bầu trời tự sinh chú thích từ dữ liệu.
+    for (const id of IDS) expect(!!ENTRIES[id].figure || hasSkyVisual(id), id).toBe(true);
+  });
+
+  it('mọi hình đầu trang dựng được ở nhiều vĩ độ, có tên truy cập, không có NaN', () => {
+    const L = { ...content.diagram, north: 'B', east: 'Đ', south: 'N', west: 'T' } as DiagramLabels;
+    for (const lat of [21.03, 10.8, 0, -33.9, 89]) {
+      const env = { lat, sun: { ra: 190, dec: -4, lambda: 192 }, sunDate: '2026-10-05' };
+      for (const id of IDS) {
+        const v = entryVisual(id, ENTRIES[id].figure, L, env);
+        expect(v, id).not.toBeNull();
+        expect(v!.caption.length, id).toBeGreaterThan(20);
+        expect(v!.svg, id).toMatch(/^<svg [^>]*role="img" aria-label="[^"]{20,}"/);
+        expect(v!.svg.includes('NaN') || v!.svg.includes('undefined') || v!.svg.includes('Infinity'), `${id} @ ${lat}`).toBe(false);
+      }
+    }
+  });
+
+  it('ảnh bầu trời vẽ sao thật: Orion có Betelgeuse và Rigel, số liệu Sirius đúng danh mục', () => {
+    const L = { ...content.diagram, north: 'B', east: 'Đ', south: 'N', west: 'T' } as DiagramLabels;
+    const env = { lat: 21, sun: { ra: 0, dec: 0, lambda: 0 }, sunDate: '2026-03-20' };
+    const ori = entryVisual('ori', undefined, L, env)!.svg;
+    expect(ori).toContain('Betelgeuse');
+    expect(ori).toContain('Rigel');
+    expect((ori.match(/<circle/g) ?? []).length).toBeGreaterThan(20);
+    const facts = Object.fromEntries(entryFacts('sirius', env).map((f) => [f.label, f.value]));
+    expect(Object.values(facts)).toContain('−1,44'); // cấp sao trong danh mục (HYG), không phải số làm tròn trong bài
+    expect(Object.values(facts).join(' ')).toMatch(/Canis Major/);
+    expect(entryFacts('m31', env).length).toBeGreaterThanOrEqual(5);
+    expect(entryFacts('uma', env).map((f) => f.value).join(' ')).toMatch(/Alioth|Dubhe/);
   });
 });
 

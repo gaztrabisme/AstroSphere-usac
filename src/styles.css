@@ -2676,7 +2676,9 @@ body.mode-simple .lbl--allsky {
 
 /* ===== Codex (redesign-2 C) ===== */
 /* Bộ khung "codex" bằng kiểu chữ và cấu trúc, không bằng hiệu ứng: nhãn danh mục chữ hoa nhỏ, một đường kẻ mảnh,
-   trang đọc rộng ~65ch. Cam chỉ dành cho mục đang chọn, dấu "mới" và hành động (chữ trên cam = --on-accent). */
+   trang đọc rộng ~65ch, cột "số liệu" bên phải trên màn hình rộng. Cam chỉ dành cho thứ bấm được: mục đang chọn và
+   hành động (chữ trên cam = --on-accent). Dấu "mới", tiến độ và trạng thái dùng trắng/xám trung tính
+   (fix-1: docs/redesign-2/fix-1-codex.md). */
 
 /* Nút Codex và huy hiệu số mục mới (không bật lên, không lấy tiêu điểm). */
 .btn--codex {
@@ -2756,7 +2758,7 @@ body.mode-simple .lbl--allsky {
 
 /* Hộp thoại */
 .cdx {
-  width: min(1080px, calc(100vw - 24px));
+  width: min(1200px, calc(100vw - 24px));
   height: min(780px, calc(100vh - 40px));
   overflow: hidden;
 }
@@ -2781,7 +2783,7 @@ body.mode-simple .lbl--allsky {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(240px, 300px) 1fr;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
 }
 
 /* Cột trái: danh mục */
@@ -2815,7 +2817,7 @@ body.mode-simple .lbl--allsky {
   display: block;
   width: calc(var(--p, 0) * 100%);
   height: 100%;
-  background: var(--accent);
+  background: var(--text-quiet);
 }
 
 .cdx-cat {
@@ -2834,6 +2836,19 @@ body.mode-simple .lbl--allsky {
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.cdx-cat__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cdx-glyph {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-quiet);
 }
 
 .cdx-cat__count {
@@ -2875,10 +2890,15 @@ body.mode-simple .lbl--allsky {
 
 .cdx-item__mark {
   flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--muted);
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+
+.cdx-mark {
+  display: block;
 }
 
 .cdx-item__name {
@@ -2886,51 +2906,148 @@ body.mode-simple .lbl--allsky {
   min-width: 0;
 }
 
+/* Ba trạng thái, không dựa vào màu: ổ khóa · chấm đặc + "MỚI" · dấu tích. */
 .cdx-item__state {
   flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius-pill);
+  color: var(--text);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
+  line-height: 1.3;
   text-transform: uppercase;
 }
 
-.cdx-item.is-new .cdx-item__mark {
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-a30);
+.cdx-item[data-state='new'] .cdx-item__mark {
+  color: var(--text);
 }
 
-.cdx-item.is-new .cdx-item__state {
-  color: var(--accent-hi);
-}
-
-/* Chưa khám phá: vẫn bấm và đọc được, nhưng nhạt hơn; dấu tròn rỗng. Chữ "chưa khám phá" chỉ cho trình đọc màn hình
-   ở danh sách (41 nhãn lặp lại sẽ thành nhiễu), hiện rõ trên trang đọc. */
-.cdx-item.is-locked {
+/* Chưa khám phá: vẫn bấm và đọc được, chữ nhạt hơn (--subtle 5,9:1 trên --surface-quiet), dấu ổ khóa. Chữ
+   "chưa khám phá" và "đã đọc" chỉ cho trình đọc màn hình ở danh sách (41 nhãn lặp lại sẽ thành nhiễu); trang đọc
+   ghi rõ trạng thái. */
+.cdx-item[data-state='locked'] {
   color: var(--subtle);
 }
 
-.cdx-item.is-locked .cdx-item__mark {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--subtle);
+.cdx-item[data-state='locked'] .cdx-item__mark {
+  color: var(--subtle);
 }
 
-.cdx-item.is-locked .cdx-item__state {
+.cdx-item[data-state='locked'] .cdx-item__state,
+.cdx-item[data-state='read'] .cdx-item__state {
   position: absolute;
   width: 1px;
   height: 1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
 
-/* Cột phải: trang đọc */
+/* Cột phải: trang đọc. Hẹp: một cột (đầu trang → hình → bài → số liệu → hành động → liên quan). Rộng (≥ 760 px
+   bên trong khung đọc): bài ~65ch bên trái, cột "số liệu" bên phải giữ hình, con số, hành động và mục liên quan. */
 .cdx-page {
   overflow-y: auto;
   padding: var(--space-5) var(--space-6) var(--space-6);
+  container-type: inline-size;
 }
 
-.cdx-page > * {
+.cdx-page__in {
+  display: flex;
+  flex-direction: column;
+}
+
+.cdx-page__head,
+.cdx-page__main {
   max-width: 65ch;
+}
+
+.cdx-page__aside {
+  display: contents;
+}
+
+.cdx-page__head {
+  order: 0;
+}
+
+.cdx-page__aside > .cdx-figure {
+  order: 1;
+  margin: var(--space-4) 0 0;
+}
+
+.cdx-page__main {
+  order: 2;
+}
+
+.cdx-facts {
+  order: 3;
+}
+
+.cdx-page__sim {
+  order: 4;
+}
+
+.cdx-page__related {
+  order: 5;
+}
+
+/* Thẻ công thức chỉ là bản tóm tắt cho cột bên; thân bài đã có công thức đúng chỗ của nó. */
+.cdx-facts--formula {
+  display: none;
+}
+
+@container (min-width: 760px) {
+  .cdx-page__in {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+
+  .cdx-page__head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .cdx-page__main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .cdx-page__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .cdx-page__aside > .cdx-figure {
+    margin: 0;
+  }
+
+  .cdx-facts--formula {
+    display: block;
+  }
+
+  .cdx-page__aside .cdx-page__sim {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .cdx-page__aside .cdx-page__sim .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cdx-page__aside .cdx-page__related h4 {
+    margin-top: 0;
+  }
 }
 
 .cdx-page__back {
@@ -2938,6 +3055,9 @@ body.mode-simple .lbl--allsky {
 }
 
 .cdx-page__kicker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0 0 var(--space-1);
   font-size: 11px;
   font-weight: 700;
@@ -2963,14 +3083,25 @@ body.mode-simple .lbl--allsky {
 }
 
 .cdx-page__state {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: var(--space-2) 0 0;
   font-size: 12px;
   color: var(--muted);
 }
 
+.cdx-page__state .cdx-mark {
+  flex: none;
+}
+
+.cdx-page__state[data-state='new'] {
+  color: var(--text);
+}
+
 .cdx-page__state.is-locked {
-  display: block;
+  display: flex;
+  align-items: flex-start;
   padding: var(--space-2) var(--space-3);
   border: 1px dashed var(--border-control);
   border-radius: var(--radius-sm);
@@ -3007,7 +3138,7 @@ body.mode-simple .lbl--allsky {
 
 .cdx-figure {
   max-width: 420px;
-  margin: 0 0 var(--space-4);
+  margin: 0;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -3048,6 +3179,90 @@ body.mode-simple .lbl--allsky {
   font-family: var(--font);
   font-size: 12px;
   fill: var(--text);
+  /* Viền nền quanh chữ: nét vẽ đi qua không cắt chữ. */
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.cdx-svg__sky,
+.cdx-svg__frame {
+  fill: var(--bg);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.cdx-svg__tick {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.cdx-svg__compass {
+  color: var(--scene-dir);
+}
+
+.cdx-svg__veil {
+  fill: var(--bg);
+  fill-opacity: 0.85;
+}
+
+/* Cột số liệu */
+.cdx-aside__h {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cdx-facts {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-quiet);
+}
+
+.cdx-facts dl {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 6px var(--space-3);
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.cdx-facts dt {
+  color: var(--muted);
+}
+
+.cdx-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.cdx-facts__src {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--subtle);
+}
+
+.cdx-facts .formula-grid {
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+.cdx-facts .formula {
+  margin: 0;
+}
+
+@container (min-width: 760px) {
+  .cdx-facts {
+    margin-top: 0;
+  }
 }
 
 .cdx-svg__t--muted {
@@ -3099,6 +3314,9 @@ body.mode-simple .lbl--allsky {
 }
 
 .cdx-rel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 32px;
   padding: 4px 12px;
   border: 1px solid var(--border-control);
@@ -3115,6 +3333,16 @@ body.mode-simple .lbl--allsky {
 .cdx-rel.is-locked {
   border-style: dashed;
   color: var(--muted);
+}
+
+.cdx-rel__mark {
+  display: grid;
+  flex: none;
+  color: var(--muted);
+}
+
+.cdx-rel[data-state='new'] .cdx-rel__mark {
+  color: var(--text);
 }
 
 /* Điện thoại: danh sách → trang đọc (nút quay lại), toàn màn hình, vùng chạm 44 px. */
