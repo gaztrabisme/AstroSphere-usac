@@ -67,6 +67,8 @@ export abstract class View implements QualityTarget {
   private baseWidths = new WeakMap<Line2, number>();
   /** Độ mờ gốc của các đường mảnh (LineBasicMaterial, luôn rộng 1 px) — để tăng độ đậm khi trình chiếu. */
   private baseOpacity = new WeakMap<THREE.LineBasicMaterial, number>();
+  /** Nét/khe gốc của các đường đứt nét (để đổi khi trình chiếu rồi trả lại). */
+  private baseDash = new WeakMap<LineMaterial, [number, number]>();
   /** Đang ở chế độ trình chiếu (máy chiếu): lớp con có thể đổi khung hình (xem preferredFov). */
   protected presenting = false;
   private hoverList: THREE.Object3D[] = [];
@@ -517,6 +519,18 @@ export abstract class View implements QualityTarget {
         this.baseWidths.set(line, w0);
       }
       setFatLineStyle(line, { width: w0 * k });
+      // Đường đứt nét trên máy chiếu (review-4 H1): nét dài hơn, khe hẹp hơn — vẫn là đường đứt (giữ nghĩa) nhưng
+      // gần như liền khi nhìn từ xa. Chỉ đổi uniform dashSize/gapSize (không biên dịch lại, không dựng hình học).
+      if (m.dashed) {
+        let d0 = this.baseDash.get(m);
+        if (d0 === undefined) {
+          d0 = [m.dashSize, m.gapSize];
+          this.baseDash.set(m, d0);
+        }
+        const on = k > 1;
+        m.dashSize = on ? d0[0] * PRESENT_DASH_K : d0[0];
+        m.gapSize = on ? d0[1] * PRESENT_GAP_K : d0[1];
+      }
     });
     this.emphasis.setScale(k);
     this.invalidateLabelSizes();
@@ -608,6 +622,10 @@ export abstract class View implements QualityTarget {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
 }
+
+/** Trình chiếu: hệ số độ dài nét và khe của đường đứt nét (nét 1,6×, khe 0,5× → tỉ lệ nét/khe tăng ~3 lần). */
+const PRESENT_DASH_K = 1.6;
+const PRESENT_GAP_K = 0.5;
 
 /** Vùng đệm (px) quanh nhãn số đo đang tô sáng và nhãn đối tượng đang chọn: tên hạng thấp không chen sát. */
 const FOCUS_PAD = 8;

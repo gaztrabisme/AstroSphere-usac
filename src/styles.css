@@ -1609,8 +1609,21 @@ kbd {
    chữ nền 20 px và chữ phụ dùng --muted thay cho --subtle (đọc được trên máy chiếu). */
 body.present {
   --subtle: var(--muted);
-  --lbl-k: 1.8;
+  /* review-4 H1: 12 px × 2,35 = 28 px — tên sao trên máy chiếu ít nhất 28 px (trước: × 1,8 = 21,6 px). */
+  --lbl-k: 2.35;
   font-size: 20px;
+}
+
+/* ---- Luồng P (review-4 H1): chữ trên máy chiếu ------------------------------------------------------------------
+   Tên sao trắng (không xám) và ít nhất 28 px; tên 88 chòm nền to lên vừa đủ nhưng vẫn là lớp nền. */
+body.present .lbl--catalog,
+body.present .lbl--star {
+  color: var(--text);
+  font-weight: 600;
+}
+
+body.present .lbl--allsky {
+  font-size: 15px;
 }
 
 /* Dải cốt lõi dưới giản đồ chân trời: to, yên lặng — đọc được từ cuối phòng (review-1 H1). */
@@ -1653,12 +1666,13 @@ body.present .views {
   min-height: 0;
 }
 
+/* review-4 H1: tiêu đề khung đọc được từ cuối phòng (20 → 30 px; thiên cầu vẫn nhỏ hơn một bậc). */
 body.present .view__head h2 {
-  font-size: 20px;
+  font-size: 30px;
 }
 
 body.present #view-sphere .view__head h2 {
-  font-size: 18px;
+  font-size: 26px;
 }
 
 /* Máy chiếu (review-2 H1): bỏ phần vỏ cỡ máy tính — phụ đề khung, nút nhỏ trong khung (phím C vẫn đặt lại góc
