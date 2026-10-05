@@ -45,6 +45,7 @@ The browser acceptance checks:
 | `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
 | `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
 | `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view (always small and muted) is then hidden on phones |
+| `astrosphere.codex.v1` | localStorage | Codex progress `{discovered: string[], read: string[]}` (entry ids); guard `isCodexProgress` in `src/codex/triggers.ts` |
 
 ## Interface text (i18n)
 
@@ -54,6 +55,9 @@ The browser acceptance checks:
   - No common English words appear in any string. The banned words are: the, and, reset, help, about, start, pause, stop, speed, show, hide, star(s), trail, north, south, east, west, settings, loading, error.
   - The formulas in `help.body` and `about.body` compile in KaTeX.
 - Keys built at runtime (template strings) are invisible to that test. Any new dynamic key family needs its own unit test that checks every generated key exists.
+- **Codex content** lives in a second file, `src/i18n/codex.vi.json` (categories, entries, diagram labels). Only the lazy codex chunk (`src/codex/ui.ts`) imports it, so it never enters the entry chunk. The Codex interface strings stay in `vi.json` under `codexUi`.
+  - `src/codex/codex.test.ts` applies the same banned-word rule and KaTeX check to it, and checks that every entry has a title, lede and body, that every `related` id, discovery-trigger id, `termLink` id and "Xem trong mô phỏng" action resolves to an entry.
+  - Celestial object names (Polaris, Ursa Major, M31…) stay in English; give the Vietnamese name in the text.
 - Number formatting uses a comma as the decimal separator; see `astro/format.ts`. Use B/N for north/south and Đ/T for east/west.
 
 ## Brand
