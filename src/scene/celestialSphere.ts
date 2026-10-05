@@ -74,7 +74,7 @@ export class CelestialSphereView extends View {
     this.tangent = new THREE.Mesh(new THREE.CircleGeometry(this.R * 0.17, 48), translucent(COLORS.horizon, 0.55));
     this.tangent.userData.tip = 'observerHorizon';
     this.observer.add(this.tangent);
-    const obsLabel = makeLabel(t('scene.observer'), 'poles', { cls: 'lbl--small', color: '#ffffff', hideBelowHorizon: false });
+    const obsLabel = makeLabel(t('scene.observer'), 'poles', { cls: 'lbl--small lbl--chip', color: '#ffffff', hideBelowHorizon: false });
     obsLabel.position.set(0, this.R * 0.06, 0);
     this.observerDot.add(obsLabel);
     this.scene.add(this.observer);

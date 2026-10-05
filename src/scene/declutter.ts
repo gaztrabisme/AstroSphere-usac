@@ -7,8 +7,8 @@
 
 /** Dải mép (px) mà nhãn không được chạm vào. */
 export const EDGE = 6;
-/** Khoảng trống tối thiểu giữa hai nhãn (px). */
-export const GAP = 2;
+/** Khoảng trống tối thiểu giữa hai nhãn (px). 4 px (trước là 2): "N" và "Achernar" không còn dính nhau (review-2 D2). */
+export const GAP = 4;
 
 export class LabelBoxes {
   n = 0;

@@ -430,7 +430,13 @@ body.learn-open .layout {
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
+  /* Viền chữ tối (review-2 D2): bốn bóng cứng 1 px tạo viền liền quanh nét chữ, thêm hai lớp mờ — nhãn đọc được
+     cả khi nằm trên đường kẻ, chòm sao hay bề mặt Trái Đất. */
   text-shadow:
+    1px 0 0 var(--label-halo),
+    -1px 0 0 var(--label-halo),
+    0 1px 0 var(--label-halo),
+    0 -1px 0 var(--label-halo),
     0 0 3px var(--label-halo),
     0 0 6px var(--label-halo);
   pointer-events: none;
@@ -472,6 +478,13 @@ body.learn-open .layout {
   padding: 1px 6px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+/* Nhãn đặt trên bề mặt có họa tiết (người quan sát trên Trái Đất): chip tối mờ phía sau chữ. */
+.lbl--chip {
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 
 /* Số đo góc gắn với tô sáng liên kết: chip tối, chữ sáng, viền trái mang màu ngữ nghĩa của hình (review-1 F2). */

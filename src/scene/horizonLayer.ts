@@ -101,7 +101,7 @@ export class HorizonLayer {
     merLine.userData.tip = 'meridian';
     this.meridianLine = merLine;
     this.meridian.add(merLine);
-    const merLbl = makeLabel(t('scene.meridian'), 'circles', { color: COLORS.meridian });
+    const merLbl = makeLabel(t('scene.meridian'), 'circles', { color: COLORS.meridian, anchor: [0.5, 1.2] });
     merLbl.position.copy(horVec(62, 180, R * 1.03));
     this.meridian.add(merLbl);
     this.group.add(this.meridian);
