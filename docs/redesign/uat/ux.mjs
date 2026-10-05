@@ -195,6 +195,13 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     return { text: v.textContent, lines: [...new Set([...range.getClientRects()].map((r) => Math.round(r.top)))].length };
   });
   check('1440: selected-object value renders as exactly two lines (α, δ / A, h)', selLines.lines === 2 && /\nA\u00a0/.test(selLines.text), JSON.stringify(selLines));
+  // review-3 G3: gợi ý mẫu trong ô nhập đọc như gợi ý (nghiêng, màu phụ), khác chữ đã nhập.
+  const ph = await page.evaluate(() => {
+    const i = document.querySelector('#panel-stars input[placeholder="6h45m"]');
+    const p = getComputedStyle(i, '::placeholder');
+    return { color: p.color, style: p.fontStyle, value: getComputedStyle(i).color };
+  });
+  check('1440: input placeholders are italic and dimmer than typed values', ph.style === 'italic' && ph.color !== ph.value, JSON.stringify(ph));
   const first = await state();
   check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');

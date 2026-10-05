@@ -892,6 +892,14 @@ input[type='date'] {
   color-scheme: dark;
 }
 
+/* Gợi ý mẫu ("6h45m", "−16,7") đọc như gợi ý, không như giá trị đã nhập (review-3 G3): chữ nghiêng, màu --subtle
+   (5,89:1 trên --bg, vẫn đạt AA) so với chữ nhập màu --text. */
+input::placeholder {
+  color: var(--subtle);
+  font-style: italic;
+  opacity: 1;
+}
+
 input.num {
   width: 92px;
   font-variant-numeric: tabular-nums;
