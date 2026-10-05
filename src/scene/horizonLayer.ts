@@ -155,10 +155,10 @@ export class HorizonLayer {
     this.verticalLine.userData.tip = 'vertical';
     this.altArc = dynamicFatLine(46, COLORS.vertical, { width: 4, boundsRadius: bounds });
     this.altArc.userData.tip = 'altitudeArc';
-    this.azArc = dynamicFatLine(MAX_ARC_POINTS, '#fbbf24', { width: 4, boundsRadius: bounds });
+    this.azArc = dynamicFatLine(MAX_ARC_POINTS, COLORS.azimuth, { width: 4, boundsRadius: bounds });
     this.azArc.userData.tip = 'azimuthArc';
     this.altLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.vertical });
-    this.azLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: '#fbbf24', hideBelowHorizon: false });
+    this.azLabel = makeLabel('', 'angles', { cls: 'lbl--angle', color: COLORS.azimuth, hideBelowHorizon: false });
     this.azGroup.add(this.azArc, this.azLabel);
     this.azGroup.visible = view === 'horizon';
     this.vertical.add(this.verticalLine, this.altArc, this.altLabel, this.azGroup);
