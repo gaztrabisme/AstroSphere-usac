@@ -3325,18 +3325,19 @@ body.mode-simple .infocard__body .kv:is(
   grid-template-columns: 48px minmax(0, 1fr) auto;
   grid-template-areas: 'head head actions' 'body body actions';
   column-gap: var(--space-4);
-  width: min(760px, calc(100vw - 2 * var(--space-4) - 56px - var(--space-3)));
+  width: min(800px, calc(100vw - 2 * var(--space-4) - 56px - var(--space-3)));
+  padding: var(--space-3) var(--space-4);
   transform-origin: 100% calc(100% - 28px);
 }
 
 .guide-hello--wide .guide-hello__head {
   grid-area: head;
-  margin-bottom: var(--space-1);
+  margin-bottom: 2px;
 }
 
 .guide-hello--wide .guide-hello__face {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
 }
 
 .guide-hello--wide .guide-hello__body {
