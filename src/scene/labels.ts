@@ -15,7 +15,8 @@ export interface LabelData {
   hideFarSide: boolean;
   /**
    * Hạng ưu tiên tĩnh, nhỏ = quan trọng hơn: 0 số đo góc (tô sáng) · 10 hướng B/N/Đ/T · 11 thiên đỉnh, thiên cực ·
-   * 20 tên vòng tròn · 25 nhãn phụ của vòng · 30 tên chòm sao · 40 + cấp sao: tên sao (sáng hơn trước).
+   * 20 tên vòng tròn · 25 nhãn phụ của vòng · 30 tên chòm sao người dùng thêm · 40 + cấp sao: tên sao (sáng hơn
+   * trước) · 50 tên 88 chòm sao nền (nhường mọi nhãn khác, review-4 D2).
    * Nhãn của đối tượng đang chọn luôn được xét đầu tiên (động, xem view.ts).
    */
   rank: number;
@@ -37,6 +38,11 @@ export interface LabelData {
    * định, chỉ ghi lại các vector khi vĩ độ đổi (không cấp phát mỗi khung hình).
    */
   alts: Vector3[] | null;
+  /**
+   * Khoảng trống thêm (px) mà nhãn đòi quanh mình khi gỡ chồng chéo (LabelBoxes.pad). Tên chòm sao nền dùng > 0:
+   * không chen sát tên sao/thiên cực — chỗ chật thì tên chòm ẩn đi (review-4 D2).
+   */
+  clear: number;
 }
 
 export interface Label extends CSS2DObject {
@@ -59,9 +65,14 @@ export interface LabelOpts {
   sel?: { kind: 'user'; id: string } | { kind: 'catalog'; index: number } | { kind: 'dso'; index: number } | { kind: 'sun' };
   /** Nhóm tô sáng liên kết của nhãn (vd. 'pole', 'incl'). */
   emph?: string;
+  /** Khoảng trống thêm (px) quanh nhãn khi gỡ chồng chéo (xem LabelData.clear). */
+  clear?: number;
   /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
   edge?: string;
 }
+
+/** Hạng ưu tiên của tên 88 chòm sao nền: sau mọi nhãn khác (tên sao là 40 + cấp sao ≤ 49). */
+export const ALLSKY_NAME_RANK = 50;
 
 /** Hạng ưu tiên mặc định (tách riêng để kiểm thử). */
 export function labelRank(group: LabelGroup, opts: Pick<LabelOpts, 'rank' | 'mag' | 'cls'> = {}): number {
@@ -96,6 +107,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     selIdx: sel?.kind === 'catalog' || sel?.kind === 'dso' ? sel.index : -1,
     emph: opts.emph ?? '',
     alts: null,
+    clear: opts.clear ?? 0,
   };
   return obj;
 }

@@ -26,7 +26,7 @@ import {
   writeFatLine,
 } from './geom';
 import type { EmphasisFx } from './emphasis';
-import { makeLabel } from './labels';
+import { ALLSKY_NAME_RANK, makeLabel, setLabelText, type Label } from './labels';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
 
 /** Cỡ sprite vòng chọn (đơn vị cảnh ở khoảng cách 1, không co theo khoảng cách) và bán kính ngoài của vòng trong
@@ -76,6 +76,14 @@ export class SkyLayer {
   private sunPathPts = new Float32Array(181 * 3);
   private sunKey = '';
   private selRing: THREE.Sprite;
+  /**
+   * Tên của đối tượng đang chọn khi nó không có nhãn riêng (sao danh mục mờ hơn ngưỡng nhãn, vd. Polaris cấp 1,98;
+   * thiên thể sâu không tiêu biểu). Một nhãn dùng lại, đổi chữ/vị trí khi đổi lựa chọn — đối tượng đang chọn luôn
+   * được gọi tên cạnh vòng chọn (review-4 D2). Nằm trong nhóm riêng để bật/tắt mà không đụng cờ visible của nhãn.
+   */
+  private selLabelHolder = new THREE.Group();
+  private selLabel: Label;
+  private selLabelKey: Selection | undefined = undefined;
   private starMaterial = createStarMaterial();
   private dsoMaterial = createStarMaterial(true);
   private lastStars: UserStar[] | null = null;
@@ -216,6 +224,41 @@ export class SkyLayer {
     this.selRing.scale.setScalar(SEL_RING_SCALE);
     this.selRing.renderOrder = 10;
     this.rot.add(this.selRing);
+
+    this.selLabel = makeLabel('', 'stars', { cls: 'lbl--catalog', anchor: [-0.15, 0.5], mag: 2 });
+    this.selLabelHolder.add(this.selLabel);
+    this.selLabelHolder.visible = false;
+    this.rot.add(this.selLabelHolder);
+  }
+
+  /** Đặt chữ/vị trí cho nhãn tên đối tượng đang chọn (chỉ khi lựa chọn đổi; xem selLabel). */
+  private updateSelLabel(s: AppState): void {
+    const sel = s.selected;
+    const ud = this.selLabel.userData;
+    let show = false;
+    if (sel !== this.selLabelKey) {
+      this.selLabelKey = sel;
+      ud.selKind = '';
+      ud.selIdx = -1;
+      if (sel?.kind === 'catalog') {
+        const st = getCatalogStar(sel.index);
+        // Sao có nhãn riêng (rebuildCatalogLabels: cấp < 1,6 và có tên riêng) thì không cần nhãn này.
+        if (!(st.mag < CATALOG_LABEL_MAG && st.shortName)) {
+          setLabelText(this.selLabel, st.shortName || st.label);
+          this.selLabel.position.copy(this.catalogVecs[sel.index]);
+          ud.selKind = 'catalog';
+          ud.selIdx = sel.index;
+        }
+      } else if (sel?.kind === 'dso' && !DSOS[sel.index].featured) {
+        setLabelText(this.selLabel, DSOS[sel.index].id);
+        this.selLabel.position.copy(this.dsoVecs[sel.index]);
+        ud.selKind = 'dso';
+        ud.selIdx = sel.index;
+      }
+    }
+    if (ud.selKind === 'catalog') show = s.toggles.catalog;
+    else if (ud.selKind === 'dso') show = s.toggles.deepSky;
+    this.selLabelHolder.visible = show;
   }
 
   private buildAllLines(figs: FigureMap): void {
@@ -228,7 +271,9 @@ export class SkyLayer {
         polylineToSegments(greatArc(eqVec(sa[0], sa[1]), eqVec(sb[0], sb[1]), R, 4), seg);
       }
     }
-    const lines = thinSegments(seg, '#6b8cc7', 0.32);
+    // Khung thiên cầu là khung phụ: đường nối nền mờ hơn (0,3 → 0,18) như nền sao (catalogK) — bớt cạnh sáng cạnh
+    // tranh với khung giản đồ chân trời (color-theory T1; 1140 · U3 · L08 · 06:31–09:58).
+    const lines = thinSegments(seg, COLORS.figureSky, this.view === 'sphere' ? 0.18 : 0.3);
     lines.userData.tip = 'constellationLines';
     this.allSky.add(lines);
     const c = new THREE.Vector3();
@@ -236,7 +281,9 @@ export class SkyLayer {
       c.set(0, 0, 0);
       for (const [ra, dec] of fig.stars) c.add(eqVec(ra, dec));
       const holder = new THREE.Group();
-      const lbl = makeLabel(constellationName(abbr), 'stars', { cls: 'lbl--constellation lbl--allsky', rank: 30, hideFarSide: true });
+      // Hạng 50 (thấp nhất) và khoảng trống 6 px: tên chòm nền nhường tên sao, thiên cực, tên vòng; chỗ chật thì ẩn
+      // thay vì nằm sát hay đè lên nhãn khác (review-4 D2, 5642 · U4 · L55 · 00:08–01:27: một thứ bậc rõ).
+      const lbl = makeLabel(constellationName(abbr), 'stars', { cls: 'lbl--constellation lbl--allsky', rank: ALLSKY_NAME_RANK, clear: 6, hideFarSide: true });
       lbl.position.copy(c.normalize().multiplyScalar(R * 1.01));
       holder.add(lbl);
       holder.visible = !(this.lastFigures ?? []).some((f) => f.templateId === abbr);
@@ -459,7 +506,7 @@ export class SkyLayer {
     this.structureVersion++;
     for (const child of [...this.catalogLabels.children]) this.catalogLabels.remove(child);
     const cat = catalogArrays();
-    for (let i = 0; i < cat.ra.length && cat.mag[i] < 1.6; i++) {
+    for (let i = 0; i < cat.ra.length && cat.mag[i] < CATALOG_LABEL_MAG; i++) {
       if (this.catalogHidden.has(i)) continue;
       const st = getCatalogStar(i);
       if (!st.shortName) continue;
@@ -552,10 +599,21 @@ export class SkyLayer {
     if (tg.sun) this.updateSun(s);
     this.sunPath.visible = tg.sun;
 
-    // Vòng đánh dấu đối tượng đang chọn
+    // Vòng đánh dấu đối tượng đang chọn, và tên của nó nếu nó không có nhãn riêng
+    this.updateSelLabel(s);
     const local = this.selectedLocal(s);
     this.selRing.visible = !!local;
     if (local) this.selRing.position.copy(local);
+  }
+
+  /**
+   * Vị trí thế giới của vòng chọn (ghi vào `out`, không cấp phát); false nếu vòng không hiện. View dùng làm vật cản
+   * khi gỡ chồng chéo nhãn (review-4 D2).
+   */
+  selRingWorld(out: THREE.Vector3): boolean {
+    if (!this.selRing.visible) return false;
+    out.setFromMatrixPosition(this.selRing.matrixWorld);
+    return true;
   }
 
   /** Đặt ma trận theo vĩ độ và LST. */
@@ -666,6 +724,9 @@ export class SkyLayer {
     return out;
   }
 }
+
+/** Sao danh mục sáng hơn cấp này (và có tên riêng) luôn có nhãn tên. */
+const CATALOG_LABEL_MAG = 1.6;
 
 /** Độ mờ của một sao danh mục theo cấp sao, nhân hệ số của khung nhìn. */
 function catalogAlpha(mag: number, k: number): number {

@@ -60,13 +60,15 @@ export abstract class View implements QualityTarget {
   private labelKey = -1;
   /** Hộp màn hình của các nhãn đang hiện (gỡ chồng chéo) và nhãn tương ứng với từng hộp — cấp phát sẵn. */
   private boxes = new LabelBoxes();
-  private boxLabel: Label[] = [];
+  private boxLabel: (Label | null)[] = [];
   private needMeasure = true;
   /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
   private lineScale = 1;
   private baseWidths = new WeakMap<Line2, number>();
   /** Độ mờ gốc của các đường mảnh (LineBasicMaterial, luôn rộng 1 px) — để tăng độ đậm khi trình chiếu. */
   private baseOpacity = new WeakMap<THREE.LineBasicMaterial, number>();
+  /** Nét/khe gốc của các đường đứt nét (để đổi khi trình chiếu rồi trả lại). */
+  private baseDash = new WeakMap<LineMaterial, [number, number]>();
   /** Đang ở chế độ trình chiếu (máy chiếu): lớp con có thể đổi khung hình (xem preferredFov). */
   protected presenting = false;
   private hoverList: THREE.Object3D[] = [];
@@ -196,6 +198,7 @@ export abstract class View implements QualityTarget {
     this.labelRenderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = this.preferredFov(w / h);
+    this.applyViewOffset();
     this.camera.updateProjectionMatrix();
     this.dirty = true;
   }
@@ -203,6 +206,20 @@ export abstract class View implements QualityTarget {
   /** Màn hình dọc (điện thoại): mở rộng góc nhìn để vẫn thấy trọn thiên cầu. */
   protected preferredFov(aspect: number): number {
     return aspect < 0.9 ? 58 : 42;
+  }
+
+  /**
+   * Dời khung hình theo chiều dọc (px, dương = cảnh lên trên) — lớp con dùng để đặt cảnh trong khung dọc. Mặc định 0.
+   * Phép chiếu (nhãn, chọn sao) dùng chung projectionMatrix nên vẫn khớp.
+   */
+  protected viewShiftY(_aspect: number, _h: number): number {
+    return 0;
+  }
+
+  protected applyViewOffset(): void {
+    const dy = this.width > 0 ? this.viewShiftY(this.camera.aspect, this.height) : 0;
+    if (dy === 0) this.camera.clearViewOffset();
+    else this.camera.setViewOffset(this.width, this.height, 0, dy, this.width, this.height);
   }
 
   /** Đồng bộ toàn bộ khung nhìn với trạng thái. */
@@ -298,8 +315,9 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      this.boxLabel.length = list.length;
-      this.boxes.ensure(list.length);
+      // +1: chỗ cho vật cản vòng chọn (pushObstacle).
+      this.boxLabel.length = list.length + 1;
+      this.boxes.ensure(list.length + 1);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
@@ -330,8 +348,8 @@ export abstract class View implements QualityTarget {
       if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
     // Thứ tự giữ chỗ (review-3 D2): chữ hướng B/N/Đ/T trước tiên — không bao giờ bị che; rồi nhãn số đo của nhóm
-    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi đối tượng đang
-    // chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
+    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi thiên cực/thiên
+    // đỉnh (review-4 D2); rồi đối tượng đang chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       if (lbl.userData.group === 'directions' && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
@@ -345,16 +363,33 @@ export abstract class View implements QualityTarget {
         if (k >= 0) boxes.must[k] = 1;
       }
     }
-    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+    // Tên thiên cực / thiên đỉnh (nhóm poles) giữ chỗ trước tên đối tượng đang chọn: khi đối tượng chọn là Polaris,
+    // "Thiên cực Bắc" vẫn hiện, còn "Polaris" thử bên phải, trái, trên, dưới vòng chọn (review-4 D2).
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       const ud = lbl.userData;
-      if (lbl === sel || !lbl.visible || ud.group === 'directions' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
-      this.pushBox(lbl, W, H, ud.rank < 20);
+      if (ud.group !== 'poles' || lbl === sel || !lbl.visible || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
+      this.pushBox(lbl, W, H, true);
+    }
+    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+    // Vòng chọn là vật cản cho nhãn hạng ≥ 20 (tên vòng, tên sao, tên chòm): không nhãn nào chen vào vòng quanh đối
+    // tượng đang chọn — thường là thiên cực, nơi đường nối chòm sao và tên dày nhất (review-4 D2). Đặt sau nhãn hạng
+    // cao (chữ hướng, thiên đỉnh, thiên cực) để vòng không bao giờ đẩy chúng đi.
+    let ringDone = !this.sky.selRingWorld(_v);
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      const ud = lbl.userData;
+      if (lbl === sel || !lbl.visible || ud.group === 'directions' || ud.group === 'poles' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
+      if (!ringDone && ud.rank >= 20) {
+        ringDone = true;
+        this.pushObstacle(_v, this.selRingPx(), W, H);
+      }
+      this.pushBox(lbl, W, H, ud.rank < 20, 0, ud.clear);
     }
     declutter(boxes, W, H);
     for (let k = 0; k < boxes.n; k++) {
       const lbl = this.boxLabel[k];
+      if (lbl === null) continue; // vật cản (vòng chọn), không phải nhãn
       if (!boxes.keep[k]) {
         lbl.visible = false;
         continue;
@@ -419,6 +454,22 @@ export abstract class View implements QualityTarget {
     return k;
   }
 
+  /**
+   * Thêm vật cản hình vuông bán kính `r` px quanh điểm thế giới `world` (vòng chọn): luôn giữ (must), không dời.
+   * Không cấp phát.
+   */
+  private pushObstacle(world: THREE.Vector3, r: number, W: number, H: number): void {
+    _p.copy(world).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const sx = ((_p.x + 1) / 2) * W;
+    const sy = ((1 - _p.y) / 2) * H;
+    const boxes = this.boxes;
+    const k = boxes.n;
+    this.boxLabel[k] = null;
+    boxes.push(sx - r, sy - r, 2 * r, 2 * r, false);
+    boxes.must[k] = 1;
+  }
+
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
   private measureLabels(): void {
     if (!this.needMeasure) return;
@@ -468,6 +519,18 @@ export abstract class View implements QualityTarget {
         this.baseWidths.set(line, w0);
       }
       setFatLineStyle(line, { width: w0 * k });
+      // Đường đứt nét trên máy chiếu (review-4 H1): nét dài hơn, khe hẹp hơn — vẫn là đường đứt (giữ nghĩa) nhưng
+      // gần như liền khi nhìn từ xa. Chỉ đổi uniform dashSize/gapSize (không biên dịch lại, không dựng hình học).
+      if (m.dashed) {
+        let d0 = this.baseDash.get(m);
+        if (d0 === undefined) {
+          d0 = [m.dashSize, m.gapSize];
+          this.baseDash.set(m, d0);
+        }
+        const on = k > 1;
+        m.dashSize = on ? d0[0] * PRESENT_DASH_K : d0[0];
+        m.gapSize = on ? d0[1] * PRESENT_GAP_K : d0[1];
+      }
     });
     this.emphasis.setScale(k);
     this.invalidateLabelSizes();
@@ -479,6 +542,7 @@ export abstract class View implements QualityTarget {
     this.setLineScale(on ? lineScale : 1);
     if (this.height > 0) {
       this.camera.fov = this.preferredFov(this.camera.aspect);
+      this.applyViewOffset();
       this.camera.updateProjectionMatrix();
     }
     this.dirty = true;
@@ -558,6 +622,10 @@ export abstract class View implements QualityTarget {
     return [...this.sky.hoverTargets(), ...this.horizon.hoverTargets()];
   }
 }
+
+/** Trình chiếu: hệ số độ dài nét và khe của đường đứt nét (nét 1,6×, khe 0,5× → tỉ lệ nét/khe tăng ~3 lần). */
+const PRESENT_DASH_K = 1.6;
+const PRESENT_GAP_K = 0.5;
 
 /** Vùng đệm (px) quanh nhãn số đo đang tô sáng và nhãn đối tượng đang chọn: tên hạng thấp không chen sát. */
 const FOCUS_PAD = 8;

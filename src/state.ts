@@ -4,6 +4,7 @@ import { clamp, gmstDeg, julianDate, norm360 } from './astro';
 import { getCatalogStar, catalogIndexByHip } from './data/catalog';
 import { TEMPLATE_FIGURES, constellationName, getTemplate } from './data/constellations';
 import { DEFAULT_PLACE } from './data/places';
+import { COLORS } from './scene/colors';
 import type { EmphasisKey } from './emphasis';
 
 export type { EmphasisKey } from './emphasis';
@@ -209,7 +210,7 @@ function buildConstellation(templateId: string): { stars: UserStar[]; figure: Fi
       ra,
       dec,
       mag,
-      color: tpl.color,
+      color: COLORS.figure,
       kind: 'constellation',
       labelled: !!cat?.shortName && mag <= 2.1,
       hip: hip || undefined,
@@ -221,7 +222,7 @@ function buildConstellation(templateId: string): { stars: UserStar[]; figure: Fi
     id: figureId,
     templateId,
     name,
-    color: tpl.color,
+    color: COLORS.figure,
     starIds: stars.map((x) => x.id),
     segs: fig.segs.map(([a, b]) => [a, b] as [number, number]),
   };

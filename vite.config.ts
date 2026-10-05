@@ -15,7 +15,8 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             // three.js (lõi + addons) thành chunk riêng: cache được qua các lần triển khai khi chỉ mã cảnh đổi.
-            { name: 'three', test: /[\\/]node_modules[\\/]three[\\/]/ },
+            // Trừ bộ nạp glTF (và tiện ích của nó): chỉ tải khi rảnh sau lần vẽ đầu (scene/horizonDiagram.ts).
+            { name: 'three', test: /[\\/]node_modules[\\/]three[\\/](?!examples[\\/]jsm[\\/](loaders|utils)[\\/])/ },
           ],
         },
       },
