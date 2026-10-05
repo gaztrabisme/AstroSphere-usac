@@ -2667,6 +2667,13 @@ body.mode-simple .infocard__body .kv:is(
   }
 }
 
+/* Cơ bản: ẩn tên 88 chòm sao nền (hạng thấp nhất, xem labels.ts) — người mới chỉ cần sao sáng, đường nối mờ và
+   các vòng đang học; tên chòm vẫn hiện khi bấm vào sao (thẻ thông tin) và ở chế độ Đầy đủ. visibility (không phải
+   display) vì CSS2DRenderer tự ghi display lên từng nhãn. */
+body.mode-simple .lbl--allsky {
+  visibility: hidden;
+}
+
 /* ===== Codex (redesign-2 C) ===== */
 /* Bộ khung "codex" bằng kiểu chữ và cấu trúc, không bằng hiệu ứng: nhãn danh mục chữ hoa nhỏ, một đường kẻ mảnh,
    trang đọc rộng ~65ch. Cam chỉ dành cho mục đang chọn, dấu "mới" và hành động (chữ trên cam = --on-accent). */
