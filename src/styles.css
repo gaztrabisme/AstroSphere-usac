@@ -1688,10 +1688,13 @@ body.present .swatch--line {
     display: none;
   }
 
+  /* Nút chỉ có biểu tượng: vùng chạm 44 × 44 px và viền mảnh cho thấy đúng vùng chạm đó (review-3 D2 — trước
+     đây viền trong suốt, mắt chỉ thấy vòng tròn biểu tượng 20 px nên tưởng nút chỉ ~30 px). */
   .btn--top {
     padding: 4px;
     min-width: var(--tap);
-    border-color: transparent;
+    min-height: var(--tap);
+    border-color: var(--border);
   }
 
   /* Vùng chạm ≥ 44 px trên điện thoại */
