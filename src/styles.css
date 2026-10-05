@@ -567,7 +567,7 @@ body.learn-open .layout {
   flex-direction: column;
   flex: 1 1 120px;
   min-width: 0;
-  max-width: 210px;
+  max-width: 230px;
 }
 
 .data__item--end {
@@ -577,6 +577,11 @@ body.learn-open .layout {
 .data__k {
   font-size: 12px;
   color: var(--muted);
+}
+
+/* Câu nghĩa dưới số liệu: chia dòng cân bằng, không để một chữ mồ côi ("trời") ở dòng cuối (review-2 C2). */
+.data__n {
+  text-wrap: balance;
 }
 
 /* Giá trị chính đủ lớn để đọc lướt (review-1 D1: trước đây ~14 px như chữ thường). */
@@ -804,11 +809,17 @@ body.learn-open .layout {
 }
 
 /* ------------------------------------------------------------------ Bảng điều khiển */
+/* Bảng điều khiển xếp kiểu "tường gạch" (đa cột, review-2 C2): mỗi thẻ giữ chiều cao tự nhiên, thẻ ngắn (Hoạt ảnh)
+   nằm ngay dưới thẻ Vị trí thay vì đứng một mình với khoảng trống lớn bên dưới; thứ tự đọc từ trên xuống, trái sang
+   phải. Ba cột trên màn hình rộng, hai cột ở màn hình vừa. */
 .panels {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  align-items: start;
+  columns: 3;
+  column-gap: 10px;
+}
+
+.panels > .panel {
+  break-inside: avoid;
+  margin-bottom: 10px;
 }
 
 .panel {
@@ -1622,7 +1633,7 @@ body.present .swatch--line {
 /* ------------------------------------------------------------------ Màn hình vừa */
 @media (max-width: 1400px) {
   .panels {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    columns: 2;
   }
 }
 
@@ -1837,6 +1848,7 @@ body.present .swatch--line {
 
   .panels > .panel {
     display: none;
+    margin-bottom: 0;
     max-height: 48vh;
     overflow: auto;
   }
