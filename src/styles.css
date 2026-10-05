@@ -2095,7 +2095,9 @@ body.present .kv__note {
 .pole-line.is-linked {
   font-weight: 700;
   text-decoration-line: underline;
-  text-decoration-color: var(--accent);
+  /* Màu của hình đang tô sáng (ui/emphasis.ts đặt --link-color từ scene/colors.ts, review-3 F2); chữ đậm là tín hiệu
+     không dựa vào màu. */
+  text-decoration-color: var(--link-color, var(--accent));
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
 }

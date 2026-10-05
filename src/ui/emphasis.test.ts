@@ -86,3 +86,19 @@ describe('Actions.setEmphasis', () => {
     expect(store.state.emphasis).toBeNull();
   });
 });
+
+describe('màu gạch chân của con số liên kết (review-3 F2)', () => {
+  it('mọi nhóm tô sáng mà emphasisGroup có thể trả về đều có màu, lấy từ màu ngữ nghĩa của cảnh', async () => {
+    const { linkColor } = await import('./emphasis');
+    const { COLORS } = await import('../scene/colors');
+    const groups = [...EMPHASIS_KEYS.filter((k) => k !== 'zone'), 'zone_circumpolar', 'zone_riseSet', 'zone_neverRise'];
+    const scene = new Set<string>(Object.values(COLORS));
+    for (const g of groups) {
+      const c = linkColor(g);
+      expect(c, g).toBeTruthy();
+      expect(scene.has(c!), `${g} → ${c}`).toBe(true);
+    }
+    expect(linkColor('pole')).toBe(COLORS.axis);
+    expect(linkColor(null)).toBeNull();
+  });
+});
