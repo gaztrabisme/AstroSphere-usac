@@ -2215,3 +2215,374 @@ body.present .kv__note {
   font-size: 12px;
   cursor: pointer;
 }
+
+/* ===== Simple mode (redesign-2 S) ===== */
+/* Hai chế độ giao diện (docs/redesign-2/simple-mode.md). body.mode-simple: một giản đồ chân trời lớn là "số một",
+   bên cạnh (máy tính) hoặc bên dưới (điện thoại) là dải điều khiển gọn ba nhóm theo thứ tự khái niệm.
+   body.mode-full: giao diện đầy đủ như trước. Mọi màu lấy từ token trong :root. */
+
+/* ---- Công tắc Cơ bản | Đầy đủ (thanh trên cùng) */
+.modeswitch {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.modeswitch__label {
+  padding: 0 var(--space-2) 0 var(--space-1);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.modeswitch__opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.modeswitch__opt:hover {
+  color: var(--text);
+  background: var(--veil);
+}
+
+/* Ô radio gốc vẫn nhận tiêu điểm và phím mũi tên; chỉ ẩn về mặt thị giác. */
+.modeswitch__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.modeswitch__opt:has(.modeswitch__input:checked) {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.modeswitch__opt:has(.modeswitch__input:focus-visible) {
+  box-shadow: var(--focus);
+}
+
+/* ---- Dải điều khiển gọn: chỉ có ở chế độ Cơ bản */
+.simple {
+  display: none;
+}
+
+body.mode-simple .simple {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface-quiet);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+
+.simple__group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.simple__group legend {
+  padding: 0 0 var(--space-2);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.simple__slider {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.simple__slider label {
+  color: var(--muted);
+}
+
+.simple__value {
+  justify-self: end;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.simple__slider .range {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.simple .chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-a12);
+  color: var(--text);
+}
+
+.simple__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* Chạy/tạm dừng: cùng hình thức với nút trong bảng Hoạt ảnh (đang chạy = nút phụ yên lặng, đang dừng = cam). */
+.simple__play {
+  min-width: 132px;
+  font-size: 15px;
+}
+
+.simple__play[aria-pressed='true'] {
+  border-color: var(--border-control);
+  background: var(--surface-3);
+  font-weight: 600;
+}
+
+/* Chậm | Nhanh: hai ô radio dạng phân đoạn, cùng ngôn ngữ với công tắc chế độ. */
+.simple__speed {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.simple__seg {
+  position: relative;
+  min-height: 30px;
+  padding: 0 var(--space-3);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.simple__seg input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.simple__seg:has(input:checked) {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.simple__seg:has(input:focus-visible) {
+  box-shadow: var(--focus);
+}
+
+.simple__next {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.simple__next p {
+  margin: 0 0 var(--space-2);
+}
+
+.simple__more {
+  color: var(--subtle);
+  font-size: 12.5px;
+}
+
+.simple__zones {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.simple__zones .swatch--zone {
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.simple__zonekey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.simple__zonekey li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- Ẩn ở chế độ Cơ bản: thiên cầu, thẻ chọn khung nhìn, chú giải, dải số liệu, bốn bảng, Ôn tập, Trình chiếu */
+body.mode-simple #view-sphere,
+body.mode-simple .viewtabs,
+body.mode-simple .legend,
+body.mode-simple .databar,
+body.mode-simple .panels,
+body.mode-simple .btn--top-main,
+body.mode-simple .btn--top-present,
+body.mode-simple .learn {
+  display: none !important;
+}
+
+/* Thẻ thông tin rút gọn: tên, tên tiếng Việt, độ cao h, phương vị A và viên trạng thái. */
+body.mode-simple .infocard__kind,
+body.mode-simple .infocard__body > h4,
+body.mode-simple .infocard__body > dl:first-of-type,
+body.mode-simple .infocard__body > dl:nth-of-type(4),
+body.mode-simple .infocard__body .kv:is(
+    [data-emphasis='rise'],
+    [data-emphasis='transit'],
+    [data-emphasis='set'],
+    [data-emphasis='above'],
+    [data-emphasis='lowest'],
+    [data-emphasis='highest']
+  ) {
+  display: none !important;
+}
+
+/* ---- Máy tính: giản đồ chân trời lớn bên trái, dải điều khiển 320 px bên phải; tất cả trong màn hình đầu. */
+@media (min-width: 901px) {
+  body.mode-simple .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: stretch;
+  }
+
+  body.mode-simple .views {
+    grid-template-columns: minmax(0, 1fr);
+    height: clamp(420px, calc(100svh - 100px), 900px);
+  }
+
+  body.mode-simple .simple {
+    max-height: clamp(420px, calc(100svh - 100px), 900px);
+    overflow: auto;
+  }
+
+  /* Thẻ thu gọn nằm trên chân khung (dòng φ và gợi ý), không che chữ. */
+  body.mode-simple .infocard.is-collapsed {
+    bottom: calc(var(--foot-h, 0px) + 10px);
+  }
+
+  /* Thẻ mở vẫn nổi trên khung (không thành cột thứ ba như ở Đầy đủ): nó nhỏ, giản đồ giữ trọn bề ngang. */
+  body.mode-simple .views:has(> .infocard:not(.is-collapsed)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.mode-simple .infocard:not(.is-collapsed) {
+    position: absolute;
+    width: 270px;
+    min-width: 0;
+    max-height: calc(100% - 60px);
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+@media (min-width: 1600px) {
+  body.mode-simple .layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+/* Nhãn "Chế độ" chỉ hiện khi đủ chỗ; trên màn hình nhỏ nhóm vẫn có tên truy cập và chú thích (title). */
+@media (max-width: 1100px) {
+  .modeswitch__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ---- Điện thoại / máy tính bảng dọc */
+@media (max-width: 900px) {
+  .modeswitch__opt,
+  .simple__seg {
+    min-height: var(--tap);
+  }
+
+  .modeswitch__opt {
+    padding: 0 10px;
+  }
+
+  /* Vòm lớn ngay màn hình đầu (review-4 B4): không có dải thẻ khung nhìn, nên khung cao hơn ở Đầy đủ. */
+  body.mode-simple .views {
+    height: clamp(380px, calc(100vw + 130px), 72svh);
+  }
+
+  body.mode-simple .simple {
+    gap: var(--space-4);
+    padding: var(--space-3);
+  }
+}
+
+/* Đầy đủ trên màn hình hẹp: công tắc xuống hàng thứ hai của thanh trên (đủ chỗ cho các nút 44 px). */
+@media (max-width: 640px) {
+  body.mode-full .topbar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  /* Hàng thứ hai nhẹ (không viền, không nền) để không thành thêm một dải thẻ ngang hàng với thẻ khung nhìn. */
+  body.mode-full .modeswitch {
+    order: 3;
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  body.mode-full .modeswitch__label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    margin-right: auto;
+  }
+}
+
+/* Cơ bản trên điện thoại rất hẹp: logo đại diện thương hiệu (tên đầy đủ vẫn có cho trình đọc màn hình), nhường
+   chỗ cho công tắc và ba nút 44 px trên cùng một hàng. */
+@media (max-width: 480px) {
+  body.mode-simple .brand__short {
+    display: none;
+  }
+
+  .modeswitch__opt {
+    padding: 0 8px;
+    font-size: 13px;
+  }
+}

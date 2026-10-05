@@ -18,10 +18,22 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../..');
-const DEV = 'http://localhost:5190';
-const PREVIEW = 'http://localhost:4190';
+// Ports can be overridden (PERF_DEV_PORT / PERF_PREVIEW_PORT) so parallel worktrees do not share a server.
+const DEV_PORT = process.env.PERF_DEV_PORT ?? '5190';
+const PREVIEW_PORT = process.env.PERF_PREVIEW_PORT ?? '4190';
+const DEV = `http://localhost:${DEV_PORT}`;
+const PREVIEW = `http://localhost:${PREVIEW_PORT}`;
 const ARGS = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 
+// redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
+// starts with the stored choice "full" (same key the mode switch writes).
+const FULL_MODE = () => {
+  try {
+    localStorage.setItem('astrosphere.mode.v1', JSON.stringify('full'));
+  } catch {
+    /* storage blocked: the page falls back to Simple and the checks will say so */
+  }
+};
 const children = [];
 // http.get thay vì fetch: undici chặn cổng 4190 ("bad port") nhưng Chromium thì không.
 function up(url) {
@@ -100,6 +112,7 @@ async function openPage(browser, url, viewport) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.addInitScript(FULL_MODE);
   await page.addInitScript(DRAW_COUNTER);
   await page.goto(url);
   await page.waitForFunction(() => document.querySelectorAll('.view__canvas canvas').length >= 2, null, { timeout: 30000 });
@@ -109,8 +122,8 @@ async function openPage(browser, url, viewport) {
 const results = {};
 let browser;
 try {
-  await ensureServer(DEV, ['vite', '--port', '5190', '--strictPort']);
-  await ensureServer(PREVIEW, ['vite', 'preview', '--port', '4190', '--strictPort']);
+  await ensureServer(DEV, ['vite', '--port', DEV_PORT, '--strictPort']);
+  await ensureServer(PREVIEW, ['vite', 'preview', '--port', PREVIEW_PORT, '--strictPort']);
   browser = await chromium.launch({ args: ARGS });
 
   // (a) Không tạo hình học đường mới khi chạy hoạt ảnh
@@ -206,6 +219,7 @@ try {
   // (d) Nỗ lực tốt nhất: CPU chậm → chất lượng tự hạ
   {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await page.addInitScript(FULL_MODE);
     await page.goto(`${DEV}/`);
     await page.evaluate(() => {
       try {

@@ -28,6 +28,40 @@
     "about": "Giới thiệu",
     "aboutTip": "Thông tin về mô phỏng, dữ liệu và giấy phép"
   },
+  "mode": {
+    "label": "Chế độ",
+    "tip": "Cơ bản: ít nút, dễ bắt đầu. Đầy đủ: mọi bảng điều khiển và số liệu. Lựa chọn được ghi nhớ cho lần sau.",
+    "simple": "Cơ bản",
+    "full": "Đầy đủ",
+    "simpleTip": "Cơ bản: một giản đồ chân trời lớn và vài nút cho người mới bắt đầu",
+    "fullTip": "Đầy đủ: thêm thiên cầu, dải số liệu, mọi bảng điều khiển, Ôn tập và Trình chiếu"
+  },
+  "simple": {
+    "title": "Điều khiển nhanh",
+    "whereTitle": "1. Bạn đứng ở đâu?",
+    "placesAria": "Chọn nhanh nơi quan sát",
+    "place": {
+      "hanoi": "Hà Nội",
+      "hcm": "TP.HCM",
+      "equator": "Xích đạo",
+      "northPole": "Bắc Cực",
+      "sydney": "Sydney (Úc)"
+    },
+    "lat": "Vĩ độ",
+    "timeTitle": "2. Bầu trời quay",
+    "speedAria": "Tốc độ quay của bầu trời",
+    "slow": "Chậm",
+    "fast": "Nhanh",
+    "slowTip": "Bầu trời quay một vòng trong 60 giây",
+    "fastTip": "Bầu trời quay một vòng trong 15 giây",
+    "layersTitle": "3. Hiện trên bầu trời",
+    "axis": "Trục quay của bầu trời",
+    "equator": "Xích đạo trời",
+    "zones": "Tô màu vùng mọc – lặn",
+    "zonesTip": "Tô màu ba vùng tại vĩ độ này: sao không bao giờ lặn, sao mọc và lặn, sao không bao giờ mọc.",
+    "tryStar": "Bấm vào một ngôi sao để biết nó đang cao bao nhiêu, ở hướng nào và có lặn không.",
+    "more": "Muốn xem thiên cầu, dải số liệu và bài ôn tập? Chọn «Đầy đủ» ở thanh trên cùng."
+  },
   "view": {
     "sphere": "Thiên cầu",
     "sphereSub": "Trái Đất ở tâm, bầu trời quay quanh trục thiên cực",

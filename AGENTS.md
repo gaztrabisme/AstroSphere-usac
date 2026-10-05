@@ -25,6 +25,7 @@ The browser acceptance checks:
 - use the global Playwright at `/opt/node-tools/node_modules/playwright` with Chromium in `/opt/pw-browsers`;
 - run against `npx vite preview --port 4173 --strictPort`;
 - need the launch flags `--use-angle=swiftshader --enable-unsafe-swiftshader`.
+- start in Full mode: a fresh visitor lands in Simple, so the `docs/redesign/uat/` scripts store `astrosphere.mode.v1 = "full"` in an init script. `docs/redesign-2/uat/modes.mjs` covers Simple (it needs the dev server).
 
 ## Architecture rules
 
@@ -45,6 +46,7 @@ The browser acceptance checks:
 | `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
 | `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
 | `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view (always small and muted) is then hidden on phones |
+| `astrosphere.mode.v1` | localStorage | The interface mode the user last chose, `"simple"` or `"full"` (`src/ui/mode.ts`). With no value a visitor lands in Simple. `?mode=simple\|full` overrides it for one page load and is not stored |
 
 ## Interface text (i18n)
 

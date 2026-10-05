@@ -17,15 +17,18 @@ import { button, clear, h, setText } from './ui/dom';
 import { bindHintCaption } from './ui/firstHint';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
+import { bindUiMode, initialUiMode, modeSwitch } from './ui/mode';
 import { mountQualityNotice } from './ui/qualityNotice';
 import { starPanel } from './ui/starPanel';
+import { simpleControls } from './ui/simpleControls';
 import { rovingTabs } from './ui/tabs';
 import { attachViewInteraction } from './ui/viewInteraction';
 
 // Tải cảnh 3D (three.js) song song với việc dựng giao diện.
 const scenePromise = import('./scene/boot');
 
-const store = new Store(createInitialState());
+// Chế độ giao diện (Cơ bản / Đầy đủ) đọc trước khi dựng giao diện để trang không "nháy" giữa hai bố cục.
+const store = new Store({ ...createInitialState(), uiMode: initialUiMode() });
 const actions = new Actions(store);
 
 // Cảnh mở đầu: bầu trời tự quay chậm — trừ khi người dùng yêu cầu giảm chuyển động (không tự chạy).
@@ -107,6 +110,8 @@ const topbar = h(
       h('span', { class: 'brand__short', 'aria-hidden': 'true', text: t('app.shortTitle') }),
     ),
   ),
+  // Công tắc Cơ bản | Đầy đủ (redesign-2 R2).
+  modeSwitch(store, actions),
   h(
     'nav',
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
@@ -291,7 +296,9 @@ document.addEventListener('fullscreenchange', () => {
 });
 // Khung nhìn đổi kích thước (đổi bố cục điện thoại ↔ máy tính, trình chiếu): ghi bù số liệu.
 window.addEventListener('resize', () => loop.markUiDirty());
-app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, legend, data.el, panels), footer);
+// Dải điều khiển gọn của chế độ Cơ bản: CSS chỉ hiện nó khi body.mode-simple (redesign-2 R2).
+const simple = simpleControls(store, actions);
+app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, simple.el, legend, data.el, panels), footer);
 
 // ---------------------------------------------------------------- Chú giải màu
 const LEGEND: { key: keyof Toggles | 'horizon'; color: string; zone?: boolean }[] = [
@@ -398,6 +405,20 @@ const loop = startFrameLoop({
 });
 mountQualityNotice(quality, app);
 
+// ---------------------------------------------------------------- Chế độ Cơ bản / Đầy đủ (redesign-2 R2)
+// Cơ bản chỉ có giản đồ chân trời: tắt trình chiếu, đóng ngăn Ôn tập, chọn thẻ "Giản đồ chân trời" (để thiên cầu
+// bị ẩn không vẽ), rồi đo lại khung nhìn và ghi bù số liệu cho các phần vừa hiện.
+bindUiMode(store, (mode) => {
+  if (mode === 'simple') {
+    setPresent(false);
+    learn.open(false);
+    selectView('horizon');
+  }
+  window.dispatchEvent(new Event('resize'));
+  loop.markUiDirty();
+});
+const isSimple = () => store.state.uiMode === 'simple';
+
 // Hook gỡ lỗi/đo hiệu năng — chỉ có ở chế độ phát triển.
 if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__app = {
@@ -451,6 +472,7 @@ window.addEventListener('keydown', (e) => {
     sphere?.resetCamera();
     horizon?.resetCamera();
   } else if (k === 'h' || e.key === '?') dialogs.help();
-  else if (k === 'l') learn.toggle();
-  else if (k === 'f') setPresent(!presenting);
+  // Cơ bản không có Ôn tập và Trình chiếu: phím L và F không làm gì.
+  else if (k === 'l' && !isSimple()) learn.toggle();
+  else if (k === 'f' && !isSimple()) setPresent(!presenting);
 });

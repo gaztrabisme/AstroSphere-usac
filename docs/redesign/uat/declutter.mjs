@@ -8,6 +8,15 @@
 // cao thiên cực: (3) bốn chữ hướng vẫn hiện, nhãn số đo và tên Polaris cũng hiện (review-3 D2).
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 
+// redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
+// starts with the stored choice "full" (same key the mode switch writes).
+const FULL_MODE = () => {
+  try {
+    localStorage.setItem('astrosphere.mode.v1', JSON.stringify('full'));
+  } catch {
+    /* storage blocked: the page falls back to Simple and the checks will say so */
+  }
+};
 const URL = process.env.UAT_URL ?? 'http://localhost:4190/?quality=fixed';
 const TOL = 2;
 
@@ -22,6 +31,7 @@ const errors = [];
 
 async function open(width, height) {
   const ctx = await browser.newContext({ viewport: { width, height } });
+  await ctx.addInitScript(FULL_MODE);
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(URL);
