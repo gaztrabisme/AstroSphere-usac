@@ -28,6 +28,13 @@ export class LabelBoxes {
   pad = new Float32Array(0);
   /** 1 = không có chỗ trống nào thì vẫn giữ ở vị trí gốc (nhãn số đo đang tô sáng: là nội dung chính lúc đó). */
   must = new Uint8Array(0);
+  /**
+   * 1 = vật cản (vùng giữ trống, không phải nhãn): vòng chọn, hình người quan sát (fix-1 G1). Hộp `soft` bỏ qua vật
+   * cản — nhãn tự neo quanh vật cản đó (tên đối tượng chọn đặt ngoài vòng, tên thiên cực) không tự đẩy mình đi.
+   */
+  solid = new Uint8Array(0);
+  /** 1 = hộp này không né vật cản (`solid`), chỉ né nhãn. */
+  soft = new Uint8Array(0);
   /** Độ lệch ngang đặt trước (px) đã cộng vào x khi đẩy hộp — khung nhìn cộng lại khi áp vào điểm neo. */
   ox = new Float32Array(0);
   /** Vị trí thay thế (góc trên trái, px) thử theo thứ tự khi vị trí gốc bị chiếm: altN[i] vị trí tại i*MAX_ALTS. */
@@ -51,6 +58,8 @@ export class LabelBoxes {
     this.nudge = new Uint8Array(c);
     this.pad = new Float32Array(c);
     this.must = new Uint8Array(c);
+    this.solid = new Uint8Array(c);
+    this.soft = new Uint8Array(c);
     this.ox = new Float32Array(c);
     this.altN = new Uint8Array(c);
     this.altX = new Float32Array(c * MAX_ALTS);
@@ -74,6 +83,8 @@ export class LabelBoxes {
     this.nudge[i] = nudge ? 1 : 0;
     this.pad[i] = 0;
     this.must[i] = 0;
+    this.solid[i] = 0;
+    this.soft[i] = 0;
     this.ox[i] = 0;
     this.altN[i] = 0;
     this.keep[i] = 0;
@@ -92,11 +103,16 @@ export class LabelBoxes {
   }
 }
 
-/** Hộp (x, y, w, h) có chạm hộp nào đã giữ trước i không (khoảng trống = gap + phần đệm lớn hơn của hai hộp). */
+/**
+ * Hộp (x, y, w, h) có chạm hộp nào đã giữ trước i không (khoảng trống = gap + phần đệm lớn hơn của hai hộp). Hộp
+ * `soft` bỏ qua vật cản (`solid`).
+ */
 function hits(b: LabelBoxes, i: number, x: number, y: number, w: number, h: number, gap: number): boolean {
   const pi = b.pad[i];
+  const soft = b.soft[i];
   for (let j = 0; j < i; j++) {
     if (!b.keep[j]) continue;
+    if (soft && b.solid[j]) continue;
     const g = gap + (b.pad[j] > pi ? b.pad[j] : pi);
     if (x < b.x[j] + b.w[j] + g && b.x[j] < x + w + g && y < b.y[j] + b.h[j] + g && b.y[j] < y + h + g) return true;
   }

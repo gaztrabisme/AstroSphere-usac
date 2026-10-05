@@ -310,12 +310,15 @@ export function polylineToSegments(points: THREE.Vector3[], out: number[] = []):
 }
 
 /** Họa tiết hình vành khuyên dùng để đánh dấu đối tượng đang chọn. */
-export function ringTexture(color = '#ffffff'): THREE.CanvasTexture {
+/** Ảnh vòng chọn (64 px). `dashed`: vòng đứt nét — đối tượng đang chọn nằm khuất dưới chân trời (fix-1 #2). */
+export function ringTexture(color = '#ffffff', dashed = false): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const ctx = c.getContext('2d')!;
   ctx.strokeStyle = color;
   ctx.lineWidth = 5;
+  // Chu vi 2π·24 ≈ 150,8 px: 12 nét 7,6 px + khe 5 px chia đều quanh vòng.
+  if (dashed) ctx.setLineDash([7.57, 5]);
   ctx.beginPath();
   ctx.arc(32, 32, 24, 0, Math.PI * 2);
   ctx.stroke();

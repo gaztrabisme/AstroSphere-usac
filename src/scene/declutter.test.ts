@@ -124,4 +124,35 @@ describe('declutter', () => {
     for (let k = 0; k < MAX_ALTS + 3; k++) b.addAlt(0, k, k);
     expect(b.altN[0]).toBe(MAX_ALTS);
   });
+
+  it('an obstacle (solid) moves an ordinary label to its alternative, but a soft label ignores it', () => {
+    const b = new LabelBoxes();
+    b.ensure(3);
+    const o = b.push(100, 100, 40, 40, false); // vòng chọn
+    b.solid[o] = 1;
+    b.must[o] = 1;
+    const d = b.push(130, 110, 20, 20, true); // chữ hướng chồng lên vòng
+    b.addAlt(d, 160, 110);
+    const p = b.push(110, 90, 30, 16, true); // tên thiên cực (soft) chồng lên vòng
+    b.soft[p] = 1;
+    declutter(b, 800, 600);
+    expect(b.keep[o]).toBe(1);
+    expect(b.keep[d]).toBe(1);
+    expect(b.dx[d]).toBe(30); // dời sang vị trí thay thế
+    expect(b.keep[p]).toBe(1);
+    expect(b.dx[p]).toBe(0); // bỏ qua vật cản, giữ chỗ gốc
+  });
+
+  it('a must box with no free place stays at its origin even when an obstacle covers it', () => {
+    const b = new LabelBoxes();
+    b.ensure(2);
+    const o = b.push(100, 100, 40, 40, false);
+    b.solid[o] = 1;
+    b.must[o] = 1;
+    const d = b.push(110, 110, 20, 20, true);
+    b.must[d] = 1;
+    declutter(b, 800, 600);
+    expect(b.keep[d]).toBe(1);
+    expect(b.dx[d]).toBe(0);
+  });
 });

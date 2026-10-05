@@ -43,6 +43,11 @@ export interface LabelData {
    * không chen sát tên sao/thiên cực — chỗ chật thì tên chòm ẩn đi (review-4 D2).
    */
   clear: number;
+  /**
+   * Không có chỗ trống nào thì vẫn giữ ở vị trí gốc thay vì ẩn (LabelBoxes.must): nhãn cảnh báo "đang ở dưới chân
+   * trời" là thông tin duy nhất về đối tượng đang chọn khi nó bị mặt đất che (fix-1 #2).
+   */
+  must: boolean;
 }
 
 export interface Label extends CSS2DObject {
@@ -67,6 +72,8 @@ export interface LabelOpts {
   emph?: string;
   /** Khoảng trống thêm (px) quanh nhãn khi gỡ chồng chéo (xem LabelData.clear). */
   clear?: number;
+  /** Luôn giữ (xem LabelData.must). */
+  must?: boolean;
   /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
   edge?: string;
 }
@@ -108,6 +115,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     emph: opts.emph ?? '',
     alts: null,
     clear: opts.clear ?? 0,
+    must: opts.must ?? false,
   };
   return obj;
 }

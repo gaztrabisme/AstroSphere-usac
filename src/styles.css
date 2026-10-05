@@ -3998,3 +3998,22 @@ body.present .guide-tip {
     margin: -8px -8px 0 0;
   }
 }
+
+/* ===== Fix round 1: scene ===== */
+/* fix-1 #5: chữ hướng B/N/Đ/T trắng trung tính — màu lục chỉ còn nghĩa "đường chân trời" (viền đĩa). Áp cho cả hình
+   minh họa trong Codex (cùng biến). */
+:root {
+  --scene-dir: var(--text);
+}
+
+/* fix-1 #2: nhãn "… đang ở dưới chân trời (h = …)" khi đối tượng chọn bị mặt đất che. Chip tối như nhãn số đo, viền
+   trái ĐỨT NÉT màu hồng của đường thẳng đứng/cung h (màu do JS đặt) — cùng ngôn ngữ với dấu "bóng" đứt nét. */
+.lbl--under {
+  font-size: calc(13px * var(--lbl-k, 1));
+  font-weight: 650;
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border-left: 3px dashed;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+}
