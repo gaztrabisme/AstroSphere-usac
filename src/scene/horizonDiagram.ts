@@ -16,6 +16,8 @@ const DAY = new THREE.Color('#1d4374');
 const GROUND_OPACITY = 0.55;
 /** Góc nhìn ngang (độ) của giản đồ chân trời trong khung dọc. */
 const PORTRAIT_HFOV = 46;
+/** Khung dọc: dời cảnh lên (tỉ lệ chiều cao khung). */
+const PORTRAIT_SHIFT = 0.06;
 const DEG = Math.PI / 180;
 
 export class HorizonDiagramView extends View {
@@ -189,6 +191,14 @@ export class HorizonDiagramView extends View {
     return Math.min(62, Math.max(37, (2 * Math.atan(Math.tan((PORTRAIT_HFOV / 2) * DEG) / aspect)) / DEG));
   }
 
+  /**
+   * Khung dọc (điện thoại, review-4 B4): nút công cụ giờ là biểu tượng nổi ở góc, dải trời phía trên vòm không còn bị
+   * hàng nút chiếm — đưa cảnh lên 6 % chiều cao để vòm bắt đầu cao hơn và đĩa chân trời cách xa thẻ thông tin hơn.
+   */
+  protected viewShiftY(aspect: number, h: number): number {
+    return !this.firstPerson && aspect < 0.9 ? Math.round(h * PORTRAIT_SHIFT) : 0;
+  }
+
   isFirstPerson(): boolean {
     return this.firstPerson;
   }
@@ -218,6 +228,7 @@ export class HorizonDiagramView extends View {
       super.resetCamera();
     }
     this.camera.fov = this.preferredFov(this.camera.aspect);
+    this.applyViewOffset();
     this.camera.updateProjectionMatrix();
     this.controls.update();
     this.onUpdate(this.store.state);

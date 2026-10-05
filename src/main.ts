@@ -121,32 +121,36 @@ const topbar = h(
 // ---------------------------------------------------------------- Hai khung nhìn
 const sphereHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.sphereAria') });
 const horizonHost = h('div', { class: 'view__canvas', role: 'img', 'aria-label': t('view.horizonAria') });
-const fpBtn = h('button', {
-  type: 'button',
-  class: 'btn btn--small',
-  'aria-pressed': 'false',
-  title: t('view.firstPersonTip'),
-  text: t('view.firstPerson'),
-  onclick: () => {
-    if (!horizon) return;
-    const on = !horizon.isFirstPerson();
-    horizon.setFirstPerson(on);
-    fpBtn.setAttribute('aria-pressed', String(on));
-    fpBtn.textContent = on ? t('view.outside') : t('view.firstPerson');
-  },
+/**
+ * Nút công cụ của khung nhìn (review-4 B4): nút biểu tượng 44 px NỔI ở góc trên phải của cảnh, không còn chiếm một
+ * hàng riêng phía trên cảnh. Tên truy cập = aria-label (cũng là chữ hiện cạnh biểu tượng trên màn hình rộng), title
+ * giải thích thêm. Nằm ngoài vùng role="img" của canvas để trình đọc màn hình vẫn thấy nút.
+ */
+function viewTool(icon: string, label: string, tip: string, onClick: () => void): HTMLButtonElement {
+  return h(
+    'button',
+    { type: 'button', class: 'view-tool', 'aria-label': label, title: tip, onclick: onClick },
+    h('span', { class: 'view-tool__icon', 'aria-hidden': 'true', text: icon }),
+    h('span', { class: 'view-tool__text', 'aria-hidden': 'true', text: label }),
+  ) as HTMLButtonElement;
+}
+
+const fpBtn = viewTool('👁', t('view.firstPerson'), t('view.firstPersonTip'), () => {
+  if (!horizon) return;
+  const on = !horizon.isFirstPerson();
+  horizon.setFirstPerson(on);
+  // Nút bật/tắt: tên giữ nguyên, trạng thái nằm ở aria-pressed (và viền cam khi đang bật).
+  fpBtn.setAttribute('aria-pressed', String(on));
+  fpBtn.title = on ? t('view.outside') : t('view.firstPersonTip');
 });
+fpBtn.setAttribute('aria-pressed', 'false');
 
 function viewBox(id: string, title: string, sub: string, host: HTMLElement, tools: HTMLElement[], foot: HTMLElement | null = null) {
   return h(
     'article',
     { class: 'view', id, 'aria-labelledby': `${id}-title` },
-    h(
-      'header',
-      { class: 'view__head' },
-      h('div', null, h('h2', { id: `${id}-title`, text: title }), h('p', { class: 'view__sub', text: sub })),
-      h('div', { class: 'view__tools' }, ...tools),
-    ),
-    host,
+    h('header', { class: 'view__head' }, h('div', null, h('h2', { id: `${id}-title`, text: title }), h('p', { class: 'view__sub', text: sub }))),
+    h('div', { class: 'view__stage' }, host, h('div', { class: 'view__tools', role: 'group', 'aria-label': title }, ...tools)),
     foot,
   );
 }
@@ -170,14 +174,14 @@ function updateKeyLine(s: AppState) {
 }
 
 const sphereBox = viewBox('view-sphere', t('view.sphere'), t('view.sphereSub'), sphereHost, [
-  button(t('view.resetCamera'), () => sphere?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') }),
+  viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => sphere?.resetCamera()),
 ]);
 const horizonBox = viewBox(
   'view-horizon',
   t('view.horizon'),
   t('view.horizonSub'),
   horizonHost,
-  [fpBtn, button(t('view.resetCamera'), () => horizon?.resetCamera(), { cls: 'btn--small', title: t('view.resetCameraTip') })],
+  [fpBtn, viewTool('⟲', t('view.resetCamera'), t('view.resetCameraTip'), () => horizon?.resetCamera())],
   horizonFoot,
 );
 

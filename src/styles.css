@@ -360,11 +360,54 @@ body.learn-open .layout {
   color: var(--muted);
 }
 
+/* ---- Luồng P (review-4 B4): nút công cụ nổi trong cảnh -------------------------------------------------------
+   Khung cảnh (.view__stage) chứa canvas và một nhóm nút biểu tượng ở góc trên phải. Đầu khung chỉ còn tiêu đề;
+   trên điện thoại đầu khung ẩn hẳn (thẻ chọn khung đã gọi tên khung) để cảnh bắt đầu ngay dưới thẻ chọn. */
+.view__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .view__tools {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+}
+
+.view-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+  background: var(--label-pill-strong);
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.view-tool:hover {
+  background: var(--surface-3);
+}
+
+.view-tool[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.view-tool__icon {
+  font-size: 15px;
+  line-height: 1;
 }
 
 .view__canvas {
@@ -1822,14 +1865,26 @@ body.present .swatch--line {
     display: none;
   }
 
-  /* Nút công cụ của khung nổi trên góc trên của cảnh (vùng trời trống phía trên vòm), không chiếm một hàng riêng. */
+  /* review-4 B4: đầu khung không còn nút (nút nổi trong cảnh) và thẻ chọn khung đã gọi tên khung — ẩn hẳn. Nút
+     công cụ là biểu tượng 44 px ở góc trên phải, xếp dọc, ngoài vòm trời. */
   .view__head {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 2;
-    justify-content: flex-end;
-    padding: 4px 6px;
+    display: none;
+  }
+
+  .view__tools {
+    top: var(--space-1);
+    right: var(--space-1);
+    flex-direction: column;
+  }
+
+  .view-tool {
+    width: var(--tap);
+    height: var(--tap);
+    padding: 0;
+  }
+
+  .view-tool__text {
+    display: none;
   }
 
   .infocard {

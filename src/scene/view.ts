@@ -196,6 +196,7 @@ export abstract class View implements QualityTarget {
     this.labelRenderer.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = this.preferredFov(w / h);
+    this.applyViewOffset();
     this.camera.updateProjectionMatrix();
     this.dirty = true;
   }
@@ -203,6 +204,20 @@ export abstract class View implements QualityTarget {
   /** Màn hình dọc (điện thoại): mở rộng góc nhìn để vẫn thấy trọn thiên cầu. */
   protected preferredFov(aspect: number): number {
     return aspect < 0.9 ? 58 : 42;
+  }
+
+  /**
+   * Dời khung hình theo chiều dọc (px, dương = cảnh lên trên) — lớp con dùng để đặt cảnh trong khung dọc. Mặc định 0.
+   * Phép chiếu (nhãn, chọn sao) dùng chung projectionMatrix nên vẫn khớp.
+   */
+  protected viewShiftY(_aspect: number, _h: number): number {
+    return 0;
+  }
+
+  protected applyViewOffset(): void {
+    const dy = this.width > 0 ? this.viewShiftY(this.camera.aspect, this.height) : 0;
+    if (dy === 0) this.camera.clearViewOffset();
+    else this.camera.setViewOffset(this.width, this.height, 0, dy, this.width, this.height);
   }
 
   /** Đồng bộ toàn bộ khung nhìn với trạng thái. */
@@ -513,6 +528,7 @@ export abstract class View implements QualityTarget {
     this.setLineScale(on ? lineScale : 1);
     if (this.height > 0) {
       this.camera.fov = this.preferredFov(this.camera.aspect);
+      this.applyViewOffset();
       this.camera.updateProjectionMatrix();
     }
     this.dirty = true;
