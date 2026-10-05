@@ -119,10 +119,10 @@ const topbar = h(
     { class: 'topbar__actions', 'aria-label': t('top.navAria') },
     learnBtn,
     presentBtn,
-    button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip'), guide: 'reset' }),
+    button(t('top.reset'), () => resetAll(), { cls: 'btn--top btn--top-reset', icon: '↺', title: t('top.resetTip'), guide: 'reset' }),
     codexButton(store, actions), // Codex (redesign-2 C)
-    button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip'), guide: 'help' }),
-    button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip'), guide: 'about' }),
+    button(t('top.help'), () => dialogs.help(), { cls: 'btn--top btn--top-aux', icon: '?', title: t('top.helpTip'), guide: 'help' }),
+    button(t('top.about'), () => dialogs.about(), { cls: 'btn--top btn--top-aux', icon: 'i', title: t('top.aboutTip'), guide: 'about' }),
   ),
 );
 

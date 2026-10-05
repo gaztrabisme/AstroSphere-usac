@@ -104,7 +104,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
 
   const order = await page.locator('.topbar__actions .btn .btn__text').allTextContents();
   // redesign-2 C: nút Codex đứng ngay trước Trợ giúp.
-  check('top bar order', order.join('|') === 'Ôn tập|Trình chiếu|Đặt lại|Codex|Trợ giúp|Giới thiệu', order.join(' | '));
+  check('top bar order', order.join('|') === 'Ôn tập|Trình chiếu|Đặt lại|USACodex|Trợ giúp|Giới thiệu', order.join(' | '));
 
   const brand = await page.evaluate(() => {
     const cs = (sel, p) => getComputedStyle(document.querySelector(sel))[p];

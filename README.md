@@ -34,10 +34,10 @@ TP.HCM, Xích đạo, Bắc Cực, Sydney, thanh trượt vĩ độ), cho bầu 
 vùng mọc – lặn. Thẻ sao rút gọn còn tên, tên Việt, A, h và trạng thái. *Đầy đủ* là toàn bộ giao diện bên dưới.
 `?mode=simple|full` chọn chế độ cho một lần mở. Thiết kế: `docs/redesign-2/simple-mode.md`.
 
-**Codex** (kiểu Mass Effect): 44 mục trong 7 danh mục (Nền tảng, Hệ tọa độ, Mọc – lặn, Mở rộng, Sao sáng, Chòm sao,
+**USACodex** (sổ tay kiểu codex của Mass Effect): 44 mục trong 7 danh mục (Nền tảng, Hệ tọa độ, Mọc – lặn, Mở rộng, Sao sáng, Chòm sao,
 Thiên thể sâu), mỗi mục có hình minh họa (sơ đồ vẽ theo vĩ độ đang chọn, hoặc ảnh sao vẽ từ danh mục thật) và cột số
 liệu. Mục nào bạn đã gặp trong mô phỏng thì được đánh dấu "đã khám phá" (mục chưa gặp vẫn đọc được, có ổ khóa); số trên
-nút Codex là số mục mới chưa đọc. Các dấu "?" cạnh số liệu mở đúng mục; nút "Xem trong mô phỏng" đưa bạn về đúng cảnh.
+nút USACodex là số mục mới chưa đọc. Các dấu "?" cạnh số liệu mở đúng mục; nút "Xem trong mô phỏng" đưa bạn về đúng cảnh.
 Nội dung nằm trong `src/i18n/codex.vi.json`, chỉ tải khi mở Codex. Thiết kế: `docs/redesign-2/codex.md`.
 
 **Usui-chan**, linh vật của CLB, chào một lần ở lần đầu ghé thăm rồi ngồi ở góc màn hình. Bấm vào Usui-chan để bật *chế
@@ -73,7 +73,7 @@ LST/H, trạng thái mọc – lặn) thì hình tương ứng sáng lên ở c�
 
 **Trình chiếu** (phím `F`): toàn màn hình cho buổi sinh hoạt — đường nét dày ×2, nhãn lớn ×1,8, ẩn bảng điều khiển, dòng φ = độ cao thiên cực cỡ lớn.
 
-**Hiệu năng**: three.js tải song song sau phần khung giao diện (JS ban đầu ≈ 82 kB gzip; Codex, Usui-chan và mô hình 3D của Usui-chan chỉ tải khi cần); không vẽ khung bị ẩn hay khi thẻ trình duyệt ở nền; tự hạ chất lượng khi máy yếu (`?quality=fixed` để tắt). Số đo: `docs/redesign/perf.md`.
+**Hiệu năng**: three.js tải song song sau phần khung giao diện (JS ban đầu ≈ 82 kB gzip; USACodex, Usui-chan và mô hình 3D của Usui-chan chỉ tải khi cần); không vẽ khung bị ẩn hay khi thẻ trình duyệt ở nền; tự hạ chất lượng khi máy yếu (`?quality=fixed` để tắt). Số đo: `docs/redesign/perf.md`.
 
 **Mở rộng**: hoàng đạo (điểm xuân phân, hạ chí, thu phân, đông chí), Mặt Trời theo ngày (độ dài ban ngày, nền trời đổi màu theo ngày/đêm), xích đạo thiên hà và tâm Ngân Hà.
 
@@ -96,7 +96,7 @@ src/
   runtime/      frameLoop (vòng lặp, tạm dừng khi ẩn), quality (chất lượng thích ứng)
   ui/           Bảng điều khiển, bản đồ, thẻ thông tin, tooltip, hộp thoại, Ôn tập, storage, emphasis,
                 mode (Cơ bản | Đầy đủ), simpleControls (dải điều khiển chế độ Cơ bản)
-  codex/        Codex: triggers (luật khám phá, nhẹ, nằm trong gói đầu), ui/diagrams/sky (tải khi mở)
+  codex/        USACodex: triggers (luật khám phá, nhẹ, nằm trong gói đầu), ui/diagrams/sky (tải khi mở)
   guide/        Usui-chan: boot (nút ảnh), guide (lời chào, chế độ giải thích; tải khi cần)
   emphasis.ts   Ánh xạ khóa nhấn mạnh ↔ con số ↔ hình 3D
   scenario.ts   Tiện ích dựng tình huống cho Ôn tập

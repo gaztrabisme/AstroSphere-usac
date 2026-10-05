@@ -60,7 +60,7 @@ The browser acceptance checks:
   - The formulas in `help.body` and `about.body` compile in KaTeX.
 - Keys built at runtime (template strings) are invisible to that test. Any new dynamic key family needs its own unit test that checks every generated key exists.
 - **Usui-chan's explanations** (`src/guide/`, see `docs/redesign-2/guide.md`): every interactive control carries `data-guide="<key>"`, and its text is `guide.tip.<key>` in `vi.json`. Write the key as a literal (`'data-guide': '<key>'`, `guide: '<key>'` or `guide('<key>', el)` from `ui/dom.ts`); `src/guide/guide.test.ts` collects them and fails on a missing string, an orphan string or a new non-literal assignment. A new control needs a key and a tip of at most two sentences.
-- **Codex content** lives in a second file, `src/i18n/codex.vi.json` (categories, entries, diagram labels). Only the lazy codex chunk (`src/codex/ui.ts`) imports it, so it never enters the entry chunk. The Codex interface strings stay in `vi.json` under `codexUi`.
+- **USACodex** is the user-facing name of the codex (the code, file names and storage key keep `codex`). Its content lives in a second file, `src/i18n/codex.vi.json` (categories, entries, diagram labels). Only the lazy codex chunk (`src/codex/ui.ts`) imports it, so it never enters the entry chunk. The Codex interface strings stay in `vi.json` under `codexUi`.
   - `src/codex/codex.test.ts` applies the same banned-word rule and KaTeX check to it, and checks that every entry has a title, lede and body, that every `related` id, discovery-trigger id, `termLink` id and "Xem trong mô phỏng" action resolves to an entry.
   - Celestial object names (Polaris, Ursa Major, M31…) stay in English; give the Vietnamese name in the text.
 - Number formatting uses a comma as the decimal separator; see `astro/format.ts`. Use B/N for north/south and Đ/T for east/west.
@@ -90,7 +90,7 @@ The brand comes from the club site https://web-usac.vercel.app/.
 
 - Respect `prefers-reduced-motion`: no autoplay, and draw trails statically.
 - Return focus to the opener when a drawer or sheet closes.
-- **Esc priority:** dialog (including the Codex) → Usui-chan's hello / explain mode → learning drawer → clear the selection. Esc never fires while the user is typing.
+- **Esc priority:** dialog (including the USACodex) → Usui-chan's hello / explain mode → learning drawer → clear the selection. Esc never fires while the user is typing.
 - Global shortcuts must not hijack interactive elements:
   - Space is ignored on buttons, links, `summary`, and inputs.
   - Arrow keys are ignored inside `role=tablist`, `slider` and `radiogroup`.
