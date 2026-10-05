@@ -102,8 +102,24 @@ export class HorizonDiagramView extends View {
         model.scale.setScalar(k);
         const center = box.getCenter(new THREE.Vector3());
         model.position.set(-center.x * k, -box.min.y * k, -center.z * k);
+        // Nâng nhẹ khỏi mặt đất để đáy bệ không trùng mặt phẳng chân trời (tránh nhấp nháy z-fighting).
+        model.position.y += this.R * 0.004;
         model.traverse((o) => {
-          if ((o as THREE.Mesh).isMesh) o.userData.tip = 'observer';
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.userData.tip = 'observer';
+          // Lưới có xương (VRoid) có khối bao sai so với tư thế thật → bị loại khỏi khung nhìn ở vài góc. Tắt cắt xén.
+          mesh.frustumCulled = false;
+          // VRoid xuất mọi vật liệu ở chế độ BLEND (trong suốt, không ghi chiều sâu) nên khi xoay, các phần
+          // tóc/mặt/thân đè nhau sai thứ tự. Chuyển sang chế độ cắt alpha: vẽ như vật đặc, vẫn giữ viền tóc, mi mắt.
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) {
+            if (!m.transparent) continue;
+            m.transparent = false;
+            m.alphaTest = Math.max(m.alphaTest, 0.5);
+            m.depthWrite = true;
+            m.needsUpdate = true;
+          }
         });
         this.person.clear();
         this.person.add(model);
