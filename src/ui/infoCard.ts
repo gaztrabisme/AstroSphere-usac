@@ -61,7 +61,11 @@ export function infoCard(store: Store, actions: Actions) {
   const dot = h('span', { class: 'infocard__dot', 'aria-hidden': 'true' });
   // Dòng phụ: tên tiếng Việt (nếu có) ngay dưới tên quốc tế (ux-brief §7).
   const viName = h('p', { class: 'infocard__vi', lang: 'vi', hidden: true });
-  const kind = h('p', { class: 'infocard__kind' });
+  // Dòng loại: ký hiệu · chòm sao · cấp sao. Cấp sao nằm trong span không ngắt dòng để "cấp sao 1,97" không bị
+  // tách thành dòng mồ côi (review-2 D2).
+  const kindText = h('span');
+  const magText = h('span', { class: 'infocard__mag' });
+  const kind = h('p', { class: 'infocard__kind' }, kindText, magText);
   const collapseBtn = h('button', {
     type: 'button',
     class: 'icon-btn',
@@ -69,15 +73,18 @@ export function infoCard(store: Store, actions: Actions) {
     'aria-label': t('info.collapse'),
     title: t('info.collapse'),
     text: '–',
-    onclick: () => {
-      const collapsed = el.classList.toggle('is-collapsed');
-      collapseBtn.setAttribute('aria-expanded', String(!collapsed));
-      collapseBtn.textContent = collapsed ? '+' : '–';
-      const label = t(collapsed ? 'info.expand' : 'info.collapse');
-      collapseBtn.setAttribute('aria-label', label);
-      collapseBtn.title = label;
-    },
+    onclick: () => setCollapsed(!el.classList.contains('is-collapsed')),
   });
+  /** Thu gọn thẻ về một dòng tiêu đề (tên đối tượng) hoặc mở ra đầy đủ. */
+  function setCollapsed(collapsed: boolean): void {
+    el.classList.toggle('is-collapsed', collapsed);
+    collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+    collapseBtn.textContent = collapsed ? '+' : '–';
+    const label = t(collapsed ? 'info.expand' : 'info.collapse');
+    collapseBtn.setAttribute('aria-label', label);
+    collapseBtn.title = label;
+  }
+  const isWide = (): boolean => !(window.matchMedia?.('(max-width: 900px)').matches ?? false);
 
   // Cấu trúc thẻ dựng một lần; mỗi lần cập nhật chỉ thay chữ (rẻ khi đang chạy hoạt ảnh).
   const note = (k: (typeof INFO_NOTE_KEYS)[number]) => t(`info.${k}Note`);
@@ -95,7 +102,8 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
-  const statusRow = h('div', { class: 'kv', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
+  // Hàng trạng thái xếp dọc (nhãn trên, viên trạng thái dưới) để viên "Cận cực (không bao giờ lặn)" nằm trọn một dòng.
+  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
   const body = h(
     'div',
     { class: 'infocard__body' },
@@ -144,7 +152,9 @@ export function infoCard(store: Store, actions: Actions) {
     head.title = getComputedStyle(el).position === 'absolute' ? t('info.dragTip') : '';
   });
   let drag: { dx: number; dy: number } | null = null;
+  let dragged = false;
   head.addEventListener('pointerdown', (e) => {
+    dragged = false;
     // Chỉ kéo được khi thẻ nổi trên khung nhìn (không kéo khi là cột cố định hoặc trên điện thoại).
     if ((e.target as HTMLElement).closest('button') || window.matchMedia?.('(max-width: 900px)').matches) return;
     if (getComputedStyle(el).position !== 'absolute') return;
@@ -155,6 +165,7 @@ export function infoCard(store: Store, actions: Actions) {
   });
   head.addEventListener('pointermove', (e) => {
     if (!drag || !el.parentElement) return;
+    dragged = true;
     const box = el.parentElement.getBoundingClientRect();
     const x = Math.min(Math.max(e.clientX - box.left - drag.dx, 0), box.width - el.offsetWidth);
     const y = Math.min(Math.max(e.clientY - box.top - drag.dy, 0), box.height - 40);
@@ -165,6 +176,11 @@ export function infoCard(store: Store, actions: Actions) {
   const endDrag = () => (drag = null);
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
+  // Màn hình rộng: bấm vào thanh tiêu đề (không phải nút, không phải kéo) cũng mở/thu gọn thẻ (review-2 B2).
+  head.addEventListener('click', (e) => {
+    if (dragged || (e.target as HTMLElement).closest('button') || !isWide() || el.classList.contains('is-empty')) return;
+    setCollapsed(!el.classList.contains('is-collapsed'));
+  });
 
   // Còn nội dung bên dưới mép thẻ → mép dưới mờ dần (lớp can-scroll). Chỉ đọc kích thước khi cuộn hoặc khi
   // ResizeObserver báo đổi kích thước (sau bố cục), không đọc trong nhịp cập nhật của vòng lặp.
@@ -183,15 +199,24 @@ export function infoCard(store: Store, actions: Actions) {
     ro.observe(body);
   }
 
-  // Trên màn hình hẹp, thẻ bắt đầu ở dạng thu gọn để không che khung nhìn.
-  if (window.matchMedia?.('(max-width: 900px)').matches) collapseBtn.click();
+  // Thẻ bắt đầu thu gọn về một dòng tên đối tượng (review-2 B2/B3: một tiêu điểm duy nhất là giản đồ chân trời).
+  // Điện thoại: như trước, thu gọn để không che khung nhìn. Màn hình rộng: thẻ tự mở khi người dùng chọn một
+  // đối tượng KHÁC (bấm vào sao), tự thu lại khi bỏ chọn; khi thu gọn, cột thứ ba trả chỗ cho hai khung nhìn.
+  setCollapsed(true);
 
   let staticKey = '';
   let wasEmpty: boolean | null = null;
+  // undefined = chưa ghi nhận (lần đầu, hoặc sau "Đặt lại"): lựa chọn mặc định không tự mở thẻ.
+  let selRef: AppState['selected'] | undefined;
   const update = () => {
     const s = store.state;
     const obj = resolveSelection(s);
     const isEmpty = !obj;
+    // So sánh tham chiếu: trạng thái bất biến, lựa chọn chỉ đổi khi người dùng chọn/bỏ chọn (không cấp phát).
+    if (s.selected !== selRef) {
+      if (selRef !== undefined && isWide()) setCollapsed(!obj);
+      selRef = s.selected;
+    }
     if (isEmpty !== wasEmpty) {
       wasEmpty = isEmpty;
       el.classList.toggle('is-empty', isEmpty);
@@ -213,8 +238,10 @@ export function infoCard(store: Store, actions: Actions) {
       setText(viName, obj.viName ?? '');
       setHidden(viName, !obj.viName);
       dot.style.background = obj.color;
-      const kindParts = [obj.designation, obj.kind, obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : undefined];
-      setText(kind, kindParts.filter(Boolean).join(' · '));
+      const kindHead = [obj.designation, obj.kind].filter(Boolean).join(' · ');
+      const mag = obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : '';
+      setText(kindText, kindHead && mag ? `${kindHead} · ` : kindHead);
+      setText(magText, mag);
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);
       setRow(r.dec, fmtDMS(obj.dec), `(${fmtDegSigned(obj.dec)})`);
       status.className = `status status--${rs.visibility}`;
@@ -240,7 +267,13 @@ export function infoCard(store: Store, actions: Actions) {
     setRow(r.alt, fmtDegSigned(alt, 2), alt >= 0 ? t('info.above') : t('info.below'));
   };
 
-  return { el, update };
+  /** "Đặt lại": về trạng thái lần đầu vào trang (thẻ thu gọn, lựa chọn mặc định không tự mở thẻ). */
+  const reset = () => {
+    setCollapsed(true);
+    selRef = undefined;
+  };
+
+  return { el, update, reset };
 }
 
 /**

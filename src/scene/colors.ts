@@ -10,6 +10,9 @@ export const COLORS = {
   meridian: '#e2e8f0',
   zenith: '#ffffff',
   vertical: '#f472b6',
+  // Cung và nhãn phương vị A: xanh lơ, khác hẳn vàng xích đạo, cam hoàng đạo/thương hiệu, hồng vòng thẳng đứng và
+  // màu các vùng (review-2 G2: hổ phách cũ đọc như cùng họ với xích đạo). 13,7:1 trên nền trời, 5,4:1 trên mặt đất.
+  azimuth: '#67e8f9',
   circumpolar: '#8b5cf6',
   riseSet: '#14b8a6',
   neverRise: '#ef4444',

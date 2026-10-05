@@ -14,6 +14,8 @@
   --surface: #141414;
   --surface-2: #1c1c1c;
   --surface-3: #242424;
+  --surface-quiet: #101010; /* bề mặt phụ (dải số liệu, bảng điều khiển): gần nền hơn để giản đồ chân trời nổi lên */
+  --text-quiet: #d9d9d9; /* giá trị phụ (dải số liệu): 13,0:1 trên --surface-quiet, nhỏ giọng hơn chữ chính */
   --border: #2e2e2e; /* chỉ để phân cách */
   --border-control: #707070; /* viền ô nhập, hộp kiểm (≥ 3:1) */
   --text: #f2f2f2;
@@ -307,7 +309,10 @@ body.learn-open .layout {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--space-3);
-  height: clamp(380px, 60vh, 760px);
+  /* Màn hình đầu = hai khung nhìn + chú giải + dải số liệu; bảng điều khiển bắt đầu ngay dưới mép màn hình
+     (review-2 B2: bớt các nhóm cạnh tranh quanh tiêu điểm thay vì chen nửa bảng vào khung đầu). 226 px = thanh
+     trên, chú giải, dải số liệu và các khoảng cách. */
+  height: clamp(380px, calc(100svh - 226px), 760px);
 }
 
 .view {
@@ -333,6 +338,12 @@ body.learn-open .layout {
 .view__head h2 {
   margin: 0;
   font-size: 15px;
+}
+
+/* Thiên cầu là "số hai" (review-2 B2): tiêu đề nhẹ hơn, màu phụ — giản đồ chân trời đọc là số một. */
+#view-sphere .view__head h2 {
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .view__sub {
@@ -375,24 +386,24 @@ body.learn-open .layout {
   border-top: 1px solid var(--border);
 }
 
+/* Ý chính của cả ứng dụng (review-2 A2, I1.3): cỡ tiêu đề, đậm, ở đầu chân khung — tách hẳn khỏi dòng gợi ý. */
 .view__key {
   margin: 0;
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
 
+/* Gợi ý thao tác: luôn nhỏ và màu phụ, để không ngang hàng với ý chính (review-2 A2). Lớp is-new (chưa tương
+   tác lần nào) chỉ quyết định việc hiện gợi ý trên điện thoại. */
 .view__hint {
   margin: 0;
   font-size: 12.5px;
+  font-weight: 400;
   color: var(--muted);
-}
-
-/* Lần đầu vào trang: gợi ý đọc như chữ thường; sau lần kéo/bấm đầu tiên nó lùi về màu phụ. */
-.view__hint.is-new {
-  color: var(--text);
-  font-weight: 600;
 }
 
 .label-layer {
@@ -419,7 +430,13 @@ body.learn-open .layout {
   font-weight: 550;
   white-space: nowrap;
   color: var(--text);
+  /* Viền chữ tối (review-2 D2): bốn bóng cứng 1 px tạo viền liền quanh nét chữ, thêm hai lớp mờ — nhãn đọc được
+     cả khi nằm trên đường kẻ, chòm sao hay bề mặt Trái Đất. */
   text-shadow:
+    1px 0 0 var(--label-halo),
+    -1px 0 0 var(--label-halo),
+    0 1px 0 var(--label-halo),
+    0 -1px 0 var(--label-halo),
     0 0 3px var(--label-halo),
     0 0 6px var(--label-halo);
   pointer-events: none;
@@ -461,6 +478,13 @@ body.learn-open .layout {
   padding: 1px 6px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
+}
+
+/* Nhãn đặt trên bề mặt có họa tiết (người quan sát trên Trái Đất): chip tối mờ phía sau chữ. */
+.lbl--chip {
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 
 /* Số đo góc gắn với tô sáng liên kết: chip tối, chữ sáng, viền trái mang màu ngữ nghĩa của hình (review-1 F2). */
@@ -534,7 +558,7 @@ body.learn-open .layout {
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
   padding: var(--space-2) var(--space-4);
-  background: var(--surface);
+  background: var(--surface-quiet);
   border-radius: var(--radius);
 }
 
@@ -543,7 +567,7 @@ body.learn-open .layout {
   flex-direction: column;
   flex: 1 1 120px;
   min-width: 0;
-  max-width: 210px;
+  max-width: 230px;
 }
 
 .data__item--end {
@@ -555,11 +579,17 @@ body.learn-open .layout {
   color: var(--muted);
 }
 
+/* Câu nghĩa dưới số liệu: chia dòng cân bằng, không để một chữ mồ côi ("trời") ở dòng cuối (review-2 C2). */
+.data__n {
+  text-wrap: balance;
+}
+
 /* Giá trị chính đủ lớn để đọc lướt (review-1 D1: trước đây ~14 px như chữ thường). */
 .data__v {
-  font-size: 17px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--text-quiet);
   white-space: nowrap;
 }
 
@@ -680,8 +710,19 @@ body.learn-open .layout {
   font-size: 12px;
 }
 
+.kv--stack {
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.infocard__mag {
+  white-space: nowrap;
+}
+
 .status {
   display: inline-block;
+  white-space: nowrap;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;
@@ -706,24 +747,53 @@ body.learn-open .layout {
   border: 1px solid var(--zone-neverrise);
 }
 
-/* Màn hình rộng: thẻ thông tin thành cột thứ ba, không che khung nhìn nào. Đường đọc: điều bạn thấy → vì sao → số đo. */
+/* Màn hình rộng (review-2 B2/B3): thẻ bắt đầu thu gọn thành một dòng tên đối tượng, nổi ở góc dưới bên phải
+   của thiên cầu (khung số hai; góc trên là chỗ của thiên cực Bắc và Polaris), và hai khung nhìn chia hết bề ngang. Khi người dùng mở thẻ (bấm vào sao hoặc thanh tiêu
+   đề), thẻ thành cột thứ ba, không che khung nhìn nào. Đường đọc: điều bạn thấy → vì sao → số đo. */
+@media (min-width: 901px) {
+  .infocard.is-collapsed {
+    top: auto;
+    bottom: 10px;
+    width: auto;
+    min-width: 0;
+    max-width: min(320px, calc(40% - 20px));
+    padding: 6px 6px 6px 12px;
+    background: color-mix(in srgb, var(--surface-quiet) 90%, transparent);
+    box-shadow: none;
+  }
+
+  .infocard.is-collapsed .infocard__head {
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .infocard.is-collapsed .infocard__dot {
+    margin-top: 0;
+  }
+
+  .infocard.is-collapsed .infocard__title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
 @media (min-width: 1200px) {
-  .views {
+  .views:has(> .infocard:not(.is-collapsed)) {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) 270px;
   }
 
-  .infocard {
+  .infocard:not(.is-collapsed) {
     position: static;
     width: auto;
     min-width: 0;
     max-height: none;
-    background: var(--surface);
+    background: var(--surface-quiet);
     border: 0;
     box-shadow: none;
     backdrop-filter: none;
   }
 
-  .infocard__head {
+  .infocard:not(.is-collapsed) .infocard__head {
     cursor: default;
   }
 }
@@ -739,16 +809,22 @@ body.learn-open .layout {
 }
 
 /* ------------------------------------------------------------------ Bảng điều khiển */
+/* Bảng điều khiển xếp kiểu "tường gạch" (đa cột, review-2 C2): mỗi thẻ giữ chiều cao tự nhiên, thẻ ngắn (Hoạt ảnh)
+   nằm ngay dưới thẻ Vị trí thay vì đứng một mình với khoảng trống lớn bên dưới; thứ tự đọc từ trên xuống, trái sang
+   phải. Ba cột trên màn hình rộng, hai cột ở màn hình vừa. */
 .panels {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  align-items: start;
+  columns: 3;
+  column-gap: 10px;
+}
+
+.panels > .panel {
+  break-inside: avoid;
+  margin-bottom: 10px;
 }
 
 .panel {
   padding: var(--space-3) var(--space-4) var(--space-4);
-  background: var(--surface);
+  background: var(--surface-quiet);
   border-radius: var(--radius);
   min-width: 0;
 }
@@ -756,6 +832,7 @@ body.learn-open .layout {
 .panel__title {
   margin: 0 0 8px;
   font-size: 15px;
+  font-weight: 600;
 }
 
 /* Nhóm trong bảng: tách bằng khoảng trống và tiêu đề nhỏ, không đóng khung. */
@@ -1495,31 +1572,34 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
-body.present .view__sub {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-body.present .view__hint {
+/* Máy chiếu (review-2 H1): bỏ phần vỏ cỡ máy tính — phụ đề khung, nút nhỏ trong khung (phím C vẫn đặt lại góc
+   nhìn) và cả thẻ thông tin (chữ ~13 px không đọc được từ cuối phòng). Hai khung nhìn chia hết bề ngang. */
+body.present .view__sub,
+body.present .view__tools,
+body.present .view__hint,
+body.present .infocard {
   display: none;
 }
 
+body.present .views,
+body.present .views:has(> .infocard:not(.is-collapsed)) {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+body.present .view__head {
+  min-height: 0;
+  padding-block: var(--space-2);
+}
+
 body.present .legend {
-  font-size: 17px;
-  color: var(--muted);
+  gap: var(--space-2) var(--space-5);
+  font-size: 20px;
+  color: var(--text);
 }
 
-body.present .infocard {
-  font-size: 16px;
-}
-
-body.present .infocard__title {
-  font-size: 19px;
-}
-
-body.present .kv dt,
-body.present .kv__x {
-  font-size: 15px;
+body.present .swatch--line {
+  width: 28px;
+  height: 5px;
 }
 
 /* ------------------------------------------------------------------ Thông báo chất lượng (góc, không chặn) */
@@ -1553,7 +1633,7 @@ body.present .kv__x {
 /* ------------------------------------------------------------------ Màn hình vừa */
 @media (max-width: 1400px) {
   .panels {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    columns: 2;
   }
 }
 
@@ -1713,7 +1793,7 @@ body.present .kv__x {
   }
 
   .view__key {
-    font-size: 13.5px;
+    font-size: 15px;
   }
 
   /* Điện thoại: gợi ý chỉ hiện tới lần chạm đầu tiên, để dành chiều cao cho cảnh. */
@@ -1768,6 +1848,7 @@ body.present .kv__x {
 
   .panels > .panel {
     display: none;
+    margin-bottom: 0;
     max-height: 48vh;
     overflow: auto;
   }

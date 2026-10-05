@@ -270,7 +270,7 @@ function setPresent(on: boolean) {
   presenting = on;
   document.body.classList.toggle('present', on);
   // Máy chiếu: đường ×2, nhãn cảnh ×1,8 (CSS: body.present --lbl-k), đo lại nhãn để gỡ chồng chéo đúng cỡ.
-  for (const v of [sphere, horizon]) v?.setLineScale(on ? PRESENT_LINE_SCALE : 1);
+  for (const v of [sphere, horizon]) v?.setPresentation(on, PRESENT_LINE_SCALE);
   presentBtn.setAttribute('aria-pressed', String(on));
   presentBtn.title = t(on ? 'top.exitPresent' : 'top.presentTip');
   const root = document.documentElement;
@@ -342,7 +342,7 @@ scenePromise.then(
       sphere = v.sphere;
       horizon = v.horizon;
       for (const view of [sphere, horizon]) attachViewInteraction(view, store, actions);
-      if (presenting) for (const view of [sphere, horizon]) view.setLineScale(PRESENT_LINE_SCALE);
+      if (presenting) for (const view of [sphere, horizon]) view.setPresentation(true, PRESENT_LINE_SCALE);
       sphere.update(store.state);
       horizon.update(store.state);
       loop.markUiDirty();
@@ -370,6 +370,7 @@ updateKeyLine(store.state);
 
 function resetAll() {
   actions.resetAll();
+  card.reset();
   if (reducedMotion()) actions.pause();
   if (horizon?.isFirstPerson()) fpBtn.click();
   sphere?.resetCamera();

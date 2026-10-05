@@ -1,4 +1,4 @@
-# Hệ thống Mô phỏng Hệ toạ độ — CLB Thiên văn USAC
+# Hệ thống Mô phỏng Hệ tọa độ — CLB Thiên văn USAC
 
 Web app tĩnh, hoàn toàn tiếng Việt, giúp học sinh – sinh viên hiểu trực quan:
 

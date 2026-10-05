@@ -44,7 +44,7 @@ The browser acceptance checks:
 |---|---|---|
 | `thien-cau.hoc-tap.v1` | localStorage | Learning-task progress |
 | `astrosphere.quality.v1` | sessionStorage | The user restored full quality |
-| `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view is then muted |
+| `astrosphere.hint.v1` | localStorage | The user has dragged or clicked a 3D view once; the hint caption under the horizon view (always small and muted) is then hidden on phones |
 
 ## Interface text (i18n)
 

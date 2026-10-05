@@ -96,7 +96,7 @@ export class SkyLayer {
     eqLine.userData.tip = 'equator';
     this.equatorLine = eqLine;
     this.equator.add(eqLine);
-    const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator });
+    const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator, anchor: [0.5, 1.2] });
     // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
     eqLabel.position.set(Math.cos(0.436) * R * 1.02, Math.sin(0.436) * R * 1.02, 0);
     this.equator.add(eqLabel);
@@ -142,7 +142,7 @@ export class SkyLayer {
     hcLine.userData.tip = 'hourCircle';
     this.hourCircleLine = hcLine;
     this.hourCircle.add(hcLine);
-    const hcLabel = makeLabel(t('scene.hourCircle0'), 'circles', { color: '#d4d4d4' });
+    const hcLabel = makeLabel(t('scene.hourCircle0'), 'circles', { color: '#d4d4d4', anchor: [0.5, 1.2] });
     hcLabel.position.copy(eqVec(0, 38, R * 1.03));
     this.hourCircle.add(hcLabel);
     const gamma = new THREE.Mesh(new THREE.SphereGeometry(R * 0.018, 12, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
@@ -251,7 +251,7 @@ export class SkyLayer {
     line.userData.tip = 'ecliptic';
     this.ecliptic.add(line);
     const pos = eclipticToEquatorial(135, 0);
-    const lbl = makeLabel(t('scene.ecliptic'), 'circles', { color: COLORS.ecliptic });
+    const lbl = makeLabel(t('scene.ecliptic'), 'circles', { color: COLORS.ecliptic, anchor: [0.5, 1.2] });
     lbl.position.copy(eqVec(pos.ra, pos.dec, R * 1.03));
     this.ecliptic.add(lbl);
     // Các điểm hạ chí, thu phân, đông chí
@@ -290,7 +290,7 @@ export class SkyLayer {
     lbl.position.copy(eqVec(c.ra, c.dec, R * 1.04));
     this.galactic.add(lbl);
     const p = galacticToEquatorial(70, 0);
-    const lbl2 = makeLabel(t('scene.galactic'), 'circles', { color: COLORS.galactic });
+    const lbl2 = makeLabel(t('scene.galactic'), 'circles', { color: COLORS.galactic, anchor: [0.5, 1.2] });
     lbl2.position.copy(eqVec(p.ra, p.dec, R * 1.03));
     this.galactic.add(lbl2);
     this.rot.add(this.galactic);

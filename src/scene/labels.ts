@@ -68,7 +68,8 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
   if (opts.color) el.style.color = opts.color;
   if (opts.edge) el.style.borderLeftColor = opts.edge;
   const obj = new CSS2DObject(el) as Label;
-  // Điểm neo của nhãn (0,5; 0,5 = chính giữa). Nhãn tên sao đặt lệch sang phải để không che sao.
+  // Điểm neo của nhãn (0,5; 0,5 = chính giữa). Nhãn tên sao đặt lệch sang phải để không che sao; tên vòng tròn
+  // (xích đạo, vòng giờ 0h, kinh tuyến, hoàng đạo, Ngân Hà) dùng [0,5; 1,2] để nằm ngay TRÊN đường của nó (review-2 D2).
   if (opts.anchor) obj.center.set(opts.anchor[0], opts.anchor[1]);
   const sel = opts.sel;
   obj.userData = {

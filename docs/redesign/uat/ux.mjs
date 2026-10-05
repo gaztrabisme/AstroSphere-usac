@@ -34,7 +34,8 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 {
   const { ctx, page } = await open();
   // Fix round 1 (review-1 B4, E3): the floating toast is gone; the hint is ONE caption under the horizon view,
-  // stronger (is-new) until the first drag/click on a view.
+  // marked is-new until the first drag/click on a view. Fix round 2 (review-2 A2): the caption is always small and
+  // muted (is-new only keeps it visible on phones); the φ key line above it is the headline.
   const cap = await page.evaluate(() => {
     const el = document.querySelector('#view-horizon .view__hint');
     const canvas = document.querySelector('#view-horizon .view__canvas');
@@ -48,7 +49,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     };
   });
   check(
-    '(a) first visit: one hint caption, under (not over) the horizon canvas, emphasised, no floating toast',
+    '(a) first visit: one hint caption, under (not over) the horizon canvas, marked new, no floating toast',
     cap && cap.text === 'Kéo để xoay · bấm vào một ngôi sao' && cap.isNew && cap.below && cap.toasts === 0 && cap.captions === 1,
     JSON.stringify(cap),
   );
@@ -169,6 +170,42 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   await meridian.uncheck();
   const afterOff = await item.locator('.check__hint').isVisible();
   check('(f) unchecking hides the hint again', !afterOff, `visible=${afterOff}`);
+  await ctx.close();
+}
+
+// ------------------------------------------------------------------ (i) thẻ thông tin trên máy tính (fix round 2, review-2 B2/B3)
+// Thẻ bắt đầu thu gọn (một dòng tên), cột thứ ba trả chỗ cho hai khung nhìn; chọn một đối tượng khác → thẻ mở thành
+// cột thứ ba; bấm thanh tiêu đề → thu gọn; bỏ chọn (Esc) → thu gọn.
+{
+  const { ctx, page } = await open();
+  const state = () =>
+    page.evaluate(() => {
+      const c = document.querySelector('.infocard');
+      return {
+        collapsed: c.classList.contains('is-collapsed'),
+        title: c.querySelector('.infocard__title').textContent,
+        cols: getComputedStyle(document.querySelector('.views')).gridTemplateColumns.split(' ').length,
+        h: Math.round(c.getBoundingClientRect().height),
+      };
+    });
+  const first = await state();
+  check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
+  await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');
+  await page.locator('#panel-stars input[placeholder="−16,7"]').fill('-16,7');
+  await page.getByRole('button', { name: 'Thêm sao (α, δ)' }).click();
+  await page.waitForTimeout(400);
+  const opened = await state();
+  check('(i) selecting another object opens the card as a third column', !opened.collapsed && opened.cols === 3 && opened.title !== 'Polaris', JSON.stringify(opened));
+  await page.locator('.infocard__title').click();
+  await page.waitForTimeout(200);
+  const folded = await state();
+  check('(i) clicking the card header folds it again', folded.collapsed && folded.cols === 2, JSON.stringify(folded));
+  await page.locator('.infocard__title').click();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  const cleared = await state();
+  check('(i) Esc (clear selection) folds the card back', cleared.collapsed && cleared.cols === 2, JSON.stringify(cleared));
   await ctx.close();
 }
 
