@@ -370,6 +370,7 @@ updateKeyLine(store.state);
 
 function resetAll() {
   actions.resetAll();
+  card.reset();
   if (reducedMotion()) actions.pause();
   if (horizon?.isFirstPerson()) fpBtn.click();
   sphere?.resetCamera();

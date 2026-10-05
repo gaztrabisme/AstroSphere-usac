@@ -14,6 +14,8 @@
   --surface: #141414;
   --surface-2: #1c1c1c;
   --surface-3: #242424;
+  --surface-quiet: #101010; /* bề mặt phụ (dải số liệu, bảng điều khiển): gần nền hơn để giản đồ chân trời nổi lên */
+  --text-quiet: #d9d9d9; /* giá trị phụ (dải số liệu): 13,0:1 trên --surface-quiet, nhỏ giọng hơn chữ chính */
   --border: #2e2e2e; /* chỉ để phân cách */
   --border-control: #707070; /* viền ô nhập, hộp kiểm (≥ 3:1) */
   --text: #f2f2f2;
@@ -307,7 +309,10 @@ body.learn-open .layout {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--space-3);
-  height: clamp(380px, 60vh, 760px);
+  /* Màn hình đầu = hai khung nhìn + chú giải + dải số liệu; bảng điều khiển bắt đầu ngay dưới mép màn hình
+     (review-2 B2: bớt các nhóm cạnh tranh quanh tiêu điểm thay vì chen nửa bảng vào khung đầu). 226 px = thanh
+     trên, chú giải, dải số liệu và các khoảng cách. */
+  height: clamp(380px, calc(100svh - 226px), 760px);
 }
 
 .view {
@@ -333,6 +338,12 @@ body.learn-open .layout {
 .view__head h2 {
   margin: 0;
   font-size: 15px;
+}
+
+/* Thiên cầu là "số hai" (review-2 B2): tiêu đề nhẹ hơn, màu phụ — giản đồ chân trời đọc là số một. */
+#view-sphere .view__head h2 {
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .view__sub {
@@ -534,7 +545,7 @@ body.learn-open .layout {
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
   padding: var(--space-2) var(--space-4);
-  background: var(--surface);
+  background: var(--surface-quiet);
   border-radius: var(--radius);
 }
 
@@ -557,9 +568,10 @@ body.learn-open .layout {
 
 /* Giá trị chính đủ lớn để đọc lướt (review-1 D1: trước đây ~14 px như chữ thường). */
 .data__v {
-  font-size: 17px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--text-quiet);
   white-space: nowrap;
 }
 
@@ -706,24 +718,53 @@ body.learn-open .layout {
   border: 1px solid var(--zone-neverrise);
 }
 
-/* Màn hình rộng: thẻ thông tin thành cột thứ ba, không che khung nhìn nào. Đường đọc: điều bạn thấy → vì sao → số đo. */
+/* Màn hình rộng (review-2 B2/B3): thẻ bắt đầu thu gọn thành một dòng tên đối tượng, nổi ở góc dưới bên phải
+   của thiên cầu (khung số hai; góc trên là chỗ của thiên cực Bắc và Polaris), và hai khung nhìn chia hết bề ngang. Khi người dùng mở thẻ (bấm vào sao hoặc thanh tiêu
+   đề), thẻ thành cột thứ ba, không che khung nhìn nào. Đường đọc: điều bạn thấy → vì sao → số đo. */
+@media (min-width: 901px) {
+  .infocard.is-collapsed {
+    top: auto;
+    bottom: 10px;
+    width: auto;
+    min-width: 0;
+    max-width: min(320px, calc(40% - 20px));
+    padding: 6px 6px 6px 12px;
+    background: color-mix(in srgb, var(--surface-quiet) 90%, transparent);
+    box-shadow: none;
+  }
+
+  .infocard.is-collapsed .infocard__head {
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .infocard.is-collapsed .infocard__dot {
+    margin-top: 0;
+  }
+
+  .infocard.is-collapsed .infocard__title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
 @media (min-width: 1200px) {
-  .views {
+  .views:has(> .infocard:not(.is-collapsed)) {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) 270px;
   }
 
-  .infocard {
+  .infocard:not(.is-collapsed) {
     position: static;
     width: auto;
     min-width: 0;
     max-height: none;
-    background: var(--surface);
+    background: var(--surface-quiet);
     border: 0;
     box-shadow: none;
     backdrop-filter: none;
   }
 
-  .infocard__head {
+  .infocard:not(.is-collapsed) .infocard__head {
     cursor: default;
   }
 }
@@ -748,7 +789,7 @@ body.learn-open .layout {
 
 .panel {
   padding: var(--space-3) var(--space-4) var(--space-4);
-  background: var(--surface);
+  background: var(--surface-quiet);
   border-radius: var(--radius);
   min-width: 0;
 }
@@ -756,6 +797,7 @@ body.learn-open .layout {
 .panel__title {
   margin: 0 0 8px;
   font-size: 15px;
+  font-weight: 600;
 }
 
 /* Nhóm trong bảng: tách bằng khoảng trống và tiêu đề nhỏ, không đóng khung. */

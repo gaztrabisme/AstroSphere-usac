@@ -114,7 +114,10 @@ export class HorizonDiagramView extends View {
   }
 
   protected preferredFov(aspect: number): number {
-    return this.firstPerson ? 75 : super.preferredFov(aspect);
+    // Khung ngang rộng (màn hình máy tính): thu hẹp góc nhìn để vòm trời và đĩa chân trời lấp khung — khung chân
+    // trời là tiêu điểm của trang (review-2 B2, color-theory T1).
+    if (this.firstPerson) return 75;
+    return aspect >= 1.2 ? 37 : super.preferredFov(aspect);
   }
 
   isFirstPerson(): boolean {
