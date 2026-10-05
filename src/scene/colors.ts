@@ -30,4 +30,12 @@ export const COLORS = {
   dsoNebula: '#5eead4',
   dsoCluster: '#fde68a',
   dsoOther: '#cbd5e1',
+  // Hình chòm sao người dùng thêm (đường nối, chấm sao, nhãn): MỘT tông cát trung tính, độ bão hòa thấp
+  // (OKLCH L 0,80 · C 0,05 · H 80°), không bắt chước màu ngữ nghĩa nào — ΔE OKLab ≥ 0,098 với mọi màu ở trên
+  // (gần nhất: dsoOther, hourCircle). Trước đây mỗi chòm một màu: Ursa Major xanh như trục, Ursa Minor hồng như
+  // vòng thẳng đứng (review-4 G2). 10,6:1 trên nền trời. Xem docs/redesign-2/polish.md.
+  figure: '#cfbb9a',
+  // Đường nối 88 chòm sao (nền, mặc định bật): cùng họ cát nhưng tối và nhạt hơn (L 0,60 · C 0,03), vẽ mờ 0,3 —
+  // lùi hẳn về sau các đường ngữ nghĩa và hình chòm sao người dùng thêm.
+  figureSky: '#8a7f6c',
 } as const;

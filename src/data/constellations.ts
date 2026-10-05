@@ -50,7 +50,6 @@ export interface ConstellationTemplate {
   viName: string;
   /** Tên gọi khác bằng tiếng Việt (có thể rỗng). */
   alias: string;
-  color: string;
   note: string;
 }
 
@@ -63,27 +62,27 @@ function viParts(abbr: string): { viName: string; alias: string } {
   return { viName: n.hanViet, alias: extra.join(', ') };
 }
 
-function tpl(id: string, rest: { color: string; note: string }): ConstellationTemplate {
+function tpl(id: string, rest: { note: string }): ConstellationTemplate {
   return { id, name: constellationName(id), ...viParts(id), ...rest };
 }
 
 export const TEMPLATES: ConstellationTemplate[] = [
-  tpl('UMa', { color: '#7dd3fc', note: 'Chứa nhóm sao Big Dipper (Bắc Đẩu, cái gáo); hai sao Dubhe và Merak chỉ hướng về Polaris.' }),
-  tpl('UMi', { color: '#f0abfc', note: 'Polaris (sao Bắc Cực) ở đuôi, gần như trùng thiên cực Bắc (δ ≈ +89,3°).' }),
-  tpl('Cas', { color: '#fda4af', note: 'Hình chữ W, đối diện Big Dipper qua Polaris.' }),
-  tpl('Ori', { color: '#a5b4fc', note: 'Nằm trên xích đạo trời: mọc gần chính Đông, lặn gần chính Tây. Có Betelgeuse và Rigel.' }),
-  tpl('Cru', { color: '#86efac', note: 'Chòm sao nhỏ nhất, gần thiên cực Nam (δ ≈ −57° … −63°). Có Acrux và Gacrux.' }),
-  tpl('Sco', { color: '#fb923c', note: 'Có Antares màu đỏ, nằm ở phía Nam xích đạo trời.' }),
-  tpl('Cyg', { color: '#99f6e4', note: 'Có Deneb, nằm trên dải Ngân Hà.' }),
-  tpl('Lyr', { color: '#67e8f9', note: 'Có Vega, một trong các sao sáng nhất bầu trời.' }),
-  tpl('Aql', { color: '#fde68a', note: 'Có Altair; cùng Vega và Deneb tạo thành Tam giác Mùa hè.' }),
-  tpl('Leo', { color: '#fdba74', note: 'Có Regulus, nằm gần hoàng đạo.' }),
-  tpl('Gem', { color: '#c4b5fd', note: 'Hai sao sáng Castor và Pollux.' }),
-  tpl('CMa', { color: '#93c5fd', note: 'Có Sirius — sao sáng nhất bầu trời đêm.' }),
-  tpl('Tau', { color: '#fca5a5', note: 'Có Aldebaran và cụm sao Pleiades (M45) gần đó.' }),
-  tpl('Sgr', { color: '#bef264', note: 'Hướng về tâm Ngân Hà.' }),
-  tpl('Cen', { color: '#5eead4', note: 'Có Rigil Kentaurus (α Centauri) — hệ sao gần Mặt Trời nhất.' }),
-  tpl('Peg', { color: '#d8b4fe', note: 'Hình vuông lớn Great Square of Pegasus, dễ nhận vào mùa thu.' }),
+  tpl('UMa', { note: 'Chứa nhóm sao Big Dipper (Bắc Đẩu, cái gáo); hai sao Dubhe và Merak chỉ hướng về Polaris.' }),
+  tpl('UMi', { note: 'Polaris (sao Bắc Cực) ở đuôi, gần như trùng thiên cực Bắc (δ ≈ +89,3°).' }),
+  tpl('Cas', { note: 'Hình chữ W, đối diện Big Dipper qua Polaris.' }),
+  tpl('Ori', { note: 'Nằm trên xích đạo trời: mọc gần chính Đông, lặn gần chính Tây. Có Betelgeuse và Rigel.' }),
+  tpl('Cru', { note: 'Chòm sao nhỏ nhất, gần thiên cực Nam (δ ≈ −57° … −63°). Có Acrux và Gacrux.' }),
+  tpl('Sco', { note: 'Có Antares màu đỏ, nằm ở phía Nam xích đạo trời.' }),
+  tpl('Cyg', { note: 'Có Deneb, nằm trên dải Ngân Hà.' }),
+  tpl('Lyr', { note: 'Có Vega, một trong các sao sáng nhất bầu trời.' }),
+  tpl('Aql', { note: 'Có Altair; cùng Vega và Deneb tạo thành Tam giác Mùa hè.' }),
+  tpl('Leo', { note: 'Có Regulus, nằm gần hoàng đạo.' }),
+  tpl('Gem', { note: 'Hai sao sáng Castor và Pollux.' }),
+  tpl('CMa', { note: 'Có Sirius — sao sáng nhất bầu trời đêm.' }),
+  tpl('Tau', { note: 'Có Aldebaran và cụm sao Pleiades (M45) gần đó.' }),
+  tpl('Sgr', { note: 'Hướng về tâm Ngân Hà.' }),
+  tpl('Cen', { note: 'Có Rigil Kentaurus (α Centauri) — hệ sao gần Mặt Trời nhất.' }),
+  tpl('Peg', { note: 'Hình vuông lớn Great Square of Pegasus, dễ nhận vào mùa thu.' }),
 ];
 
 /** Dòng mô tả của mẫu: tên IAU trước, tên tiếng Việt sau, rồi ghi chú — "Ursa Major — Đại Hùng (Gấu Lớn). …". */

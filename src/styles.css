@@ -57,6 +57,12 @@
   --zone-circumpolar: #8b5cf6;
   --zone-riseset: #14b8a6;
   --zone-neverrise: #ef4444;
+  /* Tên 88 chòm sao nền (review-4 G2): xám ấm cùng họ với đường nối (scene/colors.ts figureSky), không còn xanh
+     như trục thiên cực. 6,4:1 trên viên thuốc nhãn, độ mờ 1 (độ mờ phần tử làm viên thuốc trong suốt theo). */
+  --scene-allsky-name: #9a9283;
+  /* Viên thuốc đậm hơn cho tên sao và tên chòm (review-4 D2): đường nối chòm sao đi qua tên của chính nó không
+     còn cắt nét chữ (65 % → 85 %). */
+  --label-pill-strong: #0a0a0ad9;
 
   color-scheme: dark;
 }
@@ -476,7 +482,13 @@ body.learn-open .layout {
   font-size: calc(12px * var(--lbl-k, 1));
   font-style: italic;
   letter-spacing: 0.4px;
-  opacity: 0.95;
+}
+
+/* review-4 D2: tên sao và tên chòm nằm giữa các đường nối — viên thuốc đậm hơn để đường đi DƯỚI chữ không cắt nét. */
+.lbl--constellation,
+.lbl--catalog,
+.lbl--star {
+  background: var(--label-pill-strong);
 }
 
 .lbl--allsky {
@@ -485,8 +497,7 @@ body.learn-open .layout {
   font-style: normal;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #8fa7d6;
-  opacity: 0.8;
+  color: var(--scene-allsky-name);
 }
 
 .lbl--angle {

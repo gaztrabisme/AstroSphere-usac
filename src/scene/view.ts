@@ -60,7 +60,7 @@ export abstract class View implements QualityTarget {
   private labelKey = -1;
   /** Hộp màn hình của các nhãn đang hiện (gỡ chồng chéo) và nhãn tương ứng với từng hộp — cấp phát sẵn. */
   private boxes = new LabelBoxes();
-  private boxLabel: Label[] = [];
+  private boxLabel: (Label | null)[] = [];
   private needMeasure = true;
   /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
   private lineScale = 1;
@@ -298,8 +298,9 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      this.boxLabel.length = list.length;
-      this.boxes.ensure(list.length);
+      // +1: chỗ cho vật cản vòng chọn (pushObstacle).
+      this.boxLabel.length = list.length + 1;
+      this.boxes.ensure(list.length + 1);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
@@ -330,8 +331,8 @@ export abstract class View implements QualityTarget {
       if (vis && sel === null && isSelectedLabel(ud, s.selected)) sel = lbl;
     }
     // Thứ tự giữ chỗ (review-3 D2): chữ hướng B/N/Đ/T trước tiên — không bao giờ bị che; rồi nhãn số đo của nhóm
-    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi đối tượng đang
-    // chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
+    // đang tô sáng (dời dọc theo cung của nó nếu chỗ gốc trùng chữ hướng, xem LabelData.alts); rồi thiên cực/thiên
+    // đỉnh (review-4 D2); rồi đối tượng đang chọn (đặt ra ngoài vòng chọn); rồi các nhãn khác theo hạng.
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       if (lbl.userData.group === 'directions' && lbl.visible && ancestorsVisible(lbl)) this.pushBox(lbl, W, H, true);
@@ -345,16 +346,33 @@ export abstract class View implements QualityTarget {
         if (k >= 0) boxes.must[k] = 1;
       }
     }
-    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+    // Tên thiên cực / thiên đỉnh (nhóm poles) giữ chỗ trước tên đối tượng đang chọn: khi đối tượng chọn là Polaris,
+    // "Thiên cực Bắc" vẫn hiện, còn "Polaris" thử bên phải, trái, trên, dưới vòng chọn (review-4 D2).
     for (let i = 0; i < list.length; i++) {
       const lbl = list[i];
       const ud = lbl.userData;
-      if (lbl === sel || !lbl.visible || ud.group === 'directions' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
-      this.pushBox(lbl, W, H, ud.rank < 20);
+      if (ud.group !== 'poles' || lbl === sel || !lbl.visible || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
+      this.pushBox(lbl, W, H, true);
+    }
+    if (sel && !(em !== null && sel.userData.emph === em)) this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+    // Vòng chọn là vật cản cho nhãn hạng ≥ 20 (tên vòng, tên sao, tên chòm): không nhãn nào chen vào vòng quanh đối
+    // tượng đang chọn — thường là thiên cực, nơi đường nối chòm sao và tên dày nhất (review-4 D2). Đặt sau nhãn hạng
+    // cao (chữ hướng, thiên đỉnh, thiên cực) để vòng không bao giờ đẩy chúng đi.
+    let ringDone = !this.sky.selRingWorld(_v);
+    for (let i = 0; i < list.length; i++) {
+      const lbl = list[i];
+      const ud = lbl.userData;
+      if (lbl === sel || !lbl.visible || ud.group === 'directions' || ud.group === 'poles' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
+      if (!ringDone && ud.rank >= 20) {
+        ringDone = true;
+        this.pushObstacle(_v, this.selRingPx(), W, H);
+      }
+      this.pushBox(lbl, W, H, ud.rank < 20, 0, ud.clear);
     }
     declutter(boxes, W, H);
     for (let k = 0; k < boxes.n; k++) {
       const lbl = this.boxLabel[k];
+      if (lbl === null) continue; // vật cản (vòng chọn), không phải nhãn
       if (!boxes.keep[k]) {
         lbl.visible = false;
         continue;
@@ -417,6 +435,22 @@ export abstract class View implements QualityTarget {
       }
     }
     return k;
+  }
+
+  /**
+   * Thêm vật cản hình vuông bán kính `r` px quanh điểm thế giới `world` (vòng chọn): luôn giữ (must), không dời.
+   * Không cấp phát.
+   */
+  private pushObstacle(world: THREE.Vector3, r: number, W: number, H: number): void {
+    _p.copy(world).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const sx = ((_p.x + 1) / 2) * W;
+    const sy = ((1 - _p.y) / 2) * H;
+    const boxes = this.boxes;
+    const k = boxes.n;
+    this.boxLabel[k] = null;
+    boxes.push(sx - r, sy - r, 2 * r, 2 * r, false);
+    boxes.must[k] = 1;
   }
 
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
