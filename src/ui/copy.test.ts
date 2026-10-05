@@ -90,3 +90,10 @@ describe('Chữ theo ngữ cảnh (họ khóa động)', () => {
     expect(str('info.empty')).toMatch(/^Bấm vào/);
   });
 });
+
+describe('Chính tả nhất quán', () => {
+  // review-2 D2: "Hệ toạ độ" ở tiêu đề nhưng "tọa độ" ở mọi chỗ khác. Thống nhất kiểu bỏ dấu "tọa".
+  it('mọi chuỗi giao diện viết "tọa", không viết "toạ"', () => {
+    expect(JSON.stringify(vi)).not.toMatch(/[Tt]oạ/);
+  });
+});
