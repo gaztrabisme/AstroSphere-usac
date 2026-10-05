@@ -2215,3 +2215,527 @@ body.present .kv__note {
   font-size: 12px;
   cursor: pointer;
 }
+
+/* ===== Codex (redesign-2 C) ===== */
+/* Bộ khung "codex" bằng kiểu chữ và cấu trúc, không bằng hiệu ứng: nhãn danh mục chữ hoa nhỏ, một đường kẻ mảnh,
+   trang đọc rộng ~65ch. Cam chỉ dành cho mục đang chọn, dấu "mới" và hành động (chữ trên cam = --on-accent). */
+
+/* Nút Codex và huy hiệu số mục mới (không bật lên, không lấy tiêu điểm). */
+.btn--codex {
+  position: relative;
+}
+
+.codex-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Liên kết "?" cạnh thuật ngữ: nhỏ, nhạt; vùng chạm mở rộng tới 44 px bằng ::after (mắt chỉ thấy vòng 16 px). */
+.term {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-left: 5px;
+  padding: 0;
+  border: 1px solid var(--border-control);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 1px;
+  cursor: pointer;
+}
+
+.term::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.term:hover,
+.term:focus-visible {
+  border-color: var(--accent-hi);
+  color: var(--accent-hi);
+}
+
+.check-row,
+.pole-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.check-row > :first-child,
+.pole-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.check-row > .term {
+  margin: 6px 4px 0 0;
+}
+
+.pole-row > .term {
+  margin: 10px 2px 0 0;
+}
+
+/* Hộp thoại */
+.cdx {
+  width: min(1080px, calc(100vw - 24px));
+  height: min(780px, calc(100vh - 40px));
+  overflow: hidden;
+}
+
+.cdx[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.cdx__head {
+  position: static;
+  align-items: flex-start;
+}
+
+.cdx__sub {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.cdx__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) 1fr;
+}
+
+/* Cột trái: danh mục */
+.cdx-nav {
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-2) var(--space-5);
+  border-right: 1px solid var(--border);
+  background: var(--surface-quiet);
+}
+
+.cdx-progress {
+  padding: 0 var(--space-2) var(--space-3);
+}
+
+.cdx-progress__text {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cdx-progress__bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.cdx-progress__bar::before {
+  content: '';
+  display: block;
+  width: calc(var(--p, 0) * 100%);
+  height: 100%;
+  background: var(--accent);
+}
+
+.cdx-cat {
+  margin-top: var(--space-3);
+}
+
+.cdx-cat__title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0 var(--space-2) var(--space-1);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cdx-cat__count {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.cdx-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdx-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 34px;
+  padding: 5px var(--space-2);
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cdx-item:hover {
+  background: var(--surface-2);
+}
+
+.cdx-item[aria-current='true'] {
+  border-left-color: var(--accent);
+  background: var(--accent-a12);
+  font-weight: 700;
+}
+
+.cdx-item__mark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.cdx-item__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.cdx-item__state {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cdx-item.is-new .cdx-item__mark {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-a30);
+}
+
+.cdx-item.is-new .cdx-item__state {
+  color: var(--accent-hi);
+}
+
+/* Chưa khám phá: vẫn bấm và đọc được, nhưng nhạt hơn; dấu tròn rỗng. Chữ "chưa khám phá" chỉ cho trình đọc màn hình
+   ở danh sách (41 nhãn lặp lại sẽ thành nhiễu), hiện rõ trên trang đọc. */
+.cdx-item.is-locked {
+  color: var(--subtle);
+}
+
+.cdx-item.is-locked .cdx-item__mark {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--subtle);
+}
+
+.cdx-item.is-locked .cdx-item__state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Cột phải: trang đọc */
+.cdx-page {
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.cdx-page > * {
+  max-width: 65ch;
+}
+
+.cdx-page__back {
+  display: none;
+}
+
+.cdx-page__kicker {
+  margin: 0 0 var(--space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cdx-page__title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.cdx-page__title:focus {
+  outline: none;
+}
+
+.cdx-page__aka {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.cdx-page__state {
+  display: inline-block;
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cdx-page__state.is-locked {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--border-control);
+  border-radius: var(--radius-sm);
+}
+
+.cdx-page__lede {
+  margin: var(--space-4) 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.cdx-page__rule {
+  margin: var(--space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.cdx-page__body {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.cdx-page__body p {
+  margin: 0 0 var(--space-3);
+}
+
+.cdx-page__body .formula-grid {
+  grid-template-columns: 1fr;
+}
+
+.cdx-page__body .katex {
+  font-size: 1.08em;
+}
+
+.cdx-figure {
+  max-width: 420px;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.cdx-figure figcaption {
+  margin-top: var(--space-1);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.cdx-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cdx-svg__dome {
+  fill: none;
+  stroke: var(--border-control);
+  stroke-width: 1;
+}
+
+.cdx-svg__rule {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.cdx-svg__me,
+.cdx-svg__star {
+  fill: var(--text);
+}
+
+.cdx-svg__t {
+  font-family: var(--font);
+  font-size: 12px;
+  fill: var(--text);
+}
+
+.cdx-svg__t--muted {
+  fill: var(--muted);
+}
+
+.cdx-svg__t--key {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cdx-svg__t--dir {
+  font-weight: 700;
+  fill: var(--scene-dir);
+}
+
+.cdx-page__sim {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.cdx-page__simnote {
+  flex: 1 1 220px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cdx-page__related h4 {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cdx-page__related ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdx-rel {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.cdx-rel:hover {
+  border-color: var(--accent-hi);
+}
+
+.cdx-rel.is-locked {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+/* Điện thoại: danh sách → trang đọc (nút quay lại), toàn màn hình, vùng chạm 44 px. */
+@media (max-width: 700px) {
+  .cdx {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .cdx__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cdx.is-reading .cdx-nav,
+  .cdx:not(.is-reading) .cdx-page {
+    display: none;
+  }
+
+  .cdx-nav {
+    border-right: 0;
+  }
+
+  .cdx-page {
+    padding: var(--space-2) var(--space-4) var(--space-6);
+  }
+
+  .cdx-page__back {
+    display: inline-flex;
+    margin: 0 0 var(--space-3) calc(-1 * var(--space-2));
+  }
+
+  .cdx-item,
+  .cdx-rel {
+    min-height: var(--tap);
+  }
+
+  .cdx-page__title {
+    font-size: 22px;
+  }
+
+  .cdx-page__sim .btn {
+    width: 100%;
+  }
+
+  .term::after {
+    inset: -14px;
+  }
+
+  .check-row > .term {
+    margin-top: 14px;
+  }
+}
+
+.term-wrap {
+  white-space: nowrap;
+}
+
+/* Rất hẹp: thêm nút Codex làm thanh trên chật hơn một vùng chạm 44 px. "Ôn tập" bỏ biểu tượng (chữ vẫn còn) để tên
+   ngắn của ứng dụng không bị bẻ thành bốn dòng. */
+@media (max-width: 480px) {
+  .btn--top-main .btn__icon {
+    display: none;
+  }
+
+  .btn--top.btn--top-main {
+    padding: 4px 10px;
+  }
+
+  .topbar {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+}

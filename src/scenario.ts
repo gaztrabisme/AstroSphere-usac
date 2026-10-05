@@ -1,5 +1,7 @@
 // Tiện ích dựng tình huống trên mô phỏng — dùng cho các nhiệm vụ Ôn tập.
 
+import { catalogIndexByHip } from './data/catalog';
+import { DSOS } from './data/deepSky';
 import type { Actions, Store } from './state';
 
 export interface ScenarioContext {
@@ -32,4 +34,22 @@ export function zones(ctx: ScenarioContext, on: boolean): void {
   ctx.actions.setToggle('zoneCircumpolar', on);
   ctx.actions.setToggle('zoneRiseSet', on);
   ctx.actions.setToggle('zoneNeverRise', on);
+}
+
+/** Chọn một sao trong danh mục sao sáng theo số Hipparcos (bật lớp sao sáng nếu đang tắt). Dùng cho Codex. */
+export function selectCatalogHip(ctx: ScenarioContext, hip: number): boolean {
+  const index = catalogIndexByHip(hip);
+  if (index === undefined) return false;
+  if (!ctx.store.state.toggles.catalog) ctx.actions.setToggle('catalog', true);
+  ctx.actions.select({ kind: 'catalog', index });
+  return true;
+}
+
+/** Bật lớp thiên thể sâu và chọn một thiên thể theo định danh (M31, M42…). */
+export function selectDso(ctx: ScenarioContext, id: string): boolean {
+  const index = DSOS.findIndex((o) => o.id === id);
+  if (index < 0) return false;
+  ctx.actions.setToggle('deepSky', true);
+  ctx.actions.select({ kind: 'dso', index });
+  return true;
 }

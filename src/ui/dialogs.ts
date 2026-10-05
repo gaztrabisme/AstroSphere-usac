@@ -35,7 +35,7 @@ function inline(text: string): (Node | string)[] {
   return out;
 }
 
-function renderLines(lines: string[]): HTMLElement {
+export function renderLines(lines: string[]): HTMLElement {
   const root = h('div', { class: 'dialog__content' });
   let ul: HTMLUListElement | null = null;
   let table: HTMLTableElement | null = null;
@@ -87,7 +87,7 @@ type Katex = typeof import('katex').default;
 let katexReady: Promise<Katex> | null = null;
 
 /** Tải KaTeX (một lần) rồi dựng mọi công thức còn đang ở dạng mã TeX. */
-function renderMath(root: HTMLElement): void {
+export function renderMath(root: HTMLElement): void {
   const pending = [...root.querySelectorAll<HTMLElement>('.math[data-tex]')];
   if (!pending.length) return;
   katexReady ??= Promise.all([import('katex'), import('katex/dist/katex.min.css')]).then(([mod]) => mod.default);

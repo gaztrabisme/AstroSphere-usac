@@ -15,6 +15,7 @@ import {
   poleAltitude,
   riseSet,
 } from '../astro';
+import { appendTerm, termLink } from '../codex/triggers';
 import { t } from '../i18n';
 import { resolveSelection, sunEquatorial } from '../selection';
 import { lstOf, type Actions, type AppState, type Store } from '../state';
@@ -133,6 +134,19 @@ export function infoCard(store: Store, actions: Actions) {
   );
 
   for (const row of [r.ha.el, r.az.el, r.alt.el, statusRow]) bindEmphasis(row, store, actions);
+
+  // ----- Codex (redesign-2 C): liên kết "?" nhỏ cạnh nhãn dòng → mục giải thích. Trạng thái trỏ tới vùng hiện tại.
+  const statusTerm = termLink('riseSetZone', t('info.status'));
+  for (const [rowEl, id, label] of [
+    [r.ra.el, 'radec', t('info.ra')],
+    [r.dec.el, 'radec', t('info.dec')],
+    [r.ha.el, 'hourAngle', t('info.ha')],
+    [r.az.el, 'altaz', t('info.az')],
+    [r.alt.el, 'altaz', t('info.alt')],
+  ] as const)
+    appendTerm(rowEl.querySelector('dt')!, termLink(id, label));
+  appendTerm(statusRow.querySelector('dt')!, statusTerm);
+  const STATUS_ENTRY = { circumpolar: 'circumpolar', riseSet: 'riseSetZone', neverRise: 'neverRise' } as const;
 
   // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
   const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
@@ -258,6 +272,7 @@ export function infoCard(store: Store, actions: Actions) {
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);
       setRow(r.dec, fmtDMS(obj.dec), `(${fmtDegSigned(obj.dec)})`);
       status.className = `status status--${rs.visibility}`;
+      statusTerm.dataset.codex = STATUS_ENTRY[rs.visibility];
       setText(status, t(`visibility.${rs.visibility}`));
       const rsVis = rs.visibility === 'riseSet';
       r.rise.el.hidden = !rsVis;
@@ -334,6 +349,9 @@ export function dataBar(store: Store, actions: Actions) {
     );
   }
   for (const c of DATA_CELLS) bindEmphasis(cells[c.key], store, actions);
+  // Codex (redesign-2 C): liên kết "?" cạnh tên ô số liệu.
+  const DATA_TERMS: Partial<Record<DataKey, string>> = { lat: 'latPole', pole: 'latPole', incl: 'eqAngle', lst: 'lst', gst: 'lst' };
+  for (const [k, id] of Object.entries(DATA_TERMS)) appendTerm(cells[k as DataKey].querySelector('.data__k')!, termLink(id, t(`data.${k}`)));
   const sunCell = cells.solar;
   const el = h('section', { class: 'databar', 'aria-label': t('data.aria') }, ...DATA_CELLS.map((c) => cells[c.key]));
 

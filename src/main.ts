@@ -3,6 +3,7 @@
 import './styles.css';
 import logoUrl from './assets/usac-logo.png';
 import { Animator } from './animator';
+import { codexButton, isCodexOpen } from './codex/triggers';
 import { t } from './i18n';
 import { startFrameLoop, type FrameView } from './runtime/frameLoop';
 import { createQuality } from './runtime/quality';
@@ -113,6 +114,7 @@ const topbar = h(
     learnBtn,
     presentBtn,
     button(t('top.reset'), () => resetAll(), { cls: 'btn--top', icon: '↺', title: t('top.resetTip') }),
+    codexButton(store, actions), // Codex (redesign-2 C)
     button(t('top.help'), () => dialogs.help(), { cls: 'btn--top', icon: '?', title: t('top.helpTip') }),
     button(t('top.about'), () => dialogs.about(), { cls: 'btn--top', icon: 'i', title: t('top.aboutTip') }),
   ),
@@ -423,8 +425,8 @@ const SPACE_OWNERS = 'button,a,summary,label,[role=tab],input,select,textarea,[c
 const ARROW_OWNERS = '[role=tablist],[role=slider],[role=radiogroup]';
 
 window.addEventListener('keydown', (e) => {
-  // Ưu tiên Esc: 1) hộp thoại gốc (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) bỏ chọn.
-  if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen()) return;
+  // Ưu tiên Esc: 1) hộp thoại gốc, kể cả Codex (trình duyệt tự đóng) → 2) ngăn Ôn tập → 3) bỏ chọn.
+  if (e.ctrlKey || e.metaKey || e.altKey || dialogs.isOpen() || isCodexOpen()) return;
   const target = e.target instanceof HTMLElement ? e.target : null;
   // Tính "đang gõ" TRƯỚC khi xử lý Esc: Esc trong ô nhập không được bỏ chọn hay đóng ngăn.
   const typing = !!target && (!!target.closest('input,select,textarea') || target.isContentEditable || target.getAttribute('role') === 'slider');

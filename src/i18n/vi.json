@@ -591,5 +591,25 @@
       "**Ký hiệu:** \\(q\\) là khoảng cách cận điểm (đơn vị thiên văn), \\(e\\) là tâm sai, \\(i\\) là độ nghiêng quỹ đạo so với mặt phẳng hoàng đạo. Sao chổi chuyển động nhanh trên nền sao nên không được vẽ lên bầu trời mô phỏng.",
       "**Nguồn:** tọa độ, cấp sao, kích thước của thiên thể sâu từ d3-celestial (BSD-3); khoảng cách tham khảo từ SIMBAD/NED và NASA; quỹ đạo sao chổi từ JPL Small-Body Database và IAU Minor Planet Center (làm tròn)."
     ]
+  },
+  "codexUi": {
+    "button": "Codex",
+    "buttonTip": "Codex: giải thích mọi khái niệm và thiên thể trong mô phỏng",
+    "buttonAriaNew": "Codex, {n} mục mới chưa đọc",
+    "termAria": "Giải thích trong Codex: {term}",
+    "termTip": "Mở mục giải thích trong Codex",
+    "title": "Codex",
+    "subtitle": "Mọi khái niệm và thiên thể bạn gặp trong mô phỏng",
+    "close": "Đóng Codex",
+    "navAria": "Danh mục Codex",
+    "progress": "{n}/{total} đã khám phá",
+    "stateLocked": "chưa khám phá",
+    "stateNew": "mới",
+    "pageNew": "Mới khám phá",
+    "pageFound": "Đã khám phá",
+    "pageLocked": "Chưa khám phá — bạn vẫn đọc được. Mục này sẽ được đánh dấu khi bạn gặp nó trong mô phỏng.",
+    "back": "Danh mục",
+    "showInSim": "Xem trong mô phỏng",
+    "related": "Liên quan"
   }
 }
