@@ -113,7 +113,7 @@ export class SkyLayer {
     this.fixed.add(this.equatorPlane);
 
     const axisLen = R * 1.15;
-    const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 2.4 });
+    const axisLine = fatLine([new THREE.Vector3(0, 0, -axisLen), new THREE.Vector3(0, 0, axisLen)], COLORS.axis, { width: 3 });
     axisLine.userData.tip = 'axis';
     this.axisLine = axisLine;
     this.axis.add(axisLine);
