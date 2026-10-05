@@ -1537,31 +1537,34 @@ body.present .view__head h2 {
   font-size: 20px;
 }
 
-body.present .view__sub {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-body.present .view__hint {
+/* Máy chiếu (review-2 H1): bỏ phần vỏ cỡ máy tính — phụ đề khung, nút nhỏ trong khung (phím C vẫn đặt lại góc
+   nhìn) và cả thẻ thông tin (chữ ~13 px không đọc được từ cuối phòng). Hai khung nhìn chia hết bề ngang. */
+body.present .view__sub,
+body.present .view__tools,
+body.present .view__hint,
+body.present .infocard {
   display: none;
 }
 
+body.present .views,
+body.present .views:has(> .infocard:not(.is-collapsed)) {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+}
+
+body.present .view__head {
+  min-height: 0;
+  padding-block: var(--space-2);
+}
+
 body.present .legend {
-  font-size: 17px;
-  color: var(--muted);
+  gap: var(--space-2) var(--space-5);
+  font-size: 20px;
+  color: var(--text);
 }
 
-body.present .infocard {
-  font-size: 16px;
-}
-
-body.present .infocard__title {
-  font-size: 19px;
-}
-
-body.present .kv dt,
-body.present .kv__x {
-  font-size: 15px;
+body.present .swatch--line {
+  width: 28px;
+  height: 5px;
 }
 
 /* ------------------------------------------------------------------ Thông báo chất lượng (góc, không chặn) */

@@ -65,6 +65,10 @@ export abstract class View implements QualityTarget {
   /** Hệ số độ dày đường hiện tại và độ dày gốc của từng đường (ghi lần đầu đổi hệ số). */
   private lineScale = 1;
   private baseWidths = new WeakMap<Line2, number>();
+  /** Độ mờ gốc của các đường mảnh (LineBasicMaterial, luôn rộng 1 px) — để tăng độ đậm khi trình chiếu. */
+  private baseOpacity = new WeakMap<THREE.LineBasicMaterial, number>();
+  /** Đang ở chế độ trình chiếu (máy chiếu): lớp con có thể đổi khung hình (xem preferredFov). */
+  protected presenting = false;
   private hoverList: THREE.Object3D[] = [];
   private hoverKey = -1;
   /** Khóa của lần tính nhóm tô sáng gần nhất (chỉ tính lại khi khóa, đối tượng chọn, vĩ độ hoặc danh sách sao đổi). */
@@ -395,6 +399,19 @@ export abstract class View implements QualityTarget {
     if (k === this.lineScale) return;
     this.lineScale = k;
     this.scene.traverse((o) => {
+      // Đường mảnh (lưới, đường nối chòm sao, vạch mặt đất) không đổi được độ dày trong WebGL: tăng độ đậm thay vào
+      // đó để không biến mất trên máy chiếu (review-2 H1). ×1,6 khi k = 2, tối đa 1.
+      if ((o as THREE.LineSegments).isLineSegments && !(o as Line2).isLine2) {
+        const m = (o as THREE.LineSegments).material as THREE.LineBasicMaterial;
+        if (!m.isLineBasicMaterial || !m.transparent) return;
+        let o0 = this.baseOpacity.get(m);
+        if (o0 === undefined) {
+          o0 = m.opacity;
+          this.baseOpacity.set(m, o0);
+        }
+        m.opacity = Math.min(1, o0 * (1 + (k - 1) * 0.6));
+        return;
+      }
       if (!(o as Line2).isLine2) return;
       const line = o as Line2;
       const m = line.material as LineMaterial;
@@ -407,6 +424,17 @@ export abstract class View implements QualityTarget {
     });
     this.emphasis.setScale(k);
     this.invalidateLabelSizes();
+  }
+
+  /** Chế độ trình chiếu: đường dày hơn (hệ số `lineScale`), đường mảnh đậm hơn, khung hình theo preferredFov. */
+  setPresentation(on: boolean, lineScale: number): void {
+    this.presenting = on;
+    this.setLineScale(on ? lineScale : 1);
+    if (this.height > 0) {
+      this.camera.fov = this.preferredFov(this.camera.aspect);
+      this.camera.updateProjectionMatrix();
+    }
+    this.dirty = true;
   }
 
   /** Cỡ chữ nhãn đổi (chế độ trình chiếu): đo lại mọi nhãn ở lần vẽ tới. */

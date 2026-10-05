@@ -28,6 +28,16 @@ export class CelestialSphereView extends View {
   private _ray = new THREE.Ray();
   private _sphere: THREE.Sphere;
 
+  /**
+   * Trình chiếu: khung thiên cầu thường hơi dọc (0,7 ≤ tỉ lệ < 0,9) nên góc nhìn 58° của điện thoại để trống một dải
+   * lớn bên dưới (review-2 H1). Khi trình chiếu, chọn góc nhìn để nửa góc ngang là 21,5° (≈ khung vuông 42° và một
+   * chút lề cho nhãn Đ/T) — thiên cầu to hơn mà vẫn trọn trong khung. Điện thoại không đổi.
+   */
+  protected preferredFov(aspect: number): number {
+    if (this.presenting && aspect >= 0.7 && aspect < 0.9) return (2 * Math.atan(Math.tan((21.5 * Math.PI) / 180) / aspect) * 180) / Math.PI;
+    return super.preferredFov(aspect);
+  }
+
   constructor(container: HTMLElement, store: Store) {
     const R = SKY_RADIUS;
     super(container, 'sphere', store, new THREE.Vector3(R * 1.05, R * 0.85, R * 2.75));
