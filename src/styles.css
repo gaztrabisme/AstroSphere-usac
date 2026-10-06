@@ -63,6 +63,9 @@
   /* Viên thuốc đậm hơn cho tên sao và tên chòm (review-4 D2): đường nối chòm sao đi qua tên của chính nó không
      còn cắt nét chữ (65 % → 85 %). */
   --label-pill-strong: #0a0a0ad9;
+  /* Xích đạo Trái Đất trên bản đồ chọn vị trí (review-4 #10): xám trung tính, nét đứt. Không dùng vàng: vàng là
+     xích đạo trời trong cảnh. */
+  --map-equator: #a3a3a3;
 
   color-scheme: dark;
 }
