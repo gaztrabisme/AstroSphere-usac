@@ -3846,8 +3846,10 @@ body.mode-simple .lbl--allsky {
     width: 100%;
   }
 
+  /* Vùng chạm 44 px: ::after tính từ hộp đệm 14 px (16 px trừ viền 1 px), nên −15 px chứ không phải −14 px (42 px,
+     review-4 #15). Vòng nhìn thấy vẫn 16 px. */
   .term::after {
-    inset: -14px;
+    inset: -15px;
   }
 
   .check-row > .term {
