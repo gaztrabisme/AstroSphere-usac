@@ -25,6 +25,11 @@ import { chevronIcon } from './icons';
 
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
+/** Chiều cao tối thiểu (px) của vùng cuộn để hiện dấu "↓ Còn nữa": dòng tiêu đề + dải che + một dòng số liệu. */
+const MORE_MIN_HEIGHT = 120;
+
+const reducedMotion = (): boolean => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 /** Tên hướng (8 hướng) cho phương vị; chuỗi rỗng nếu phương vị không xác định (vd. ở hai cực). */
 export function compassName(az: number): string {
   if (!Number.isFinite(az)) return '';
@@ -109,8 +114,19 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
+  // Chú giải màu chấm (fix-3 #8): lớp vùng mọc – lặn (chú giải màu của nó) tắt theo mặc định, nên chú thích của nút "?"
+  // cạnh "Trạng thái" liệt kê cả ba trạng thái, mỗi cái với chấm màu vùng của nó (cùng lớp .status--* với viên).
+  const statusKey = h(
+    'span',
+    { class: 'status-key', id: 'info-status-key', role: 'tooltip' },
+    h('span', { class: 'status-key__head', text: t('info.statusKey') }),
+    h('span', { class: 'status-key__item status--circumpolar', text: t('visibility.circumpolar') }),
+    h('span', { class: 'status-key__item status--riseSet', text: t('visibility.riseSet') }),
+    h('span', { class: 'status-key__item status--neverRise', text: t('visibility.neverRise') }),
+    h('span', { class: 'status-key__foot', text: t('codexUi.termTip') }),
+  );
   // Hàng trạng thái xếp dọc (nhãn trên, viên trạng thái dưới) để viên "Cận cực (không bao giờ lặn)" nằm trọn một dòng.
-  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
+  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status, statusKey));
   const detailsHead = h('h4', { text: t('info.details') });
   const detailsDl = h('dl');
   const body = h(
@@ -150,10 +166,30 @@ export function infoCard(store: Store, actions: Actions) {
   ] as const)
     appendTerm(rowEl.querySelector('dt')!, termLink(id, label));
   appendTerm(statusRow.querySelector('dt')!, statusTerm);
+  // Chú giải riêng thay cho chú thích gốc (title) của nút: không hiện hai chú thích chồng nhau.
+  statusTerm.removeAttribute('title');
+  statusTerm.setAttribute('aria-describedby', statusKey.id);
   const STATUS_ENTRY = { circumpolar: 'circumpolar', riseSet: 'riseSetZone', neverRise: 'neverRise' } as const;
 
   // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
   const empty = h('p', { class: 'infocard__empty', text: t('info.empty') });
+  // Dấu "↓ Còn nữa" (fix-3 #11): dính ở mép dưới vùng cuộn của thẻ, chỉ hiện khi còn nội dung bên dưới (lớp has-more).
+  // Bấm vào thì cuộn xuống gần một khung. Chỉ dành cho chuột/chạm: bàn phím và trình đọc màn hình cuộn chính thẻ, nên
+  // nút không nhận tiêu điểm (tránh tiêu điểm rơi mất khi nút ẩn đi lúc đã cuộn tới đáy).
+  const more = h(
+    'div',
+    { class: 'infocard__more' },
+    h('button', {
+      type: 'button',
+      class: 'infocard__more-btn',
+      tabIndex: -1,
+      'aria-hidden': 'true',
+      'data-guide': 'infoMore',
+      title: t('info.moreTip'),
+      text: t('info.more'),
+      onclick: () => el.scrollBy({ top: Math.max(80, el.clientHeight * 0.8), behavior: reducedMotion() ? 'auto' : 'smooth' }),
+    }),
+  );
   const el = h(
     'aside',
     { class: 'infocard is-empty', 'aria-label': t('info.aria'), 'data-guide': 'infoCard' },
@@ -178,6 +214,7 @@ export function infoCard(store: Store, actions: Actions) {
     kind,
     empty,
     body,
+    more,
   );
 
   // Kéo thẻ bằng thanh tiêu đề để không che phần đang quan sát (chỉ trên màn hình rộng).
@@ -217,14 +254,16 @@ export function infoCard(store: Store, actions: Actions) {
     setCollapsed(!el.classList.contains('is-collapsed'));
   });
 
-  // Còn nội dung bên dưới mép thẻ → mép dưới mờ dần (lớp can-scroll). Chỉ đọc kích thước khi cuộn hoặc khi
-  // ResizeObserver báo đổi kích thước (sau bố cục), không đọc trong nhịp cập nhật của vòng lặp.
-  let canScroll = false;
+  // Còn nội dung bên dưới mép thẻ → mép dưới mờ nhẹ và dấu "↓ Còn nữa" (lớp has-more, fix-3 #11; trước đây chỉ có
+  // lớp can-scroll làm mờ). Chỉ đọc kích thước khi cuộn hoặc khi ResizeObserver báo đổi kích thước (sau bố cục), không
+  // đọc trong nhịp cập nhật của vòng lặp; chỉ ghi DOM khi trạng thái đổi. Thẻ chỉ còn chỗ cho dòng tiêu đề (bố cục
+  // tập trung trên màn hình thấp, fix-3 #2: thiên cầu giữ ≥ 220 px) thì không có dấu, để dải che không đè lên tên.
+  let hasMore = false;
   const syncScroll = () => {
-    const can = el.scrollHeight - el.scrollTop - el.clientHeight > 4;
-    if (can !== canScroll) {
-      canScroll = can;
-      el.classList.toggle('can-scroll', can);
+    const can = el.clientHeight >= MORE_MIN_HEIGHT && el.scrollHeight - el.scrollTop - el.clientHeight > 4;
+    if (can !== hasMore) {
+      hasMore = can;
+      el.classList.toggle('has-more', can);
     }
   };
   el.addEventListener('scroll', syncScroll, { passive: true });

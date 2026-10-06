@@ -915,10 +915,6 @@ body.learn-open .layout {
   scrollbar-color: var(--border-control) transparent;
 }
 
-.infocard.can-scroll {
-  mask-image: linear-gradient(to bottom, var(--bg) calc(100% - 40px), transparent);
-}
-
 /* ------------------------------------------------------------------ Bảng điều khiển */
 /* Bảng điều khiển xếp kiểu "tường gạch" (đa cột, review-2 C2): mỗi thẻ giữ chiều cao tự nhiên, thẻ ngắn (Hoạt ảnh)
    nằm ngay dưới thẻ Vị trí thay vì đứng một mình với khoảng trống lớn bên dưới; thứ tự đọc từ trên xuống, trái sang
@@ -4463,7 +4459,7 @@ body.present .guide-tip {
 /* ===== Owner decisions 2026-10-05: reward and polish ===== */
 /* docs/redesign-2/decisions-2026-10-05.md. Một mục chỉ ở đây; quy tắc cũ chỉ đổi tại chỗ khi bắt buộc. */
 
-/* 2. Hộp xác nhận "Đặt lại mọi thứ?": nhỏ, hai dòng "Sẽ đặt lại / Vẫn giữ", "Hủy" (phụ) trước "Đặt lại" (chính, cam). */
+/* 2. Hộp xác nhận "Đặt lại mô phỏng?": nhỏ, hai dòng "Sẽ đặt lại / Vẫn giữ", "Hủy" (phụ) trước "Đặt lại" (chính, cam). */
 .dialog--confirm {
   width: min(440px, calc(100vw - 24px));
 }
@@ -4857,6 +4853,299 @@ body.present .guide-tip {
   body.mode-full:not(.focus-data-open):not(.present) .databar [data-emphasis='selected'] .data__v {
     white-space: normal;
   }
+}
+
+/* ==== fix-3 ui ==== */
+/* Vòng sửa 3, luồng giao diện (docs/redesign-2/review-3.md, mục #2 và #4–#11). Mọi quy tắc của vòng này nằm ở đây và
+   ghi đè các quy tắc phía trên; màu chỉ qua token trong :root. */
+
+/* #2. Bố cục tập trung mở cả "Số liệu" lẫn "Bảng điều khiển" và có đối tượng đang chọn: thẻ thông tin nằm dưới thiên
+   cầu ở cột 2 từng ép thiên cầu còn ~90 px (review-4 ảnh 06). Hàng thiên cầu giữ tối thiểu đầu khung (~70 px, tiêu
+   đề + phụ đề hai dòng) + 220 px cảnh; thẻ nhận phần còn lại và tự cuộn bên trong. Hàng thẻ không bao giờ thấp hơn
+   dòng tiêu đề của nó (tên đối tượng + hai nút). */
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .views:has(> .infocard:not(.is-collapsed)) {
+    grid-template-rows: minmax(292px, 1fr) minmax(56px, auto);
+  }
+
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) {
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+/* #11. Thẻ thông tin dài hơn vùng của nó: mép dưới chỉ mờ nhẹ rồi che hẳn, cộng dấu "↓ Còn nữa" (lớp has-more do
+   infoCard.ts đặt khi còn nội dung bên dưới, bỏ khi đã cuộn tới đáy). Trước đây mặt nạ mờ dần làm dòng cuối (vd.
+   "MỌC – LẶN") còn 3,1:1. Nay phần mờ chỉ phủ tối đa 30 % màu nền: chữ phụ --muted vẫn ≥ 4,9:1 trên nền thẻ; dưới đó
+   là một dải đặc giữ dấu "Còn nữa", chữ đã bị che hẳn chứ không mờ dở. --infocard-bg: nền thật của thẻ ở từng bố cục. */
+.infocard {
+  --infocard-bg: var(--surface);
+}
+
+@media (min-width: 1200px) {
+  .infocard:not(.is-collapsed) {
+    --infocard-bg: var(--surface-quiet);
+  }
+}
+
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) {
+    --infocard-bg: var(--surface-quiet);
+  }
+}
+
+.infocard__more {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  z-index: 1;
+}
+
+.infocard.has-more:not(.is-collapsed):not(.is-empty) .infocard__more {
+  display: block;
+}
+
+/* Dải che: 12 px mờ (0 → 30 %), rồi đặc tới mép dưới thẻ (gồm cả lề dưới 10 px của thẻ). */
+.infocard__more::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  bottom: -10px;
+  height: 48px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    color-mix(in srgb, var(--infocard-bg) 30%, transparent) 12px,
+    var(--infocard-bg) 13px
+  );
+  pointer-events: none;
+}
+
+.infocard__more-btn {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.infocard__more-btn:hover {
+  border-color: var(--accent-hi);
+}
+
+/* Vùng chạm 44 px (điện thoại) quanh viên 28 px, không làm dải che cao thêm. */
+.infocard__more-btn::after {
+  content: '';
+  position: absolute;
+  inset: -8px -4px;
+}
+
+/* #4. Lời chào trên điện thoại mở đầu bằng việc đầu tiên nên làm ("Thử chạm vào một ngôi sao nhé…", như lời chào trên
+   máy tính); câu dài hơn nên xuống ba dòng. Dòng sát hơn một chút và bỏ đệm dọc của nút để dải vẫn chỉ che ≤ 15 %
+   bầu trời, vẫn nằm trên thẻ đang chọn và dòng φ (vị trí neo theo --card-h, --foot-h không đổi). */
+@media (max-width: 900px) {
+  .guide-hello--toast .guide-hello__title {
+    line-height: 1.25;
+  }
+
+  .guide-hello--toast .guide-hello__go {
+    padding-block: 0;
+  }
+}
+
+/* #5. "Hủy" là lựa chọn mặc định của hộp "Đặt lại mô phỏng?": tiêu điểm đặt bằng mã khi mở hộp, nên khi người dùng mở
+   bằng chuột trình duyệt không coi đó là :focus-visible và vòng tiêu điểm không hiện. Hai nút của hộp hiện vòng cam
+   (cùng màu và khoảng hở với --focus) với mọi kiểu tiêu điểm. Dùng outline (không phải box-shadow) để vòng vẫn
+   thấy trong chế độ màu cưỡng bức. */
+#dlg-reset .confirm__btn:focus {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* #6. Thanh trên của chế độ Đầy đủ trên điện thoại: từng cao ba hàng (~150 px) với "Cơ bản / Đầy đủ" đứng một mình ở
+   hàng ba, còn "Ôn tập" có viền sáng hơn trông như đang được chọn (review-4 ảnh 12). Nay hai hàng gọn (≤ 104 px ở
+   375 px): hàng 1 là thương hiệu và công tắc chế độ (như Cơ bản), hàng 2 là dải nút biểu tượng 44 px chia đều bề
+   ngang. "Ôn tập" chỉ còn biểu tượng bút chì (tên vẫn là aria-label, chú thích ở title), viền như các nút cạnh nó. */
+@media (max-width: 640px) {
+  body.mode-full .topbar {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+    padding-block: var(--space-1);
+  }
+
+  body.mode-full .brand {
+    flex: 1 1 auto;
+  }
+
+  /* Công tắc ở hàng 1, bên phải: giữ viền của công tắc phân đoạn, bỏ đệm để hàng chỉ cao 46 px. */
+  body.mode-full .modeswitch {
+    order: 0;
+    flex: none;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  body.mode-full .topbar__actions {
+    order: 1;
+    flex: 1 0 100%;
+    gap: var(--space-1);
+  }
+
+  body.mode-full .topbar__actions .btn--top {
+    flex: 1 1 0;
+  }
+
+  body.mode-full .btn--top.btn--top-main {
+    padding: 4px;
+    border-color: var(--border);
+  }
+
+  body.mode-full .btn--top-main .btn__icon {
+    display: inline-grid;
+  }
+
+  body.mode-full .btn--top-main .btn__text {
+    display: none;
+  }
+}
+
+/* #7. Khoảnh khắc mở khóa của USACodex (review-4 ảnh 09: viên "✓ Đã mở khóa" nặng ngang phụ đề, không thấy là phần
+   thưởng). Giữ giọng điềm tĩnh, chỉ cho nó "đáp" một lần:
+   - viên "Đã mở khóa" sáng mềm (bóng trắng trung tính, không cam: không phải nút bấm) đúng lúc nó hiện ra, 520–900 ms,
+     nên cả nhịp vẫn kết thúc trong 900 ms;
+   - thanh tiến độ (chung và từng danh mục) trượt tới giá trị mới trong ~400 ms, cùng đường cong ease-out
+     (codex/ui.ts chỉ ghi giá trị khi hộp đang mở, nên lần mở sau thanh trượt từ giá trị lần xem trước).
+   Giảm chuyển động: không khai báo gì → viên và thanh hiện ngay ở trạng thái cuối.
+   Thẻ đã đọc: dấu tích ✓ (glyphs.ts) cộng chữ "đã đọc" nay hiện ra (trước chỉ dành cho trình đọc màn hình): một dấu
+   tích 12 px đứng một mình quá mờ để thấy là một trạng thái. Cả ba trạng thái giờ cùng dạng "dấu + chữ", không dựa
+   vào màu: ổ khóa + "chưa khám phá" (viền đứt), chấm + "MỚI" (viền sáng), ✓ + "đã đọc". */
+@media (prefers-reduced-motion: no-preference) {
+  .cdx-page.is-unlocking .cdx-unlocked {
+    animation:
+      cdx-line 340ms var(--cdx-ease) 520ms both,
+      cdx-pill-glow 380ms var(--cdx-ease) 520ms both;
+  }
+
+  .cdx-progress__bar::before,
+  .cdx-tile__bar::before {
+    transition: width 400ms var(--cdx-ease);
+  }
+}
+
+@keyframes cdx-pill-glow {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  40% {
+    box-shadow:
+      0 0 0 1px var(--text),
+      0 0 16px 2px color-mix(in srgb, var(--text) 35%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.cdx-card[data-state='read'] .cdx-card__state {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+}
+
+/* #8. Chú giải màu của viên "Trạng thái" (review-4 ảnh 03, 04): chấm lục lam của viên chỉ có nghĩa nhờ chú giải vùng,
+   mà lớp vùng tắt theo mặc định. Rê chuột lên (hoặc Tab tới) nút "?" cạnh "Trạng thái", hoặc rê lên viên, hiện một
+   chú thích liệt kê ba trạng thái, mỗi cái với chấm màu vùng (--zone-*, trùng scene/colors.ts) và chữ của nó. */
+.kv--stack[data-emphasis='status'] {
+  position: relative;
+}
+
+.status-key {
+  display: none;
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 0;
+  z-index: 3;
+  flex-direction: column;
+  gap: 6px;
+  width: max-content;
+  max-width: min(280px, 100%);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.kv:has(.term:hover) .status-key,
+.kv:has(.term:focus-visible) .status-key,
+.status:hover + .status-key {
+  display: flex;
+}
+
+.status-key__head,
+.status-key__foot {
+  color: var(--muted);
+}
+
+.status-key__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-key__item::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-dot);
+}
+
+/* #10. Chữ giải thích từng nằm sát sàn 13 px (đo được ~12,5–13 px, review-3 #10). Câu nghĩa ngắn dưới mỗi dòng của
+   thẻ thông tin là chữ người mới thật sự đọc: 14 px. Dòng gợi ý dưới giản đồ chân trời và các bộ đếm, chú thích hình
+   của USACodex: 13,5–14 px. Bản trình chiếu (body.present …) có độ đặc hiệu cao hơn nên vẫn to hơn. */
+.kv__note {
+  font-size: 14px;
+}
+
+.view__hint {
+  font-size: 13.5px;
+}
+
+.cdx-card__meta {
+  font-size: 13.5px;
+}
+
+.cdx-catview__count,
+.cdx-tile__count,
+.cdx-figure figcaption {
+  font-size: 14px;
 }
 
 /* ==== fix-3 scene ==== */

@@ -43,3 +43,25 @@ export function bookIcon(): SVGSVGElement {
   svg.append(path);
   return svg;
 }
+
+/**
+ * Bút chì (nút "Ôn tập", fix-3 #6): thân bút chéo và ngòi, nét 1,6 px trên khung 16 × 16. Trên điện thoại "Ôn tập" chỉ
+ * còn biểu tượng như các nút cạnh nó; ký tự ✎ không có trong Arial nên vẽ bằng SVG cho chắc.
+ */
+export function pencilIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.6');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', 'M11.2 2.3l2.5 2.5-8.4 8.4-3.3.8.8-3.3 8.4-8.4zM9.6 3.9l2.5 2.5');
+  svg.append(path);
+  return svg;
+}
