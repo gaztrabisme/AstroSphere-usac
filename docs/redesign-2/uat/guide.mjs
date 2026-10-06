@@ -381,7 +381,7 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
     fs: parseFloat(getComputedStyle(document.querySelector('.guide-hello__title')).fontSize),
   }));
   // fix-3 #4: lời chào trên điện thoại mở đầu bằng việc đầu tiên nên làm (chạm vào một ngôi sao), như trên máy tính.
-  check('(fix-1 #3, fix-3 #4, 375) toast = avatar + "Chào bạn! Thử chạm vào một ngôi sao nhé. Bấm vào mình nếu muốn hỏi về các nút." + ×, text ≥ 15 px', toast.face && toast.text === 'Chào bạn! Thử chạm vào một ngôi sao nhé. Bấm vào mình nếu muốn hỏi về các nút.' && toast.fs >= 15, JSON.stringify(toast));
+  check('(fix-1 #3, fix-3 #4, 375) toast = avatar + "Chào bạn! Thử chạm vào một ngôi sao nhé. Chạm vào mình nếu muốn hỏi về các nút." + ×, text ≥ 15 px', toast.face && toast.text === 'Chào bạn! Thử chạm vào một ngôi sao nhé. Chạm vào mình nếu muốn hỏi về các nút.' && toast.fs >= 15, JSON.stringify(toast));
   check('(375) no horizontal scroll with the hello open', await noHScroll(page));
   const btnH = await page.evaluate(() => [...document.querySelectorAll('.guide-hello button')].map((b) => b.getBoundingClientRect().height));
   check('(375) hello buttons are ≥ 44 px', btnH.every((x) => x >= 44), btnH.join(','));
