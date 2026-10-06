@@ -120,6 +120,15 @@ export class SkyLayer {
     const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator, anchor: [0.5, 1.2], compactKeep: true });
     // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
     eqLabel.position.set(Math.cos(0.436) * R * 1.02, Math.sin(0.436) * R * 1.02, 0);
+    // Vị trí thay thế (MAX_ALTS = 8): dọc xích đạo phía trước, và — chỉ ở khung thiên cầu — ngay dưới đường (lệch về
+    // phía thiên cực Nam 0,24 R, đủ để cả nhãn nằm dưới nét vẽ). Ở khung thiên cầu nhỏ (review-4 #4) dải ngang quanh
+    // đường xích đạo bị chữ T, Đ, tên đối tượng chọn và vòng chọn (quay theo giờ sao) chiếm hết; tên xích đạo vẫn phải
+    // hiện. Khung chân trời không dùng chỗ "dưới đường" (có thể rơi xuống dưới mặt đất).
+    const eqAt = (a: number, z = 0) => new THREE.Vector3(Math.cos(a) * R * 1.02, Math.sin(a) * R * 1.02, z * R);
+    eqLabel.userData.alts =
+      view === 'sphere'
+        ? [eqAt(0.2), eqAt(0.65), eqAt(-0.2), eqAt(0.9), eqAt(-0.436), eqAt(0.436, -0.24), eqAt(0.2, -0.24), eqAt(0.65, -0.24)]
+        : [eqAt(0.2), eqAt(0.65), eqAt(-0.2), eqAt(0.9), eqAt(1.1), eqAt(-0.436), eqAt(-0.65), eqAt(-0.873)];
     this.equator.add(eqLabel);
     this.fixed.add(this.equator);
 

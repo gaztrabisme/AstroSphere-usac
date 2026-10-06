@@ -117,10 +117,26 @@ for (const [w, h] of [
     JSON.stringify({ canvas: lbl.canvas, names }),
   );
   check(
-    '#4 the small sphere view keeps cardinal letters, a celestial pole and the celestial equator, and drops zenith / γ',
-    cardinals.length >= 2 && names.some((t) => /^Thiên cực/.test(t)) && names.includes(VI.scene.equator) && !names.includes(VI.scene.zenith) && !names.includes(VI.scene.vernal),
+    '#4 the small sphere view keeps cardinal letters and a celestial pole, and drops zenith / γ',
+    cardinals.length >= 2 && names.some((t) => /^Thiên cực/.test(t)) && !names.includes(VI.scene.zenith) && !names.includes(VI.scene.vernal),
     names.join(' | '),
   );
+  // Tên xích đạo: vòng chọn và tên đối tượng chọn quay theo giờ sao và có lúc chiếm hết chỗ trong khung 272 × 222 px
+  // (kiểm tra cũ đọc theo đồng hồ lúc chạy). Thử 12 giờ sao cố định: tên phải hiện ở ít nhất 11 (chú giải ngay dưới
+  // khung vẫn ghi "Xích đạo trời").
+  const eqSeen = [];
+  await page.evaluate(() => window.__app.actions.pause());
+  for (let lst = 0; lst < 360; lst += 30) {
+    await page.evaluate((l) => window.__app.actions.setLst(l), lst);
+    await page.waitForTimeout(400);
+    const on = await page.evaluate((eqText) =>
+      [...document.querySelectorAll('#view-sphere .label-layer .lbl')].some((el) => {
+        const r = el.getBoundingClientRect();
+        return el.textContent === eqText && getComputedStyle(el).display !== 'none' && r.width > 0;
+      }), VI.scene.equator);
+    if (on) eqSeen.push(lst);
+  }
+  check('#4 the small sphere view names the celestial equator at ≥ 11 of 12 sidereal times', eqSeen.length >= 11, `shown at LST ${eqSeen.join(', ')}`);
   check(
     '#4 the horizon view is unchanged: it still shows constellation names',
     lbl.horizon.some((l) => /lbl--constellation/.test(l.cls)),
