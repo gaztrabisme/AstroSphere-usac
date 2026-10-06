@@ -44,7 +44,7 @@ How each check was done:
   - "**Sẽ đặt lại:** vị trí, thời gian, các lớp hiển thị, góc nhìn và ngôi sao đang chọn. Các sao và chòm sao bạn đã thêm sẽ bị xóa."
   - "**Vẫn giữ:** chế độ Cơ bản hay Đầy đủ, tiến độ USACodex và Ôn tập."
 - **Buttons:** "Hủy" (secondary, first in reading order, focused by default) and "Đặt lại" (primary, orange, `--on-accent` text). Both are 44 px tall.
-- **Closing:** Esc and a click on the backdrop both cancel. Focus returns to the button that opened the dialog. The global Esc handler skips while the dialog is open, so Esc closes the dialog and does not also clear the selection.
+- **Closing:** "Hủy" and "Đặt lại" act synchronously in their click handlers instead of waiting for the `close` event. That event arrives in a later task, which took more than 200 ms on a busy main thread in the UAT. Esc and a click on the backdrop both cancel. Focus returns to the button that opened the dialog. The global Esc handler skips while the dialog is open, so Esc closes the dialog and does not also clear the selection.
 - The strings are in `vi.json › resetConfirm`. The two buttons carry `data-guide` keys (`resetCancel`, `resetConfirm`) with tips. The `reset` tip and the button tooltip now say that the app asks first.
 
 **The text is truthful.** I checked `Actions.resetAll()` and `resetAll()` in `main.ts`:

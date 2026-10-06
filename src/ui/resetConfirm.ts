@@ -18,6 +18,12 @@ export function resetConfirm(onConfirm: () => void): ResetConfirm {
   let cancelBtn: HTMLButtonElement | null = null;
   let opener: HTMLElement | null = null;
 
+  /** Trả tiêu điểm về nút đã mở hộp (AGENTS.md › Accessibility), kể cả khi trình duyệt không tự làm. */
+  function restoreFocus(): void {
+    if (opener?.isConnected && document.activeElement !== opener) opener.focus();
+    opener = null;
+  }
+
   function build(): HTMLDialogElement {
     const d = h(
       'dialog',
@@ -30,21 +36,25 @@ export function resetConfirm(onConfirm: () => void): ResetConfirm {
         h('p', { class: 'confirm__line' }, h('strong', { text: t('resetConfirm.keepsLabel') }), ` ${t('resetConfirm.keeps')}`),
       ),
     ) as HTMLDialogElement;
-    // "Hủy" đứng trước (đọc trước, tiêu điểm mặc định); "Đặt lại" là nút chính màu cam ở cuối.
-    cancelBtn = button(t('resetConfirm.cancel'), () => d.close('cancel'), { cls: 'confirm__btn', guide: 'resetCancel' }) as HTMLButtonElement;
+    // "Hủy" đứng trước (đọc trước, tiêu điểm mặc định); "Đặt lại" là nút chính màu cam ở cuối. Hai nút đóng hộp và làm
+    // việc của mình ngay (đồng bộ), không chờ sự kiện close — sự kiện đó đến sau, trong một tác vụ riêng.
+    const finish = (confirmed: boolean) => {
+      d.close(confirmed ? 'confirm' : 'cancel');
+      if (confirmed) onConfirm();
+      restoreFocus();
+    };
+    cancelBtn = button(t('resetConfirm.cancel'), () => finish(false), { cls: 'confirm__btn', guide: 'resetCancel' }) as HTMLButtonElement;
     cancelBtn.autofocus = true;
-    const okBtn = button(t('resetConfirm.confirm'), () => d.close('confirm'), { cls: 'btn--primary confirm__btn', guide: 'resetConfirm' });
+    const okBtn = button(t('resetConfirm.confirm'), () => finish(true), { cls: 'btn--primary confirm__btn', guide: 'resetConfirm' });
     d.append(h('footer', { class: 'dialog__foot confirm__foot' }, cancelBtn, okBtn));
     // Bấm ra ngoài hộp (nền mờ) = Hủy.
     d.addEventListener('click', (e) => {
-      if (e.target === d) d.close('cancel');
+      if (e.target === d) finish(false);
     });
+    // Esc (sự kiện cancel của trình duyệt) = Hủy: chỉ cần trả tiêu điểm. Bỏ qua sự kiện close đến muộn khi hộp đã được
+    // mở lại.
     d.addEventListener('close', () => {
-      const confirmed = d.returnValue === 'confirm';
-      if (confirmed) onConfirm();
-      // Trả tiêu điểm về nút đã mở hộp (AGENTS.md › Accessibility), kể cả khi trình duyệt không tự làm.
-      if (opener?.isConnected) opener.focus();
-      opener = null;
+      if (!d.open) restoreFocus();
     });
     document.body.append(d);
     return d;
