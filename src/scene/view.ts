@@ -11,7 +11,7 @@ import { lstOf, type AppState, type Selection, type Store } from '../state';
 import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
 import { setFatLineStyle } from './geom';
-import { HorizonLayer } from './horizonLayer';
+import { GHOST_ARROW_K, HorizonLayer } from './horizonLayer';
 import { declutter, LabelBoxes } from './declutter';
 import type { Label, LabelData } from './labels';
 import { SEL_RING_OUTER, SEL_RING_SCALE, SkyLayer } from './skyLayer';
@@ -27,6 +27,7 @@ export interface HoverInfo {
 
 const _v = new THREE.Vector3();
 const _p = new THREE.Vector3();
+const _q = new THREE.Vector3();
 const _ndc = new THREE.Vector2();
 const _local = { x: 0, y: 0 };
 
@@ -61,6 +62,8 @@ export abstract class View implements QualityTarget {
   /** Hộp màn hình của các nhãn đang hiện (gỡ chồng chéo) và nhãn tương ứng với từng hộp — cấp phát sẵn. */
   private boxes = new LabelBoxes();
   private boxLabel: (Label | null)[] = [];
+  /** Hộp px của vòng "bóng" đã vẽ (0–3) và mũi tên mép khung (4–7) ở lần gỡ chồng chéo gần nhất; w = 0: không có. */
+  private readonly ghostPx = new Float32Array(8);
   private needMeasure = true;
   /**
    * Lớp giao diện nổi trên khung nhìn (nút "Nhìn từ người quan sát", "Góc nhìn mặc định" — fix-2 #1): hộp px tương
@@ -404,9 +407,9 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      // +2: chỗ cho vật cản vòng chọn (pushObstacle) và vùng giữ trống (keepOut); + lớp giao diện nổi.
-      this.boxLabel.length = list.length + 2 + MAX_OVERLAYS;
-      this.boxes.ensure(list.length + 2 + MAX_OVERLAYS);
+      // + chỗ cho các vật cản (vòng chọn, vùng giữ trống keepOut, vòng và mũi tên "bóng") và lớp giao diện nổi.
+      this.boxLabel.length = list.length + MAX_OBSTACLES + MAX_OVERLAYS;
+      this.boxes.ensure(list.length + MAX_OBSTACLES + MAX_OVERLAYS);
     }
     const lt = s.labels;
     const clip = this.clipBelow(s);
@@ -453,7 +456,35 @@ export abstract class View implements QualityTarget {
       boxes.solid[k] = 1;
       boxes.hard[k] = 1;
     }
-    if (this.sky.selRingWorld(_v)) this.pushObstacle(_v, this.selRingPx(), W, H);
+    const ringPx = this.selRingPx();
+    if (this.sky.selRingWorld(_v)) this.pushObstacle(_v, ringPx, W, H);
+    // Dấu "bóng" của đối tượng chọn khuất dưới mặt đất, ở vị trí ĐÃ VẼ (sau khi kẹp vào khung), và mũi tên mép khung
+    // (fix-3 #3): vật cản CỨNG — nhãn "… dưới chân trời" (soft, neo vào dấu bóng) cũng phải né, không còn đè lên chính
+    // dấu của nó. Vòng chọn ở trên nằm ở vị trí thật (có thể ngoài khung) và nhãn soft bỏ qua nó.
+    const gp = this.ghostPx;
+    gp[2] = 0;
+    gp[6] = 0;
+    const gm = this.horizon.ghostMarks(_v, _q);
+    if (gm > 0) {
+      let k = this.pushObstacle(_v, ringPx, W, H);
+      if (k >= 0) {
+        boxes.hard[k] = 1;
+        gp[0] = boxes.x[k];
+        gp[1] = boxes.y[k];
+        gp[2] = boxes.w[k];
+        gp[3] = boxes.h[k];
+      }
+      if (gm > 1) {
+        k = this.pushObstacle(_q, ringPx * GHOST_ARROW_K, W, H);
+        if (k >= 0) {
+          boxes.hard[k] = 1;
+          gp[4] = boxes.x[k];
+          gp[5] = boxes.y[k];
+          gp[6] = boxes.w[k];
+          gp[7] = boxes.h[k];
+        }
+      }
+    }
     if (this.keepOut(_ko, W, H)) {
       const k = boxes.n;
       this.boxLabel[k] = null;
@@ -490,7 +521,7 @@ export abstract class View implements QualityTarget {
       if (k >= 0) boxes.soft[k] = 1;
     }
     if (sel && !(em !== null && sel.userData.emph === em)) {
-      const k = this.pushBox(sel, W, H, true, this.selRingPx(), FOCUS_PAD);
+      const k = this.pushBox(sel, W, H, true, ringPx, FOCUS_PAD);
       if (k >= 0) boxes.soft[k] = 1;
     }
     // Các nhãn còn lại theo hạng; vòng chọn (đã đặt ở trên) là vật cản cho chúng — không nhãn nào chen vào vòng quanh
@@ -501,8 +532,9 @@ export abstract class View implements QualityTarget {
       if (lbl === sel || !lbl.visible || ud.group === 'directions' || ud.group === 'poles' || (em !== null && ud.emph === em) || !ancestorsVisible(lbl)) continue;
       // Nhãn `must` (cảnh báo "dưới chân trời", neo vào dấu bóng của đối tượng chọn): đặt ra ngoài vòng như tên đối
       // tượng chọn — bên phải, trái, trên, dưới vòng, rồi các vị trí thay thế của nó.
+      // Khoảng hở UNDER_GAP px giữa vòng và nhãn (fix-3 #3, review-3 #3).
       const must = ud.must;
-      const k = this.pushBox(lbl, W, H, ud.rank < 20, must ? this.selRingPx() : 0, ud.clear);
+      const k = this.pushBox(lbl, W, H, ud.rank < 20, must ? ringPx + UNDER_GAP : 0, ud.clear);
       if (k >= 0 && ud.avoidDisc) boxes.avoidDisc[k] = 1;
       if (k >= 0 && must) {
         boxes.must[k] = 1;
@@ -558,9 +590,10 @@ export abstract class View implements QualityTarget {
     boxes.push(sx - ud.cx0 * w + ox, sy - ud.cy0 * h, w, h, canNudge && inside);
     boxes.ox[k] = ox;
     boxes.pad[k] = pad;
-    if (ox > 0) {
+    if (gapPx > 0 && ud.cx0 < 0.5) {
       // Tên đối tượng đang chọn: bên phải vòng chọn là chỗ gốc; bị chiếm (vd. chữ hướng B ngay cạnh thiên cực) thì
-      // thử bên trái vòng, rồi phía trên và phía dưới vòng — luôn ngoài vòng.
+      // thử bên trái vòng, rồi phía trên và phía dưới vòng — luôn ngoài vòng. Kể cả khi nhãn dài tự nằm xa hơn gapPx
+      // (ox = 0): trước fix-3 #3, nhãn "… dưới chân trời" dài không có các vị trí này và bị đẩy ngược vào vòng "bóng".
       boxes.addAlt(k, sx - gapPx - w, sy - h / 2);
       boxes.addAlt(k, sx - w / 2, sy - gapPx - h);
       boxes.addAlt(k, sx - w / 2, sy + gapPx);
@@ -583,11 +616,11 @@ export abstract class View implements QualityTarget {
 
   /**
    * Thêm vật cản hình vuông bán kính `r` px quanh điểm thế giới `world` (vòng chọn): luôn giữ (must), không dời.
-   * Không cấp phát.
+   * Trả về chỉ số hộp, −1 nếu điểm nằm sau camera. Không cấp phát.
    */
-  private pushObstacle(world: THREE.Vector3, r: number, W: number, H: number): void {
+  private pushObstacle(world: THREE.Vector3, r: number, W: number, H: number): number {
     _p.copy(world).project(this.camera);
-    if (_p.z < -1 || _p.z > 1) return;
+    if (_p.z < -1 || _p.z > 1) return -1;
     const sx = ((_p.x + 1) / 2) * W;
     const sy = ((1 - _p.y) / 2) * H;
     const boxes = this.boxes;
@@ -596,6 +629,19 @@ export abstract class View implements QualityTarget {
     boxes.push(sx - r, sy - r, 2 * r, 2 * r, false);
     boxes.must[k] = 1;
     boxes.solid[k] = 1;
+    return k;
+  }
+
+  /**
+   * Chỉ để kiểm thử chấp nhận (đọc qua window.__app ở chế độ phát triển, fix-3): hộp px (tương đối với canvas, góc
+   * trên trái) của vòng "bóng" ĐÃ VẼ và của mũi tên mép khung — đúng các vật cản mà nhãn phải né; null khi không có.
+   */
+  get ghostRects(): { ring: Rect | null; arrow: Rect | null } {
+    const g = this.ghostPx;
+    return {
+      ring: g[2] > 0 ? { x: g[0], y: g[1], w: g[2], h: g[3] } : null,
+      arrow: g[6] > 0 ? { x: g[4], y: g[5], w: g[6], h: g[7] } : null,
+    };
   }
 
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
@@ -786,6 +832,19 @@ const _kd: KeepOutDisc = { x: 0, y: 0, r: 0 };
 
 /** Số phần tử giao diện nổi tối đa trên một khung nhìn (nhóm nút công cụ). */
 const MAX_OVERLAYS = 4;
+/** Số vật cản tối đa: vòng chọn, vùng giữ trống (keepOut), vòng và mũi tên "bóng". */
+const MAX_OBSTACLES = 4;
+
+/** Khoảng hở (px) giữa vòng "bóng" và nhãn "… dưới chân trời" (fix-3 #3, review-3 #3). */
+const UNDER_GAP = 8;
+
+/** Hộp px (góc trên trái) — chỉ cho các getter kiểm thử. */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 /**
  * Vùng đệm quanh chữ hướng B/N/Đ/T, theo chiều cao chữ (fix-1 G1): ở khung thiên cầu "Thiên đỉnh" từng nằm ngay

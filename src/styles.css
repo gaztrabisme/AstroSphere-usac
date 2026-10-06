@@ -4858,3 +4858,15 @@ body.present .guide-tip {
     white-space: normal;
   }
 }
+
+/* ==== fix-3 scene ==== */
+/* fix-3 #3: khung nhìn hẹp (điện thoại) — nhãn "… đang ở dưới chân trời (h = …)" xuống hai dòng thay vì dài hơn chỗ
+   trống cạnh dấu "bóng": đặt được bên cạnh vòng đứt nét thay vì bị đẩy vào trong mép và che chính dấu đó. */
+@media (max-width: 600px) {
+  .lbl--under {
+    white-space: normal;
+    max-width: 12em;
+    text-wrap: balance;
+    line-height: 1.25;
+  }
+}

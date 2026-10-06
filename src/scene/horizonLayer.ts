@@ -39,7 +39,7 @@ const _hor: Horizontal = { alt: 0, az: 0 };
 /** Độ mờ của dấu "bóng" (vòng đứt nét, chấm, cung h) khi đối tượng chọn khuất dưới mặt đất. */
 const GHOST_OPACITY = 0.8;
 /** Cỡ mũi tên mép khung so với vòng chọn (fix-2 #11). */
-const GHOST_ARROW_K = 0.42;
+export const GHOST_ARROW_K = 0.42;
 const _g = new THREE.Vector3();
 
 export class HorizonLayer {
@@ -467,6 +467,19 @@ export class HorizonLayer {
     arrow.position.copy(_g);
     (arrow.material as THREE.SpriteMaterial).rotation = Math.atan2(ux, uy);
     arrow.visible = true;
+  }
+
+  /**
+   * Vị trí ĐÃ VẼ (sau khi kẹp vào khung) của dấu "bóng": tâm vòng đứt nét vào `ring`, tâm mũi tên mép khung vào
+   * `arrow` (tọa độ thế giới; cảnh "bóng" không có phép biến đổi). Trả về 0: không có dấu "bóng"; 1: chỉ có vòng;
+   * 2: vòng và mũi tên. View dùng làm vật cản cứng cho nhãn (fix-3 #3). Không cấp phát.
+   */
+  ghostMarks(ring: THREE.Vector3, arrow: THREE.Vector3): number {
+    if (!this.ghostOn || !this.ghostRing || !this.ghostArrow) return 0;
+    ring.copy(this.ghostRing.position);
+    if (!this.ghostArrow.visible) return 1;
+    arrow.copy(this.ghostArrow.position);
+    return 2;
   }
 
   /**

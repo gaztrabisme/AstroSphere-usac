@@ -226,4 +226,62 @@ describe('declutter', () => {
     declutter(b, 800, 600);
     expect(b.keep[0]).toBe(0);
   });
+
+  // fix-3 #3: nhãn "Sirius đang ở dưới chân trời" (must, soft) cạnh dấu "bóng" sát mép phải: đẩy vào trong mép thì đè lên
+  // chính vòng "bóng" (vật cản cứng) → không được giữ ở đó; thử vị trí thay thế bên trái vòng.
+  const ghost = (b: LabelBoxes): number => {
+    const o = b.push(480, 540, 30, 30, false); // vòng "bóng" đã vẽ (sau khi kẹp vào khung)
+    b.solid[o] = 1;
+    b.hard[o] = 1;
+    b.must[o] = 1;
+    return o;
+  };
+  const under = (b: LabelBoxes): number => {
+    const k = b.push(518, 545, 250, 20, true); // bên phải vòng, cách 8 px; tràn mép phải (W = 712)
+    b.must[k] = 1;
+    b.soft[k] = 1;
+    b.addAlt(k, 480 - 8 - 250, 545); // bên trái vòng
+    b.addAlt(k, 370, 540 - 8 - 20); // phía trên vòng
+    return k;
+  };
+  const overlaps = (b: LabelBoxes, i: number, j: number): boolean =>
+    b.x[i] < b.x[j] + b.w[j] && b.x[j] < b.x[i] + b.w[i] && b.y[i] < b.y[j] + b.h[j] && b.y[j] < b.y[i] + b.h[i];
+
+  it('fix-3 #3: a must box is never nudged into a hard obstacle when an alternative is free', () => {
+    const b = new LabelBoxes();
+    b.ensure(2);
+    const o = ghost(b);
+    const k = under(b);
+    declutter(b, 712, 600);
+    expect(b.keep[k]).toBe(1);
+    expect(b.x[k]).toBe(222); // vị trí thay thế bên trái, không phải chỗ gốc bị đẩy vào trong mép
+    expect(overlaps(b, k, o)).toBe(false);
+  });
+
+  it('fix-3 #3: with no free place, a must box falls back to a place that only overlaps labels, not the obstacle', () => {
+    const b = new LabelBoxes();
+    b.ensure(4);
+    const o = ghost(b);
+    b.push(200, 540, 60, 20, true); // nhãn đã giữ bên trái vòng
+    b.push(380, 500, 60, 20, true); // nhãn đã giữ phía trên vòng
+    const k = under(b);
+    declutter(b, 712, 600);
+    expect(b.keep[k]).toBe(1);
+    expect(b.x[k]).toBe(222); // chỗ dự phòng: vị trí đầu tiên không chạm vật cản
+    expect(overlaps(b, k, o)).toBe(false);
+  });
+
+  it('fix-3 #3: a must box that hits the obstacle everywhere still falls back to its first valid place', () => {
+    const b = new LabelBoxes();
+    b.ensure(2);
+    const o = ghost(b);
+    const k = b.push(490, 545, 60, 20, true);
+    b.must[k] = 1;
+    b.soft[k] = 1;
+    b.addAlt(k, 470, 550);
+    declutter(b, 712, 600);
+    expect(o).toBe(0);
+    expect(b.keep[k]).toBe(1);
+    expect(b.dx[k]).toBe(0);
+  });
 });
