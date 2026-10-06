@@ -154,6 +154,7 @@
     "above": "trên chân trời",
     "below": "dưới chân trời",
     "status": "Trạng thái",
+    "statusKey": "Màu chấm là màu vùng trên bầu trời:",
     "rise": "Mọc",
     "transit": "Qua kinh tuyến",
     "set": "Lặn",

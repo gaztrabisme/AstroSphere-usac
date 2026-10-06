@@ -114,8 +114,19 @@ export function infoCard(store: Store, actions: Actions) {
     highest: row('highest', t('info.highest')),
   };
   const status = h('span', { class: 'status' });
+  // Chú giải màu chấm (fix-3 #8): lớp vùng mọc – lặn (chú giải màu của nó) tắt theo mặc định, nên chú thích của nút "?"
+  // cạnh "Trạng thái" liệt kê cả ba trạng thái, mỗi cái với chấm màu vùng của nó (cùng lớp .status--* với viên).
+  const statusKey = h(
+    'span',
+    { class: 'status-key', id: 'info-status-key', role: 'tooltip' },
+    h('span', { class: 'status-key__head', text: t('info.statusKey') }),
+    h('span', { class: 'status-key__item status--circumpolar', text: t('visibility.circumpolar') }),
+    h('span', { class: 'status-key__item status--riseSet', text: t('visibility.riseSet') }),
+    h('span', { class: 'status-key__item status--neverRise', text: t('visibility.neverRise') }),
+    h('span', { class: 'status-key__foot', text: t('codexUi.termTip') }),
+  );
   // Hàng trạng thái xếp dọc (nhãn trên, viên trạng thái dưới) để viên "Cận cực (không bao giờ lặn)" nằm trọn một dòng.
-  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status));
+  const statusRow = h('div', { class: 'kv kv--stack', 'data-emphasis': 'status' }, h('dt', { text: t('info.status') }), h('dd', null, status, statusKey));
   const detailsHead = h('h4', { text: t('info.details') });
   const detailsDl = h('dl');
   const body = h(
@@ -155,6 +166,9 @@ export function infoCard(store: Store, actions: Actions) {
   ] as const)
     appendTerm(rowEl.querySelector('dt')!, termLink(id, label));
   appendTerm(statusRow.querySelector('dt')!, statusTerm);
+  // Chú giải riêng thay cho chú thích gốc (title) của nút: không hiện hai chú thích chồng nhau.
+  statusTerm.removeAttribute('title');
+  statusTerm.setAttribute('aria-describedby', statusKey.id);
   const STATUS_ENTRY = { circumpolar: 'circumpolar', riseSet: 'riseSetZone', neverRise: 'neverRise' } as const;
 
   // Trạng thái trống: nói rõ vì sao thẻ trống và việc nên làm tiếp (thay cho việc ẩn thẻ).
