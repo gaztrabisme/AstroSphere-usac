@@ -39,7 +39,12 @@ const _hor: Horizontal = { alt: 0, az: 0 };
 /** Độ mờ của dấu "bóng" (vòng đứt nét, chấm, cung h) khi đối tượng chọn khuất dưới mặt đất. */
 const GHOST_OPACITY = 0.8;
 /** Cỡ mũi tên mép khung so với vòng chọn (fix-2 #11). */
-const GHOST_ARROW_K = 0.42;
+export const GHOST_ARROW_K = 0.42;
+/**
+ * Đoạn cung h tính từ chân đường thẳng đứng (độ) mà nhãn phải né (fix-3 #12): chữ hướng "B" từng nằm ngay trên vạch
+ * hồng ở chân đường thẳng đứng qua Polaris.
+ */
+const FOOT_ARC_DEG = 6;
 const _g = new THREE.Vector3();
 
 export class HorizonLayer {
@@ -100,6 +105,9 @@ export class HorizonLayer {
   private uKeyAlt = NaN;
   private uKeyAz = NaN;
   private uKeyV = false;
+  /** h, A (độ) của đối tượng chọn ở lần dựng đường thẳng đứng gần nhất — để tính chân đường (verticalFoot). */
+  private vAlt = 0;
+  private vAz = 0;
   private sunKey = '';
   private sunRa = 0;
   private sunDec = 0;
@@ -275,7 +283,16 @@ export class HorizonLayer {
     // ngoài trung điểm của cung, chữ chạy ra xa trục.
     this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.axis, anchor: [-0.04, 0.5], emph: 'pole' });
     // Vị trí thay thế dọc theo cung (ghi lại khi vĩ độ đổi): nhãn nhường chỗ cho chữ hướng B/N thay vì che nó.
-    this.poleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    this.poleLabel.userData.alts = [
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+      new THREE.Vector3(),
+    ];
     this.angleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.poleAlt.add(this.poleSector, this.poleArc, this.poleLabel);
     this.group.add(this.poleAlt);
@@ -323,6 +340,9 @@ export class HorizonLayer {
     // dọc kinh tuyến có thể trùng chữ B và vòng chọn quanh Polaris; nhãn dời ngang ra cạnh cung, vẫn gần cung.
     horVec(Math.max(pAlt / 2, 4), pAz + 45, rp * 1.06, pAlts[5]);
     horVec(Math.max(pAlt / 2, 4), pAz - 45, rp * 1.06, pAlts[6]);
+    // Lệch sang bên và thấp hơn (fix-3 #12): chữ B né chân đường thẳng đứng qua Polaris bằng cách dời sang bên phải
+    // kinh tuyến, đúng chỗ của vị trí lệch +45° ở trên — nhãn hạ xuống sát chân trời, ngay dưới chữ B.
+    horVec(Math.max(pAlt / 6, 2), pAz + 45, rp * 1.06, pAlts[7]);
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
 
@@ -470,6 +490,35 @@ export class HorizonLayer {
   }
 
   /**
+   * Chân đường thẳng đứng qua đối tượng chọn trên đường chân trời và điểm trên cung h cách chân FOOT_ARC_DEG độ (tọa độ
+   * thế giới, ghi vào `foot` và `up`) — View đặt một vật cản nhỏ ở đó để chữ hướng không che vạch hồng (fix-3 #12).
+   * Trả về false khi đường thẳng đứng đang ẩn. Không cấp phát.
+   */
+  verticalFoot(foot: THREE.Vector3, up: THREE.Vector3): boolean {
+    if (!this.vertical.visible) return false;
+    const R = this.R;
+    const a = this.vAlt;
+    const d = Math.min(Math.abs(a), FOOT_ARC_DEG);
+    const m = this.group.matrixWorld;
+    horVec(0, this.vAz, R, foot).applyMatrix4(m);
+    horVec(a < 0 ? -d : d, this.vAz, R, up).applyMatrix4(m);
+    return true;
+  }
+
+  /**
+   * Vị trí ĐÃ VẼ (sau khi kẹp vào khung) của dấu "bóng": tâm vòng đứt nét vào `ring`, tâm mũi tên mép khung vào
+   * `arrow` (tọa độ thế giới; cảnh "bóng" không có phép biến đổi). Trả về 0: không có dấu "bóng"; 1: chỉ có vòng;
+   * 2: vòng và mũi tên. View dùng làm vật cản cứng cho nhãn (fix-3 #3). Không cấp phát.
+   */
+  ghostMarks(ring: THREE.Vector3, arrow: THREE.Vector3): number {
+    if (!this.ghostOn || !this.ghostRing || !this.ghostArrow) return 0;
+    ring.copy(this.ghostRing.position);
+    if (!this.ghostArrow.visible) return 1;
+    arrow.copy(this.ghostArrow.position);
+    return 2;
+  }
+
+  /**
    * (α, δ) của đối tượng đang chọn, không cấp phát (khác resolveSelection: không dựng tên/mô tả).
    * Trả về null nếu không có đối tượng hợp lệ.
    */
@@ -525,6 +574,8 @@ export class HorizonLayer {
     this.vKeyAlt = altK;
     this.vKeyAz = azK;
 
+    this.vAlt = alt;
+    this.vAz = az;
     const R = this.R;
     const star = horVec(alt, az, 1, _star);
     const foot = horVec(0, az, 1, _foot);

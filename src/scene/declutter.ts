@@ -145,6 +145,22 @@ function hits(b: LabelBoxes, i: number, x: number, y: number, w: number, h: numb
   return false;
 }
 
+/**
+ * Hộp (x, y, w, h) có chạm VẬT CẢN nào đã giữ trước i không (chỉ các hộp `solid` mà hộp i phải né: hộp `soft` chỉ né
+ * vật cản cứng). Dùng để chọn chỗ dự phòng của hộp `must` (fix-3 #3).
+ */
+function hitsObstacle(b: LabelBoxes, i: number, x: number, y: number, w: number, h: number, gap: number): boolean {
+  const pi = b.pad[i];
+  const soft = b.soft[i];
+  for (let j = 0; j < i; j++) {
+    if (!b.keep[j] || !b.solid[j]) continue;
+    if (soft && !b.hard[j]) continue;
+    const g = gap + (b.pad[j] > pi ? b.pad[j] : pi);
+    if (x < b.x[j] + b.w[j] + g && b.x[j] < x + w + g && y < b.y[j] + b.h[j] + g && b.y[j] < y + h + g) return true;
+  }
+  return false;
+}
+
 /** Hộp (x, y, w, h) có chạm vùng tròn giữ trống của `b` không (điểm gần tâm nhất của hộp nằm trong vòng). */
 export function hitsDisc(b: LabelBoxes, x: number, y: number, w: number, h: number): boolean {
   const r = b.discR;
@@ -161,7 +177,9 @@ export function hitsDisc(b: LabelBoxes, x: number, y: number, w: number, h: numb
 /**
  * Quyết định giữ/ẩn từng hộp trong khung W×H (px). Mỗi hộp thử vị trí gốc rồi lần lượt các vị trí thay thế; vị trí
  * đầu tiên nằm trong khung (sau khi đẩy vào trong mép nếu được phép) và không chạm hộp đã giữ thì được chọn.
- * Không có vị trí nào: ẩn, trừ hộp `must` (giữ ở vị trí gốc). Độ phức tạp O(n · số vị trí · số hộp đã giữ).
+ * Không có vị trí nào: ẩn, trừ hộp `must` — giữ ở vị trí hợp lệ đầu tiên KHÔNG chạm vật cản (chỉ chồng lên nhãn), hoặc
+ * nếu vị trí nào cũng chạm vật cản thì ở vị trí hợp lệ đầu tiên (fix-3 #3: nhãn "… dưới chân trời" bị đẩy vào trong mép
+ * không được đè lên chính dấu "bóng" của nó khi còn chỗ khác). Độ phức tạp O(n · số vị trí · số hộp đã giữ).
  */
 export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap = GAP): void {
   const n = b.n;
@@ -175,6 +193,9 @@ export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap 
     let placed = false;
     let fx = NaN;
     let fy = NaN;
+    // Chỗ dự phòng không chạm vật cản (chỉ cho hộp `must`).
+    let qx = NaN;
+    let qy = NaN;
     for (let k = -1; k < na; k++) {
       let x = k < 0 ? x0 : b.altX[i * MAX_ALTS + k];
       let y = k < 0 ? y0 : b.altY[i * MAX_ALTS + k];
@@ -197,7 +218,13 @@ export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap 
         fx = x;
         fy = y;
       }
-      if (hits(b, i, x, y, w, h, gap)) continue;
+      if (hits(b, i, x, y, w, h, gap)) {
+        if (b.must[i] && Number.isNaN(qx) && !hitsObstacle(b, i, x, y, w, h, gap)) {
+          qx = x;
+          qy = y;
+        }
+        continue;
+      }
       fx = x;
       fy = y;
       placed = true;
@@ -206,6 +233,10 @@ export function declutter(b: LabelBoxes, W: number, H: number, edge = EDGE, gap 
     if (!placed && !(b.must[i] && !Number.isNaN(fx))) {
       b.keep[i] = 0;
       continue;
+    }
+    if (!placed && !Number.isNaN(qx)) {
+      fx = qx;
+      fy = qy;
     }
     b.keep[i] = 1;
     b.x[i] = fx;
