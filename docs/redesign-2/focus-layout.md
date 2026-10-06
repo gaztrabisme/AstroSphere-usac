@@ -145,7 +145,7 @@ Run against dev `:5203` (via a scratch config with `server.fs.allow`, for the Ka
 | `redesign/uat/ux.mjs` | 37/37 |
 | `redesign/uat/highlight.mjs` | 25/25 |
 | `redesign/uat/declutter.mjs` | 21/21 |
-| `redesign/uat/perf.mjs` | see below |
+| `redesign/uat/perf.mjs` | PASS: (a) playback adds 0 line geometries and 0 buffers; (b) the hidden phone view makes 0 draws; (c) the hidden tab makes 0 draws; (d) adaptive quality is informational (SwiftShader drops a level after 37,8 s) |
 | `redesign/uat/bundle-size.mjs` | PASS: entry 82,56 kB gzip |
 
 `npm test`: 170 tests in 21 files. `npm run build`: passes.
