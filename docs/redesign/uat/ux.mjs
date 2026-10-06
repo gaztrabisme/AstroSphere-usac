@@ -104,7 +104,17 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   check('(b) prefers-reduced-motion: nothing autoplays (aria-pressed="false")', pressed === 'false', `aria-pressed=${pressed}`);
   const playPrimary = await page.locator('.btn--play').evaluate((el) => el.classList.contains('btn--primary') && /Bắt đầu/.test(el.textContent));
   check('(b) while paused, "Bắt đầu" is the orange primary action', playPrimary);
-  await page.getByRole('button', { name: 'Đặt lại', exact: true }).click();
+  // "Đặt lại" hỏi lại trước (quyết định 2026-10-05). Bấm Chạy, rồi Đặt lại → Hủy: mọi thứ giữ nguyên (vẫn chạy).
+  await page.locator('.btn--play').click();
+  await page.locator('.btn--top-reset').click();
+  const dlg = page.locator('#dlg-reset');
+  await dlg.waitFor({ state: 'visible' });
+  await dlg.getByRole('button', { name: 'Hủy', exact: true }).click();
+  await page.waitForTimeout(200);
+  const afterCancel = await page.locator('.btn--play').getAttribute('aria-pressed');
+  check('(b) "Đặt lại" → "Hủy" keeps the state (still playing)', afterCancel === 'true' && !(await dlg.isVisible()), `aria-pressed=${afterCancel}`);
+  await page.locator('.btn--top-reset').click();
+  await dlg.getByRole('button', { name: 'Đặt lại', exact: true }).click();
   await page.waitForTimeout(200);
   const afterReset = await page.locator('.btn--play').getAttribute('aria-pressed');
   check('(b) prefers-reduced-motion: still paused after "Đặt lại"', afterReset === 'false', `aria-pressed=${afterReset}`);

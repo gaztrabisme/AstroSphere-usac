@@ -22,7 +22,7 @@
     "presentTip": "Chế độ trình chiếu: toàn màn hình, chữ lớn, ẩn bảng điều khiển (phím F)",
     "exitPresent": "Thoát chế độ trình chiếu (phím F hoặc Esc)",
     "reset": "Đặt lại",
-    "resetTip": "Đưa mô phỏng về trạng thái ban đầu",
+    "resetTip": "Đưa mô phỏng về trạng thái ban đầu (sẽ hỏi lại trước khi đặt lại)",
     "help": "Trợ giúp",
     "helpTip": "Hướng dẫn sử dụng và phím tắt (phím H)",
     "about": "Giới thiệu",
@@ -493,6 +493,15 @@
     "close": "Đóng",
     "ok": "Đã hiểu"
   },
+  "resetConfirm": {
+    "title": "Đặt lại mọi thứ?",
+    "resetsLabel": "Sẽ đặt lại:",
+    "resets": "vị trí, thời gian, các lớp hiển thị, góc nhìn và ngôi sao đang chọn. Các sao và chòm sao bạn đã thêm sẽ bị xóa.",
+    "keepsLabel": "Vẫn giữ:",
+    "keeps": "chế độ Cơ bản hay Đầy đủ, tiến độ USACodex và Ôn tập.",
+    "cancel": "Hủy",
+    "confirm": "Đặt lại"
+  },
   "help": {
     "title": "Hướng dẫn sử dụng",
     "body": [
@@ -673,7 +682,7 @@
       "mode": "Đổi giữa Cơ bản (ít nút, dễ làm quen) và Đầy đủ (thêm thiên cầu, bảng số liệu và bài ôn tập). Bạn chọn bên nào, lần sau mình vẫn nhớ.",
       "learn": "Mở các bài Ôn tập ngắn: mỗi bài dựng sẵn bầu trời rồi hỏi bạn một câu. Hợp để tự kiểm tra sau khi đã nghịch thử.",
       "present": "Phóng to cảnh, đường kẻ và chữ để chiếu lên màn hình lớn trong buổi sinh hoạt. Nhấn Esc hoặc bấm lại để thoát.",
-      "reset": "Đưa mọi thứ về như lúc mới mở trang: vị trí, thời gian, các lớp hiển thị và góc nhìn. Dùng khi bạn lỡ tay chỉnh quá nhiều.",
+      "reset": "Đưa mọi thứ về như lúc mới mở trang: vị trí, thời gian, các lớp hiển thị và góc nhìn. Bạn sẽ được hỏi lại trước, nên bấm nhầm cũng không sao.",
       "codex": "Sổ tay khái niệm: mỗi điều mới bạn gặp trong mô phỏng sẽ mở khóa một mục. Con số trên nút là số mục mới bạn chưa đọc.",
       "help": "Cách dùng trang, các phím tắt và những công thức chính. Phím H cũng mở được.",
       "about": "Trang mô phỏng này là gì, ai làm ra nó và nguồn dữ liệu sao lấy từ đâu.",
@@ -720,7 +729,9 @@
       "trails": "Vết sao vẽ lại đường đi của từng ngôi sao. Nhìn vết là thấy ngay các vòng tròn quanh thiên cực.",
       "clubLink": "Mở trang web của CLB Thiên văn USAC trong thẻ mới.",
       "email": "Gửi góp ý hoặc câu hỏi cho CLB qua thư điện tử.",
-      "quality": "Trang vừa tự giảm chi tiết để chạy mượt hơn. Bấm khôi phục nếu máy bạn đủ khỏe."
+      "quality": "Trang vừa tự giảm chi tiết để chạy mượt hơn. Bấm khôi phục nếu máy bạn đủ khỏe.",
+      "resetCancel": "Đóng hộp này và giữ nguyên mọi thứ như hiện tại.",
+      "resetConfirm": "Đặt lại vị trí, thời gian, hiển thị, góc nhìn và xóa các sao đã thêm. Chế độ và tiến độ học vẫn được giữ."
     }
   }
 }

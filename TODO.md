@@ -46,7 +46,7 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 - [x] **Projector legibility** (review-4 H1). (b664219: star labels 28 px and white, titles 30/26 px, denser dashes at ×2 width) Enlarge the header in presentation mode, make star labels at least 28 px and white, and thicken or drop the dashed lines.
 - [x] **Label/line crossings near the pole** (review-4 D2). (fbe876f: background names rank last with clearance, 85 % pill, selection ring as an obstacle, the selected star always named) Constellation lines cross their own names. Consider leader lines or hiding constellation names that collide.
 - [ ] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision. Measured after the review-4 polish: 0,98× (a box of 43,5 % of the frame can reach at most 2,30×, so the 2× default is out of reach without removing the data bar). See `docs/redesign-2/polish.md`.
-- [ ] **Random and manual star colours reuse semantic colours.** `STAR_COLORS` in `src/state.ts` includes `#f472b6` (exactly the vertical-circle pink), `#60a5fa` (near the axis blue) and `#facc15` (near the equator yellow). Pick them from hues the scene does not use, or use the neutral figure tone.
+- [x] **Random and manual star colours reuse semantic colours.** (4380492: every user star takes `COLORS.figure`; nearest semantic colour ΔE 0 → 0,098; see `docs/redesign-2/decisions-2026-10-05.md`) `STAR_COLORS` in `src/state.ts` includes `#f472b6` (exactly the vertical-circle pink), `#60a5fa` (near the axis blue) and `#facc15` (near the equator yellow). Pick them from hues the scene does not use, or use the neutral figure tone.
 
 ## Sau thiết kế lại lần 2 (redesign-2 review-2) / Open after redesign-2
 
@@ -57,10 +57,10 @@ The medium items and three of the low items from `docs/redesign-2/review-2.md` a
   - locked entries shown as dimmed tiles instead of text rows;
   - a thicker neutral progress bar;
   - a short, quiet "Đã mở khóa" moment when an entry unlocks. Check this against the owner's "not pushy" rule.
-- [ ] **Teaching text is below a 12 px floor** (review-2 #5): selection-card explanations, data-strip captions, codex diagram labels.
-- [ ] **Phone header** (review-2 #6). "Đặt lại" sits next to the mode switch, so it is easy to tap by mistake. Move it into the controls, or add an undo toast. Make sure the buttons measure at least 44 px.
-- [ ] **The status pill reuses a zone colour out of context** (review-2 #12). "Mọc và lặn" is teal while the zone layer is off. Use a neutral pill with a small coloured dot instead.
-- [ ] **Nothing celebrates clicking a star** (review-2 A1). This is a product idea, not a defect; it needs an owner decision because of the "not pushy" constraint.
+- [x] **Teaching text is below a 12 px floor** (review-2 #5). (d244f8b: a 13 px floor for explanatory text outside USACodex; the codex diagram labels belong to the codex stream) It listed selection-card explanations, data-strip captions and codex diagram labels.
+- [x] **Phone header** (review-2 #6). (ad5a0ff, a7e0713: "Đặt lại" asks first in a native modal dialog, with "Hủy" as the default; the dialog buttons are 44 px) "Đặt lại" sits next to the mode switch, so it is easy to tap by mistake. Move it into the controls, or add an undo toast. Make sure the buttons measure at least 44 px.
+- [x] **The status pill reuses a zone colour out of context** (review-2 #12). (fc88ae5: neutral pill, 9 px zone-colour dot) "Mọc và lặn" is teal while the zone layer is off. Use a neutral pill with a small coloured dot instead.
+- [x] **Nothing celebrates clicking a star** (review-2 A1). (0eaba1c: owner decision 2026-10-05, the selection ring pulses once; no pulse under reduced motion) This is a product idea, not a defect; it needs an owner decision because of the "not pushy" constraint.
 - [ ] **Beginners have not been tested.** "Beginners are overwhelmed" and the value of Simple mode and the guide are untested assumptions (ux skill). Run a quick 5-person hallway test at a club session.
 
 ## Kho mã / Repository

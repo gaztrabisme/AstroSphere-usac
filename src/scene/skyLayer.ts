@@ -27,6 +27,7 @@ import {
 } from './geom';
 import type { EmphasisFx } from './emphasis';
 import { ALLSKY_NAME_RANK, makeLabel, setLabelText, type Label } from './labels';
+import { SEL_PULSE_MS, SEL_PULSE_OPACITY, SEL_PULSE_SCALE, selPulseAmount } from './selPulse';
 import { createStarMaterial, makeStarPoints, sizeForMagnitude } from './starMaterial';
 
 /** Cỡ sprite vòng chọn (đơn vị cảnh ở khoảng cách 1, không co theo khoảng cách) và bán kính ngoài của vòng trong
@@ -76,6 +77,8 @@ export class SkyLayer {
   private sunPathPts = new Float32Array(181 * 3);
   private sunKey = '';
   private selRing: THREE.Sprite;
+  /** Thời điểm bắt đầu nhịp "đã chọn" của vòng chọn (ms, performance.now()); −1 khi không chạy (selPulse.ts). */
+  private pulseT0 = -1;
   /**
    * Tên của đối tượng đang chọn khi nó không có nhãn riêng (sao danh mục mờ hơn ngưỡng nhãn, vd. Polaris cấp 1,98;
    * thiên thể sâu không tiêu biểu). Một nhãn dùng lại, đổi chữ/vị trí khi đổi lựa chọn — đối tượng đang chọn luôn
@@ -607,6 +610,26 @@ export class SkyLayer {
     const local = this.selectedLocal(s);
     this.selRing.visible = !!local;
     if (local) this.selRing.position.copy(local);
+  }
+
+  /** Nhịp "đã chọn" đang chạy: khung nhìn vẽ lại mỗi khung hình chỉ trong lúc này (≈ 300 ms). */
+  get pulsing(): boolean {
+    return this.pulseT0 >= 0;
+  }
+
+  /** Bắt đầu (hoặc bắt đầu lại) nhịp "đã chọn" của vòng chọn. Không làm gì khi vòng không hiện. */
+  startSelPulse(now: number): void {
+    if (this.selRing.visible) this.pulseT0 = now;
+  }
+
+  /** Tiến nhịp một bước (gọi trong frame() khi `pulsing`). Không cấp phát; bước cuối trả vòng về cỡ và độ đục nghỉ. */
+  stepSelPulse(now: number): void {
+    if (this.pulseT0 < 0) return;
+    const u = (now - this.pulseT0) / SEL_PULSE_MS;
+    if (u >= 1) this.pulseT0 = -1;
+    const a = selPulseAmount(u);
+    this.selRing.scale.setScalar(SEL_RING_SCALE * (1 + (SEL_PULSE_SCALE - 1) * a));
+    this.selRing.material.opacity = 1 - (1 - SEL_PULSE_OPACITY) * a;
   }
 
   /**
