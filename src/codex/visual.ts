@@ -4,7 +4,7 @@
 //   (α, δ, cấp sao, B − V, chòm, tên tiếng Việt; khoảng cách và kích thước cho thiên thể sâu).
 
 import content from '../i18n/codex.vi.json';
-import { fmtDegSigned, fmtHMS, fmtNum } from '../astro';
+import { fmtDegSigned, fmtHMS, fmtMag, fmtNum } from '../astro';
 import { catalogIndexByHip, getCatalogStar, nameOf, starConstellation } from '../data/catalog';
 import { constellationName, constellationNameVi, TEMPLATE_FIGURES } from '../data/constellations';
 import { DSOS, dsoGroup } from '../data/deepSky';
@@ -16,7 +16,7 @@ import { skyGroup, skySvg } from './sky';
 const UI = content.ui;
 const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? '');
 /** Số âm dùng dấu trừ thật (−), dấu phẩy thập phân. */
-const num = (x: number, d = 2) => (x < 0 ? `−${fmtNum(-x, d)}` : fmtNum(x, d));
+const num = fmtMag;
 
 interface StarVis {
   hip: number;

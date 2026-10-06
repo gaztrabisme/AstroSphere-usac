@@ -10,7 +10,7 @@
 // Trong một dòng: **chữ đậm**, \( TeX \) công thức trong dòng, {{#màu}} ô màu.
 // Công thức được dựng bằng KaTeX (đóng gói kèm ứng dụng, chỉ tải khi mở hộp thoại lần đầu).
 
-import { fmtDegSigned, fmtHMS, fmtNum } from '../astro';
+import { fmtDegSigned, fmtHMS, fmtMag, fmtNum } from '../astro';
 import { COMETS, DSOS, dsoDesignation } from '../data/deepSky';
 import { t, tList } from '../i18n';
 import { fmtLightYears } from '../selection';
@@ -155,7 +155,7 @@ function catalogContent(): HTMLElement {
               h('td', { text: o.typeVi }),
               h('td', { class: 'num', text: fmtHMS(o.ra, { seconds: false }) }),
               h('td', { class: 'num', text: fmtDegSigned(o.dec, 1) }),
-              h('td', { class: 'num', text: fmtNum(o.mag, 1) }),
+              h('td', { class: 'num', text: fmtMag(o.mag, 1) }),
               h('td', { class: 'num', text: o.sizeArcmin ? `${fmtNum(o.sizeArcmin, o.sizeArcmin < 10 ? 1 : 0)}′` : '—' }),
               h('td', { class: 'num', text: o.distanceLy ? fmtLightYears(o.distanceLy) : '—' }),
             ),

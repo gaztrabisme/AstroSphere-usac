@@ -24,6 +24,7 @@ import {
   SIDEREAL_DAY_SECONDS,
   fmtHMS,
   fmtLat,
+  fmtMag,
   fmtNum,
   parseNum,
   parseHours,
@@ -300,6 +301,15 @@ describe('Định dạng tiếng Việt', () => {
     expect(fmtHMS(101.2872)).toBe('06h 45m 09s');
     expect(parseNum('105,85')).toBeCloseTo(105.85, 10);
     expect(parseNum('abc')).toBeNaN();
+  });
+
+  it('cấp sao âm dùng dấu trừ thật (U+2212), không dùng gạch nối', () => {
+    expect(fmtMag(-1.44)).toBe('−1,44');
+    expect(fmtMag(-1.44)).not.toContain('-');
+    expect(fmtMag(0.03)).toBe('0,03');
+    expect(fmtMag(-0.001)).toBe('0,00');
+    expect(fmtMag(-26.74, 1)).toBe('−26,7');
+    expect(fmtMag(NaN)).toBe('—');
   });
 
   it('đọc được xích kinh và xích vĩ nhập theo nhiều cách', () => {

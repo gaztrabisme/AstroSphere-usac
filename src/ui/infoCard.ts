@@ -10,7 +10,7 @@ import {
   fmtHMS,
   fmtLat,
   fmtLon,
-  fmtNum,
+  fmtMag,
   norm360,
   poleAltitude,
   riseSet,
@@ -317,7 +317,7 @@ export function infoCard(store: Store, actions: Actions) {
       );
       dot.style.background = obj.color;
       const kindHead = [obj.designation, obj.kind].filter(Boolean).join(' · ');
-      const mag = obj.mag !== undefined ? t('info.mag', { m: fmtNum(obj.mag, 2) }) : '';
+      const mag = obj.mag !== undefined ? t('info.mag', { m: fmtMag(obj.mag, 2) }) : '';
       setText(kindText, kindHead && mag ? `${kindHead} · ` : kindHead);
       setText(magText, mag);
       setRow(r.ra, fmtHMS(obj.ra), `(${fmtDeg(obj.ra)})`);
