@@ -153,3 +153,45 @@ Scope and precedence:
 - *Colour as a code* (color-theory, 5642 · U3 · L39 · 02:36–03:20). A pink user star read as "the vertical circle", and an orange one read as "the ecliptic". User content now stays out of the code.
 - *Fewer colours, better decisions* (color-theory, 1140 · U3 · L08 · 09:58–11:48), and *a bridge by family* (1140 · U3 · L09 · 05:00–06:14). User stars and user figures are one family, so the user's own additions are recognisable as such.
 - *Measure, don't eyeball* (color-theory science crosswalk). Distances are OKLab ΔE, not hue-wheel angles.
+
+## Verification (2026-10-06)
+
+**Commits:**
+
+| Commit | Change |
+|---|---|
+| `0eaba1c` | Item 1: selection-ring pulse |
+| `ad5a0ff`, `a7e0713` | Item 2: reset confirm dialog, which now acts in the click handler |
+| `fc88ae5` | Item 3: neutral status pill |
+| `d244f8b` | Item 4: 13 px floor |
+| `4380492` | Item 5: neutral user stars |
+| `51f60a6` | `decisions.mjs` hardening |
+
+**Tests and build:**
+- `npm test`: 22 files and 173 tests pass.
+- `npm run build` passes.
+- Entry JS is 82,38 kB gzip, within the 90 kB budget (`bundle-size.mjs`).
+
+**UATs** (`?quality=fixed`; dev server on 5202, preview on 4202):
+
+| UAT | Result |
+|---|---|
+| smoke | PASS |
+| ui | 25/25 |
+| ux | 38/38, including the new Hủy check |
+| highlight | 25/25 |
+| declutter | 21/21 |
+| perf | PASS (a, b, c) |
+| bundle-size | PASS |
+| modes | 37/37 |
+| guide | 85/85 |
+| codex | 44/44 |
+| below-horizon | 30/30 |
+| decisions | 60/60 |
+
+Notes on the runs:
+- **codex:** this UAT was run on a dev server with a scratch config outside the repository (`server.fs.allow` including the symlinked `node_modules`). On the plain worktree server the KaTeX fonts return 403.
+- **decisions:** the first run after a server restart once saw no frames for over a second while a lazy layer compiled its shaders. The check now waits for a steady loop and samples until the pulse ends.
+- UAT side-effect screenshots were restored.
+
+**Not judged:** there was no fresh-context vision review of the renders. The visual judgements in this record are mine, as the author.
