@@ -44,3 +44,15 @@ const STATE: Readonly<Record<EntryState, string>> = {
 export function stateGlyph(state: EntryState): string {
   return svg(12, STATE[state], 'cdx-mark');
 }
+
+/**
+ * Ổ khóa lớn cho khoảnh khắc "mở khóa" (game feel, 2026-10-05): quai (.cdx-unlock__shackle) tách riêng để CSS xoay
+ * nó mở quanh chân trái, rồi cả ổ mờ đi. Chỉ trang trí: aria-hidden, dòng chữ "Đã mở khóa" mang nghĩa.
+ */
+export function unlockGlyph(): string {
+  return svg(
+    24,
+    `<path class="cdx-unlock__shackle" d="M8 11V7.6a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><rect x="4.8" y="10.4" width="14.4" height="10.2" rx="2.2" fill="currentColor"/><circle cx="12" cy="15.2" r="1.6" class="cdx-unlock__hole"/>`,
+    'cdx-unlock__svg',
+  );
+}

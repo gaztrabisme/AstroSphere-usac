@@ -1,6 +1,12 @@
-// Codex (redesign-2 C) — phần tải lười: hộp thoại kiểu Mass Effect. Trái: danh mục và các mục (đã khám phá / mới /
-// chưa khám phá) cùng dòng tiến độ. Phải: trang đọc (tiêu đề, câu dẫn, thân bài có công thức, sơ đồ, "Xem trong mô
-// phỏng", mục liên quan). Điện thoại: danh sách → trang đọc, có nút quay lại.
+// USACodex (redesign-2 C, game feel 2026-10-05) — phần tải lười.
+//
+// Bố cục: trái là các ô danh mục (biểu tượng, tên, "x/y" và thanh tiến độ nhỏ) dưới thanh tiến độ chung; phải là
+// lưới thẻ của danh mục đang chọn (ảnh nhỏ, tên, trạng thái) HOẶC trang đọc hai cột của một mục, có nút "← danh mục"
+// để quay lại lưới. Điện thoại: ô danh mục thành dải cuộn ngang, thẻ hai cột, trang đọc thay chỗ cả hai.
+//
+// Phần thưởng chỉ xảy ra bên trong USACodex: lần đầu mở một mục "mới", trang đọc chơi một nhịp "mở khóa" ngắn (ổ khóa
+// mở rồi mờ đi → hình đầu trang hiện rõ → dòng "Đã mở khóa"). Chữ hiện ngay, không chờ hoạt ảnh. Nhịp này dựa vào
+// chuyển trạng thái mới → đã đọc nên chỉ chơi một lần cho mỗi mục.
 //
 // <dialog> gốc: bẫy tiêu điểm, Esc đóng trước mọi thứ khác, tiêu điểm trở về nút đã mở khi đóng.
 
@@ -10,7 +16,7 @@ import { h } from '../ui/dom';
 import { renderLines, renderMath } from '../ui/dialogs';
 import { sunEquatorial } from '../selection';
 import type { DiagramEnv, DiagramLabels } from './diagrams';
-import { categoryGlyph, stateGlyph, type EntryState } from './glyphs';
+import { categoryGlyph, stateGlyph, unlockGlyph, type EntryState } from './glyphs';
 import { SIM } from './sim';
 import { isDiscovered, isNew, markRead, onCodexChange, type CodexContext } from './triggers';
 import { entryFacts, entryVisual, formulaLines } from './visual';
@@ -46,21 +52,35 @@ const ORDER = CATEGORIES.flatMap((c) => c.entries);
 const CATEGORY_OF = new Map<string, CodexCategory>();
 for (const c of CATEGORIES) for (const id of c.entries) CATEGORY_OF.set(id, c);
 
-const PHONE = '(max-width: 700px)';
-const isPhone = () => window.matchMedia?.(PHONE).matches ?? false;
+/** Thời lượng nhịp "mở khóa" (ms): khớp với tổng thời gian các hoạt ảnh .is-unlocking trong styles.css. */
+const UNLOCK_MS = 900;
+
+interface Tile {
+  btn: HTMLButtonElement;
+  count: HTMLElement;
+  sr: HTMLElement;
+}
+
+interface Card {
+  btn: HTMLButtonElement;
+  thumb: HTMLElement;
+  state: HTMLElement;
+  mark: HTMLElement;
+}
 
 interface Ui {
   dlg: HTMLDialogElement;
-  items: Map<string, HTMLButtonElement>;
-  catCounts: Map<string, HTMLElement>;
+  title: HTMLElement;
+  tiles: Map<string, Tile>;
+  cards: Map<string, Card>;
   progress: HTMLElement;
   bar: HTMLElement;
+  catCount: HTMLElement;
   page: HTMLElement;
-  current: string;
-  show: (id: string, focus: Focus) => void;
+  cat: string;
+  showEntry: (id: string) => void;
+  showCategory: (cat: string, focusId?: string) => void;
 }
-
-type Focus = 'page' | 'item' | 'none';
 
 let ui: Ui | null = null;
 
@@ -74,15 +94,23 @@ function labels(): DiagramLabels {
   };
 }
 
+const envOf = (ctx: CodexContext): DiagramEnv => {
+  const s = ctx.store.state;
+  return { lat: s.lat, sun: sunEquatorial(s), sunDate: s.sunDate };
+};
+
+/** Chỉ ghi khi khác (đồng bộ chạy sau mỗi lần khám phá / đọc). */
+const setText = (el: HTMLElement, s: string) => {
+  if (el.textContent !== s) el.textContent = s;
+};
+
 function syncMarkers(u: Ui): void {
-  for (const [id, btn] of u.items) {
+  for (const [id, c] of u.cards) {
     const state = entryState(id);
-    if (btn.dataset.state === state) continue;
-    btn.dataset.state = state;
-    btn.classList.toggle('is-locked', state === 'locked');
-    btn.classList.toggle('is-new', state === 'new');
-    btn.querySelector('.cdx-item__mark')!.innerHTML = stateGlyph(state);
-    btn.querySelector<HTMLElement>('.cdx-item__state')!.textContent = STATE_TEXT(state);
+    if (c.btn.dataset.state === state) continue;
+    c.btn.dataset.state = state;
+    c.mark.innerHTML = stateGlyph(state);
+    c.state.textContent = STATE_TEXT(state);
   }
   for (const rel of u.page.querySelectorAll<HTMLElement>('.cdx-rel[data-entry]')) {
     const state = entryState(rel.dataset.entry!);
@@ -91,62 +119,113 @@ function syncMarkers(u: Ui): void {
   }
   for (const c of CATEGORIES) {
     const n = c.entries.filter(isDiscovered).length;
-    u.catCounts.get(c.id)!.textContent = `${n}/${c.entries.length}`;
+    const fresh = c.entries.some(isNew);
+    const tile = u.tiles.get(c.id)!;
+    setText(tile.count, `${n}/${c.entries.length}`);
+    setText(tile.sr, `, ${t('codexUi.catCountSr', { n, total: c.entries.length })}${fresh ? `, ${t('codexUi.tileNew')}` : ''}`);
+    tile.btn.style.setProperty('--p', String(n / c.entries.length));
+    tile.btn.toggleAttribute('data-new', fresh);
+    if (c.id === u.cat) setText(u.catCount, t('codexUi.progress', { n, total: c.entries.length }));
   }
   const n = ORDER.filter(isDiscovered).length;
-  u.progress.textContent = t('codexUi.progress', { n, total: ORDER.length });
+  setText(u.title, t('codexUi.title', { n, total: ORDER.length }));
+  setText(u.progress, t('codexUi.progress', { n, total: ORDER.length }));
   u.bar.style.setProperty('--p', String(n / ORDER.length));
 }
 
-function build(ctx: CodexContext): Ui {
-  const items = new Map<string, HTMLButtonElement>();
-  const catCounts = new Map<string, HTMLElement>();
-  const progress = h('p', {
-    class: 'cdx-progress__text',
-    id: 'codex-progress',
+const NAV_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+
+/** Phím mũi tên trong một danh sách nút (lưới thẻ hoặc ô danh mục): chuyển tiêu điểm, Home/End về hai đầu. */
+function arrowNav(list: HTMLElement, sel: string): void {
+  list.addEventListener('keydown', (e) => {
+    if (!NAV_KEYS.has(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+    const btns = [...list.querySelectorAll<HTMLButtonElement>(sel)];
+    const i = btns.indexOf(document.activeElement as HTMLButtonElement);
+    if (i < 0) return;
+    // Số cột = số nút cùng hàng với nút đầu: lưới thẻ có 2–6 cột, cột ô danh mục có 1, dải ngang trên điện thoại có n.
+    const top = btns[0].offsetTop;
+    const cols = Math.max(1, btns.filter((b) => b.offsetTop === top).length);
+    const step = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' ? -cols : e.key === 'ArrowDown' ? cols : 0;
+    const j = e.key === 'Home' ? 0 : e.key === 'End' ? btns.length - 1 : Math.min(btns.length - 1, Math.max(0, i + step));
+    e.preventDefault();
+    btns[j].focus();
   });
+}
+
+/** Đổi id trong SVG ảnh nhỏ (vd. dải màu B − V) để không trùng với hình lớn trên trang đọc. */
+const thumbSvg = (svg: string) => svg.replace(/id="([\w-]+)"/g, 'id="$1-t"').replace(/url\(#([\w-]+)\)/g, 'url(#$1-t)');
+
+function build(ctx: CodexContext): Ui {
+  const tiles = new Map<string, Tile>();
+  const cards = new Map<string, Card>();
+  const lists = new Map<string, HTMLElement>();
+  const progress = h('p', { class: 'cdx-progress__text', id: 'codex-progress' });
   const bar = h('div', { class: 'cdx-progress__bar', 'aria-hidden': 'true' });
   const page = h('article', { class: 'cdx-page', 'aria-live': 'off' });
+  let thumbsEnv = '';
+  let unlockTimer = 0;
 
-  const nav = h(
-    'nav',
-    { class: 'cdx-nav', 'aria-label': t('codexUi.navAria') },
-    h('div', { class: 'cdx-progress' }, progress, bar),
+  // ---- Ô danh mục
+  const tileList = h(
+    'ul',
+    { class: 'cdx-tiles', role: 'list' },
     ...CATEGORIES.map((c) => {
-      const count = h('span', { class: 'cdx-cat__count' });
-      catCounts.set(c.id, count);
-      return h(
-        'section',
-        { class: 'cdx-cat', 'aria-labelledby': `cdx-cat-${c.id}` },
-        (() => {
-          const name = h('span', { class: 'cdx-cat__name', text: c.title });
-          name.insertAdjacentHTML('afterbegin', categoryGlyph(c.id));
-          return h('h3', { class: 'cdx-cat__title', id: `cdx-cat-${c.id}` }, name, count);
-        })(),
-        h(
-          'ul',
-          { class: 'cdx-list', role: 'list' },
-          ...c.entries.map((id) => {
-            const btn = h(
-              'button',
-              {
-                type: 'button',
-                class: 'cdx-item',
-                'data-entry': id,
-                onclick: () => show(id, { focus: isPhone() ? 'page' : 'none' }),
-              },
-              h('span', { class: 'cdx-item__mark', 'aria-hidden': 'true' }),
-              h('span', { class: 'cdx-item__name', text: ENTRIES[id].title }),
-              h('span', { class: 'cdx-item__state' }),
-            );
-            items.set(id, btn);
-            return h('li', null, btn);
-          }),
-        ),
+      const count = h('span', { class: 'cdx-tile__count', 'aria-hidden': 'true' });
+      const sr = h('span', { class: 'sr-only' });
+      const icon = h('span', { class: 'cdx-tile__icon', 'aria-hidden': 'true' });
+      icon.innerHTML = categoryGlyph(c.id);
+      const btn = h(
+        'button',
+        { type: 'button', class: 'cdx-tile', 'data-cat': c.id, onclick: () => showCategory(c.id) },
+        icon,
+        h('span', { class: 'cdx-tile__name', text: c.title }),
+        count,
+        sr,
+        h('span', { class: 'cdx-tile__bar', 'aria-hidden': 'true' }),
       );
+      tiles.set(c.id, { btn, count, sr });
+      return h('li', null, btn);
     }),
   );
+  arrowNav(tileList, '.cdx-tile');
 
+  const nav = h('nav', { class: 'cdx-nav', 'aria-label': t('codexUi.navAria') }, h('div', { class: 'cdx-progress' }, progress, bar), tileList);
+
+  // ---- Lưới thẻ (một danh sách cho mỗi danh mục; chỉ danh sách đang chọn hiện ra)
+  const catTitle = h('h3', { class: 'cdx-catview__title', id: 'cdx-catview-title' });
+  const catBlurb = h('p', { class: 'cdx-catview__blurb' });
+  const catCount = h('p', { class: 'cdx-catview__count' });
+  const grids = CATEGORIES.map((c) => {
+    const list = h(
+      'ul',
+      { class: 'cdx-grid', role: 'list', 'data-cat': c.id, hidden: true },
+      ...c.entries.map((id) => {
+        const thumb = h('span', { class: 'cdx-card__thumb', 'aria-hidden': 'true' });
+        const mark = h('span', { class: 'cdx-card__mark', 'aria-hidden': 'true' });
+        const state = h('span', { class: 'cdx-card__state' });
+        const btn = h(
+          'button',
+          { type: 'button', class: 'cdx-card', 'data-entry': id, onclick: () => showEntry(id) },
+          thumb,
+          h('span', { class: 'cdx-card__name', text: ENTRIES[id].title }),
+          h('span', { class: 'cdx-card__meta' }, mark, state),
+        );
+        cards.set(id, { btn, thumb, state, mark });
+        return h('li', null, btn);
+      }),
+    );
+    arrowNav(list, '.cdx-card');
+    lists.set(c.id, list);
+    return list;
+  });
+  const catview = h(
+    'section',
+    { class: 'cdx-catview', 'aria-labelledby': 'cdx-catview-title' },
+    h('header', { class: 'cdx-catview__head' }, catTitle, catBlurb, catCount),
+    ...grids,
+  );
+
+  const titleEl = h('h2', { id: 'codex-title' });
   const closeBtn = h('button', {
     type: 'button',
     class: 'icon-btn',
@@ -163,42 +242,81 @@ function build(ctx: CodexContext): Ui {
       'aria-labelledby': 'codex-title',
       'aria-describedby': 'codex-progress',
     },
-    h(
-      'header',
-      { class: 'dialog__head cdx__head' },
-      h('div', null, h('h2', { id: 'codex-title', text: t('codexUi.title') }), h('p', { class: 'cdx__sub', text: t('codexUi.subtitle') })),
-      closeBtn,
-    ),
-    h('div', { class: 'cdx__body' }, nav, page),
+    h('header', { class: 'dialog__head cdx__head' }, h('div', null, titleEl, h('p', { class: 'cdx__sub', text: t('codexUi.subtitle') })), closeBtn),
+    h('div', { class: 'cdx__body' }, nav, h('div', { class: 'cdx-main' }, catview, page)),
   );
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) dlg.close();
   });
+  // Đóng khi đang đọc: lần mở sau bắt đầu lại ở lưới thẻ của danh mục đó (dễ đoán hơn là quay về giữa bài).
   dlg.addEventListener('close', () => dlg.classList.remove('is-reading'));
   document.body.append(dlg);
 
   const u: Ui = {
     dlg,
-    items,
-    catCounts,
+    title: titleEl,
+    tiles,
+    cards,
     progress,
     bar,
+    catCount,
     page,
-    current: '',
-    show: (id, focus) => show(id, { focus }),
+    cat: CATEGORIES[0].id,
+    showEntry: (id) => showEntry(id),
+    showCategory: (cat, focusId) => showCategory(cat, focusId),
   };
   onCodexChange(() => syncMarkers(u));
 
-  function show(id: string, opts: { focus: Focus }): void {
+  function selectCategory(cat: CodexCategory): void {
+    u.cat = cat.id;
+    for (const [k, tile] of tiles) {
+      if (k === cat.id) tile.btn.setAttribute('aria-current', 'true');
+      else tile.btn.removeAttribute('aria-current');
+    }
+    for (const [k, list] of lists) list.hidden = k !== cat.id;
+    catTitle.replaceChildren(h('span', { text: cat.title }));
+    catTitle.insertAdjacentHTML('afterbegin', categoryGlyph(cat.id));
+    catBlurb.textContent = cat.blurb;
+  }
+
+  /** Ảnh nhỏ trên thẻ: dựng lười khi danh mục được mở lần đầu (và dựng lại nếu vĩ độ/ngày đã đổi). */
+  function fillThumbs(cat: CodexCategory): void {
+    const en = envOf(ctx);
+    const key = `${en.lat}|${en.sunDate}`;
+    if (key !== thumbsEnv) {
+      thumbsEnv = key;
+      for (const c of cards.values()) delete c.thumb.dataset.env;
+    }
+    const L = labels();
+    for (const id of cat.entries) {
+      const c = cards.get(id)!;
+      if (c.thumb.dataset.env === key) continue;
+      const v = entryVisual(id, ENTRIES[id].figure, L, en);
+      c.thumb.innerHTML = v ? thumbSvg(v.svg) : categoryGlyph(cat.id);
+      c.thumb.dataset.env = key;
+    }
+  }
+
+  function showCategory(catId: string, focusId?: string): void {
+    const cat = CATEGORIES.find((c) => c.id === catId) ?? CATEGORIES[0];
+    selectCategory(cat);
+    fillThumbs(cat);
+    dlg.classList.remove('is-reading');
+    syncMarkers(u);
+    if (!focusId) catview.scrollTop = 0;
+    const card = focusId ? cards.get(focusId)?.btn : null;
+    if (card) {
+      card.focus();
+      card.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function showEntry(id: string): void {
     const e = ENTRIES[id];
     if (!e) return;
-    u.current = id;
     const cat = CATEGORY_OF.get(id)!;
+    selectCategory(cat);
     const wasNew = isNew(id);
-    for (const [k, b] of items) {
-      if (k === id) b.setAttribute('aria-current', 'true');
-      else b.removeAttribute('aria-current');
-    }
     const state = entryState(id);
     const found = state !== 'locked';
     const title = h('h3', {
@@ -207,17 +325,22 @@ function build(ctx: CodexContext): Ui {
       tabindex: '-1',
       text: e.title,
     });
-    const s = ctx.store.state;
-    const env: DiagramEnv = { lat: s.lat, sun: sunEquatorial(s), sunDate: s.sunDate };
-    const visual = entryVisual(id, e.figure, labels(), env);
+    const en = envOf(ctx);
+    const visual = entryVisual(id, e.figure, labels(), en);
     const fig = visual
       ? (() => {
           const f = h('figure', { class: 'cdx-figure', 'data-visual': id }, h('figcaption', { text: visual.caption }));
           f.insertAdjacentHTML('afterbegin', visual.svg);
+          if (wasNew) {
+            // Ổ khóa lớn phủ lên hình: mở quai rồi mờ đi (chỉ trang trí, chỉ trong lần mở khóa).
+            const lock = h('span', { class: 'cdx-unlock', 'aria-hidden': 'true' });
+            lock.innerHTML = unlockGlyph();
+            f.append(lock);
+          }
           return f;
         })()
       : null;
-    const facts = entryFacts(id, env);
+    const facts = entryFacts(id, en);
     const formulas = formulaLines(e.body);
     const factsBox = facts.length
       ? h(
@@ -242,21 +365,21 @@ function build(ctx: CodexContext): Ui {
           })()
         : null;
     const simFn = SIM[id];
+    // Nút quay lại mang tên danh mục (thay cho dòng "kicker" cũ): một chỗ vừa cho biết đang ở đâu vừa để quay về.
     const back = h('button', {
       type: 'button',
       class: 'btn btn--ghost cdx-page__back',
-      text: `‹ ${t('codexUi.back')}`,
-      onclick: () => {
-        dlg.classList.remove('is-reading');
-        items.get(id)?.focus();
-      },
+      'aria-label': t('codexUi.backAria', { cat: cat.title }),
+      text: t('codexUi.back', { cat: cat.title }),
+      onclick: () => showCategory(cat.id, id),
     });
-    const stateLine = h('p', { class: `cdx-page__state${found ? '' : ' is-locked'}`, 'data-state': state });
-    stateLine.insertAdjacentHTML('afterbegin', stateGlyph(state));
-    stateLine.append(h('span', { text: found ? (wasNew ? t('codexUi.pageNew') : t('codexUi.pageFound')) : t('codexUi.pageLocked') }));
-    const kicker = h('p', { class: 'cdx-page__kicker' }, h('span', { text: cat.title }));
-    kicker.insertAdjacentHTML('afterbegin', categoryGlyph(cat.id));
-    const head = h('header', { class: 'cdx-page__head' }, back, kicker, title, e.aka ? h('p', { class: 'cdx-page__aka', text: e.aka }) : null, stateLine);
+    // Dòng trạng thái: lần mở khóa → "Đã mở khóa" (hiện dần sau ổ khóa); sau đó → "Đã khám phá"; chưa gặp → ghi chú.
+    const stateLine = wasNew
+      ? h('p', { class: 'cdx-page__state cdx-unlocked', 'data-state': 'unlocked' })
+      : h('p', { class: `cdx-page__state${found ? '' : ' is-locked'}`, 'data-state': state });
+    stateLine.insertAdjacentHTML('afterbegin', stateGlyph(wasNew ? 'read' : state));
+    stateLine.append(h('span', { text: wasNew ? t('codexUi.unlocked') : found ? t('codexUi.pageFound') : t('codexUi.pageLocked') }));
+    const head = h('header', { class: 'cdx-page__head' }, back, title, e.aka ? h('p', { class: 'cdx-page__aka', text: e.aka }) : null, stateLine);
     const main = h(
       'div',
       { class: 'cdx-page__main' },
@@ -312,7 +435,7 @@ function build(ctx: CodexContext): Ui {
                     class: `cdx-rel${rs === 'locked' ? ' is-locked' : ''}`,
                     'data-entry': r,
                     'data-state': rs,
-                    onclick: () => show(r, { focus: 'page' }),
+                    onclick: () => showEntry(r),
                   },
                   h('span', { class: 'cdx-rel__mark', 'aria-hidden': 'true' }),
                   h('span', { text: ENTRIES[r]?.title ?? r }),
@@ -328,32 +451,41 @@ function build(ctx: CodexContext): Ui {
     const aside = h('aside', { class: 'cdx-page__aside', 'aria-label': content.ui.asideTitle }, ...asideParts.filter((p): p is Node => p !== null));
     page.replaceChildren(h('div', { class: 'cdx-page__in' }, head, main, aside));
     page.setAttribute('aria-labelledby', 'cdx-page-title');
+    // Nhịp mở khóa: data-unlocked đánh dấu lần xem này (ổn định cho kiểm thử); .is-unlocking chỉ sống trong lúc
+    // hoạt ảnh chạy rồi được gỡ. Mở lại cùng mục (đã đọc) thì không có cả hai.
+    window.clearTimeout(unlockTimer);
+    page.classList.remove('is-unlocking');
+    if (wasNew) {
+      page.dataset.unlocked = id;
+      void page.offsetWidth; // khởi động lại hoạt ảnh nếu hai mục mới được mở liên tiếp
+      page.classList.add('is-unlocking');
+      unlockTimer = window.setTimeout(() => page.classList.remove('is-unlocking'), UNLOCK_MS + 100);
+    } else delete page.dataset.unlocked;
     renderMath(page);
-    page.scrollTop = 0;
     dlg.classList.add('is-reading');
+    page.scrollTop = 0;
     markRead(id); // đồng bộ dấu "mới" và huy hiệu qua onCodexChange
     syncMarkers(u);
-    if (opts.focus === 'page') title.focus();
-    else if (opts.focus === 'item') items.get(id)?.focus();
-    if (!isPhone()) items.get(id)?.scrollIntoView({ block: 'nearest' });
+    title.focus();
   }
 
   return u;
-}
-
-/** Mục mở mặc định: mục mới đầu tiên (đã khám phá, chưa đọc); nếu không có, mục đang xem gần nhất hoặc mục đầu. */
-function defaultEntry(u: Ui): string {
-  return ORDER.find(isNew) ?? (u.current || ORDER[0]);
 }
 
 export function openCodexUi(ctx: CodexContext, id?: string): void {
   const u = (ui ??= build(ctx));
   if (!u.dlg.open) u.dlg.showModal();
   syncMarkers(u);
-  if (id && ENTRIES[id]) u.show(id, 'page');
-  else if (isPhone()) {
-    // Điện thoại: mở ở danh sách; chưa mục nào bị đánh dấu "đã đọc" cho tới khi người dùng chạm vào nó.
-    u.dlg.classList.remove('is-reading');
-    u.items.get(defaultEntry(u))?.focus();
-  } else u.show(defaultEntry(u), 'item');
+  if (id && ENTRIES[id]) {
+    u.showEntry(id);
+    return;
+  }
+  // Không chỉ định mục: mở lưới thẻ của danh mục có mục mới đầu tiên (thẻ "MỚI" nhận tiêu điểm, người dùng tự bấm
+  // để mở khóa); nếu không còn mục mới, mở lại danh mục xem gần nhất.
+  const fresh = ORDER.find(isNew);
+  if (fresh) u.showCategory(CATEGORY_OF.get(fresh)!.id, fresh);
+  else {
+    u.showCategory(u.cat);
+    u.tiles.get(u.cat)?.btn.focus();
+  }
 }
