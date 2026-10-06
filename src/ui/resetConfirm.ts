@@ -1,8 +1,9 @@
-// Hộp xác nhận "Đặt lại mọi thứ?" (quyết định của chủ dự án 2026-10-05, review-2 #6): một lần bấm nhầm vào "Đặt lại"
+// Hộp xác nhận "Đặt lại mô phỏng?" (quyết định của chủ dự án 2026-10-05, review-2 #6): một lần bấm nhầm vào "Đặt lại"
 // (trên điện thoại nút nằm sát công tắc chế độ) không còn xóa mất vị trí, thời gian và các sao người dùng đã thêm.
 //
 // <dialog> gốc mở bằng showModal(): có bẫy tiêu điểm, Esc là "Hủy" (sự kiện cancel), tiêu điểm mặc định ở "Hủy"
-// (lựa chọn an toàn) và trả về nút đã mở hộp khi đóng. Dựng lười ở lần mở đầu tiên.
+// (lựa chọn an toàn) và trả về nút đã mở hộp khi đóng. Dựng lười ở lần mở đầu tiên. Tiêu đề không hứa "mọi thứ":
+// dòng "Vẫn giữ" liệt kê những gì không bị đặt lại (fix-3 #5); vòng tiêu điểm của "Hủy" hiện cả khi mở bằng chuột.
 
 import { t } from '../i18n';
 import { button, h } from './dom';

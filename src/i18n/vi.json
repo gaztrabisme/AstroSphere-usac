@@ -502,7 +502,7 @@
     "ok": "Đã hiểu"
   },
   "resetConfirm": {
-    "title": "Đặt lại mọi thứ?",
+    "title": "Đặt lại mô phỏng?",
     "resetsLabel": "Sẽ đặt lại:",
     "resets": "vị trí, thời gian, các lớp hiển thị, góc nhìn và ngôi sao đang chọn. Các sao và chòm sao bạn đã thêm sẽ bị xóa.",
     "keepsLabel": "Vẫn giữ:",

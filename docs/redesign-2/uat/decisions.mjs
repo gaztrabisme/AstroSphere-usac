@@ -207,7 +207,7 @@ for (const [w, h] of [
       iw: window.innerWidth,
     };
   });
-  check(`(2) ${w}: "Đặt lại" opens a modal dialog "Đặt lại mọi thứ?"`, d.modal && d.title === 'Đặt lại mọi thứ?', d.title);
+  check(`(2) ${w}: "Đặt lại" opens a modal dialog "Đặt lại mô phỏng?" (fix-3 #5)`, d.modal && d.title === 'Đặt lại mô phỏng?', d.title);
   check(
     `(2) ${w}: the body names what is reset and what is kept`,
     ['vị trí', 'thời gian', 'hiển thị', 'sao', 'Vẫn giữ', 'chế độ', 'USACodex', 'Ôn tập'].every((x) => d.body.includes(x)),
