@@ -4858,3 +4858,22 @@ body.present .guide-tip {
     white-space: normal;
   }
 }
+
+/* ==== fix-3 ui ==== */
+/* Vòng sửa 3, luồng giao diện (docs/redesign-2/review-3.md, mục #2 và #4–#11). Mọi quy tắc của vòng này nằm ở đây và
+   ghi đè các quy tắc phía trên; màu chỉ qua token trong :root. */
+
+/* #2. Bố cục tập trung mở cả "Số liệu" lẫn "Bảng điều khiển" và có đối tượng đang chọn: thẻ thông tin nằm dưới thiên
+   cầu ở cột 2 từng ép thiên cầu còn ~90 px (review-4 ảnh 06). Hàng thiên cầu giữ tối thiểu đầu khung (~70 px, tiêu
+   đề + phụ đề hai dòng) + 220 px cảnh; thẻ nhận phần còn lại và tự cuộn bên trong. Hàng thẻ không bao giờ thấp hơn
+   dòng tiêu đề của nó (tên đối tượng + hai nút). */
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .views:has(> .infocard:not(.is-collapsed)) {
+    grid-template-rows: minmax(292px, 1fr) minmax(56px, auto);
+  }
+
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) {
+    min-height: 0;
+    overflow: auto;
+  }
+}
