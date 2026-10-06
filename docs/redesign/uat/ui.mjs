@@ -3,6 +3,7 @@
 // Ảnh chụp lưu vào docs/redesign/shots/.
 import { mkdirSync } from 'node:fs';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import { showPanel } from '../../redesign-2/uat/focus-helpers.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:4174/?quality=fixed';
 // redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
@@ -128,6 +129,8 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
     await page.keyboard.press('Escape');
   }
   check('precondition: a star is selected', await cardShown());
+  // Bố cục tập trung (≥ 1101 px): bảng điều khiển thu gọn mặc định — mở bảng Vị trí để ô vĩ độ thật sự nhận tiêu điểm.
+  await showPanel(page, 'location');
   await page.locator('#lat-input').focus();
   await page.keyboard.press('Escape');
   check('Esc in the latitude input keeps the selection', await cardShown());
@@ -135,6 +138,7 @@ const noHScroll = (page) => page.evaluate(() => ({ sw: document.documentElement.
 
   const playing = () => page.locator('.btn--play').getAttribute('aria-pressed');
   const before = await playing();
+  await showPanel(page, 'display'); // <summary> đầu tiên nằm trong bảng Hiển thị
   const summary = page.locator('details > summary').first();
   await summary.focus();
   const openBefore = await summary.evaluate((s) => s.parentElement.open);
