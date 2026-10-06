@@ -915,10 +915,6 @@ body.learn-open .layout {
   scrollbar-color: var(--border-control) transparent;
 }
 
-.infocard.can-scroll {
-  mask-image: linear-gradient(to bottom, var(--bg) calc(100% - 40px), transparent);
-}
-
 /* ------------------------------------------------------------------ Bảng điều khiển */
 /* Bảng điều khiển xếp kiểu "tường gạch" (đa cột, review-2 C2): mỗi thẻ giữ chiều cao tự nhiên, thẻ ngắn (Hoạt ảnh)
    nằm ngay dưới thẻ Vị trí thay vì đứng một mình với khoảng trống lớn bên dưới; thứ tự đọc từ trên xuống, trái sang
@@ -4876,4 +4872,82 @@ body.present .guide-tip {
     min-height: 0;
     overflow: auto;
   }
+}
+
+/* #11. Thẻ thông tin dài hơn vùng của nó: mép dưới chỉ mờ nhẹ rồi che hẳn, cộng dấu "↓ Còn nữa" (lớp has-more do
+   infoCard.ts đặt khi còn nội dung bên dưới, bỏ khi đã cuộn tới đáy). Trước đây mặt nạ mờ dần làm dòng cuối (vd.
+   "MỌC – LẶN") còn 3,1:1. Nay phần mờ chỉ phủ tối đa 30 % màu nền: chữ phụ --muted vẫn ≥ 4,9:1 trên nền thẻ; dưới đó
+   là một dải đặc giữ dấu "Còn nữa", chữ đã bị che hẳn chứ không mờ dở. --infocard-bg: nền thật của thẻ ở từng bố cục. */
+.infocard {
+  --infocard-bg: var(--surface);
+}
+
+@media (min-width: 1200px) {
+  .infocard:not(.is-collapsed) {
+    --infocard-bg: var(--surface-quiet);
+  }
+}
+
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) {
+    --infocard-bg: var(--surface-quiet);
+  }
+}
+
+.infocard__more {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  z-index: 1;
+}
+
+.infocard.has-more:not(.is-collapsed):not(.is-empty) .infocard__more {
+  display: block;
+}
+
+/* Dải che: 12 px mờ (0 → 30 %), rồi đặc tới mép dưới thẻ (gồm cả lề dưới 10 px của thẻ). */
+.infocard__more::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  bottom: -10px;
+  height: 48px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    color-mix(in srgb, var(--infocard-bg) 30%, transparent) 12px,
+    var(--infocard-bg) 13px
+  );
+  pointer-events: none;
+}
+
+.infocard__more-btn {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.infocard__more-btn:hover {
+  border-color: var(--accent-hi);
+}
+
+/* Vùng chạm 44 px (điện thoại) quanh viên 28 px, không làm dải che cao thêm. */
+.infocard__more-btn::after {
+  content: '';
+  position: absolute;
+  inset: -8px -4px;
 }
