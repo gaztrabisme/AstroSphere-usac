@@ -5126,3 +5126,24 @@ body.present .guide-tip {
   border-radius: 50%;
   background: var(--status-dot);
 }
+
+/* #10. Chữ giải thích từng nằm sát sàn 13 px (đo được ~12,5–13 px, review-3 #10). Câu nghĩa ngắn dưới mỗi dòng của
+   thẻ thông tin là chữ người mới thật sự đọc: 14 px. Dòng gợi ý dưới giản đồ chân trời và các bộ đếm, chú thích hình
+   của USACodex: 13,5–14 px. Bản trình chiếu (body.present …) có độ đặc hiệu cao hơn nên vẫn to hơn. */
+.kv__note {
+  font-size: 14px;
+}
+
+.view__hint {
+  font-size: 13.5px;
+}
+
+.cdx-card__meta {
+  font-size: 13.5px;
+}
+
+.cdx-catview__count,
+.cdx-tile__count,
+.cdx-figure figcaption {
+  font-size: 14px;
+}

@@ -2,7 +2,8 @@
 //   1. Vòng chọn nhịp một lần khi chọn (không nhịp khi giảm chuyển động; vòng lặp đang dừng ngủ lại sau nhịp).
 //   2. "Đặt lại" hỏi lại: Hủy giữ trạng thái, Đặt lại đặt lại, Esc hủy, tiêu điểm về nút mở.
 //   3. Viên trạng thái trung tính, chấm màu vùng.
-//   4. Sàn 13 px cho chữ giải thích ngoài USACodex (1440 và 375, Cơ bản và Đầy đủ, bong bóng Usui-chan).
+//   4. Sàn 13 px cho chữ giải thích ngoài USACodex (1440 và 375, Cơ bản và Đầy đủ, bong bóng Usui-chan); ghi chú dòng
+//      của thẻ thông tin ≥ 14 px (fix-3 #10).
 //   5. Sao người dùng thêm có màu trung tính (COLORS.figure, ΔE OKLab ≥ 0,08 với mọi màu ngữ nghĩa).
 // Cần máy chủ DEV (window.__app, import '/src/…'):
 //   npx vite --port 5202 --strictPort (nền), rồi
@@ -358,6 +359,9 @@ for (const [w, h] of [
     const m = await page.evaluate(MEASURE);
     check(`(4) ${w} ${mode}: explanatory text ≥ 13 px (${m.n} elements)`, m.min >= 13 && m.n > 50, `min ${m.min}px ${m.bad.join(' | ')}`);
     check(`(4) ${w} ${mode}: no horizontal scroll`, m.sw <= m.iw, `${m.sw}/${m.iw}`);
+    // fix-3 #10: câu nghĩa ngắn dưới mỗi dòng của thẻ thông tin (người mới đọc chúng) ≥ 14 px, không chỉ sàn 13 px.
+    const notes = await page.evaluate(() => [...document.querySelectorAll('.infocard .kv__note')].map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    check(`(4, fix-3 #10) ${w} ${mode}: info-card row notes ≥ 14 px (${notes.length})`, notes.length >= 5 && notes.every((f) => f >= 14), notes.join(','));
     await ctx.close();
   }
 {
