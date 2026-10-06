@@ -220,18 +220,8 @@ async function at(page, lst) {
   // (không còn che "Thiên đỉnh" — kiểm ở trên); cột thiên cầu hẹp vẫn chỉ có biểu tượng. Mọi nút giữ tên truy cập và tooltip.
   const sphereTools = z.tools.slice(2);
   check('fix-2 #1, Full 1440: nút công cụ có tên truy cập và tooltip; nút của cột thiên cầu hẹp chỉ còn biểu tượng', z.tools.length === 3 && z.tools.every((t) => t.name && t.title) && sphereTools.every((t) => t.text === 'none'), JSON.stringify(z.tools.map((t) => [t.name, t.text])));
-  // fix-4 #4 (review-4): đang chọn sao thì thẻ thông tin mở và khung thiên cầu thấp hơn 300 px, nên khung này không
-  // hiện tên chòm sao nào (chỉ giữ nhãn định hướng). Kiểm tên chòm né quả địa cầu sau khi bỏ chọn (khung cao lại).
-  const small = await page.evaluate(() => {
-    const r = document.querySelector('#view-sphere .view__canvas').getBoundingClientRect();
-    return Math.min(r.width, r.height);
-  });
-  const og0 = await onGlobe(page);
-  check('fix-4 #4, Full 1440 + chọn sao: khung thiên cầu nhỏ (< 300 px) không hiện tên chòm sao', small < 300 && og0.shown === 0, JSON.stringify({ small: Math.round(small), shown: og0.shown }));
-  await page.evaluate(() => window.__app.actions.select(null));
-  await page.waitForTimeout(1200);
   const og = await onGlobe(page);
-  check('fix-2 #3, Full 1440 (bỏ chọn, khung cao): không tên chòm sao nào in lên quả địa cầu (khung thiên cầu)', !!og.g && og.hits.length === 0 && og.shown > 0, JSON.stringify(og));
+  check('fix-2 #3, Full 1440: không tên chòm sao nào in lên quả địa cầu (khung thiên cầu)', !!og.g && og.hits.length === 0 && og.shown > 0, JSON.stringify(og));
   check('không có lỗi trang (Full 1440)', errors.length === 0, errors.join(' | '));
   await ctx.close();
 }

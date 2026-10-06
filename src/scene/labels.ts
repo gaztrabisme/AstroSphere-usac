@@ -104,12 +104,12 @@ export function labelRank(group: LabelGroup, opts: Pick<LabelOpts, 'rank' | 'mag
 }
 
 /**
- * Khung thiên cầu nhỏ (cạnh ngắn < COMPACT_SPHERE_PX px CSS, vd. bố cục tập trung 1280 × 800 mở cả hai nút, quả cầu
- * ~200 px): nhãn chen nhau và đè lên quả địa cầu (review-4 #4). Khi đó chỉ giữ những nhãn định hướng: chữ hướng
+ * Khung thiên cầu nhỏ (cạnh ngắn < COMPACT_SPHERE_PX px CSS: bố cục tập trung mở cả hai nút khi đang chọn một đối
+ * tượng, khung thiên cầu cao 222 px ở 1101–1440 px, 238 px ở 1920 px; các bố cục đóng ≥ 241 px nên vẫn hiện tên): nhãn chen nhau và đè lên quả địa cầu (review-4 #4). Khi đó chỉ giữ những nhãn định hướng: chữ hướng
  * B/N/Đ/T, nhãn số đo đang bật, thiên cực, xích đạo trời và tên đối tượng đang chọn. Tên chòm sao, tên các sao khác,
  * thiên đỉnh, người quan sát, γ và các vòng phụ ẩn đi. Khung giản đồ chân trời không đổi.
  */
-export const COMPACT_SPHERE_PX = 300;
+export const COMPACT_SPHERE_PX = 235;
 
 /** Nhãn có được giữ ở khung thiên cầu nhỏ không (chưa xét đối tượng đang chọn: view.ts luôn giữ nhãn đó). */
 export function compactKeeps(ud: Pick<LabelData, 'group' | 'compactKeep'>): boolean {

@@ -112,8 +112,8 @@ for (const [w, h] of [
   const otherStars = sph.filter((l) => /lbl--catalog|lbl--dso/.test(l.cls) && l.text !== 'Sirius');
   const cardinals = names.filter((t) => ['B', 'N', 'Đ', 'T'].includes(t));
   check(
-    '#4 1280×800 expanded + Sirius: the small sphere view (< 300 px) shows no constellation names and no other star names',
-    lbl.canvas.h < 300 && constel.length === 0 && otherStars.length === 0,
+    '#4 1280×800 expanded + Sirius: the small sphere view (< 235 px) shows no constellation names and no other star names',
+    lbl.canvas.h < 235 && constel.length === 0 && otherStars.length === 0,
     JSON.stringify({ canvas: lbl.canvas, names }),
   );
   check(
