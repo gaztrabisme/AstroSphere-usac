@@ -26,7 +26,8 @@ async function shot(name, { w = 1440, h = 900, seed = {}, session = {}, touch = 
   await page.waitForFunction(() => window.__app?.horizon, null, { timeout: 60000 });
   await page.waitForTimeout(1800);
   if (act) await act(page);
-  await page.waitForTimeout(500);
+  // 1,5 s: trình duyệt không GPU đôi khi chụp khung thiên cầu còn trống nếu chụp quá sớm sau khi chọn.
+  await page.waitForTimeout(1500);
   if (!ownShot) await page.screenshot({ path: `${OUT}${name}.png` });
   console.log('shot', name);
   await ctx.close();

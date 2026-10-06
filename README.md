@@ -73,7 +73,7 @@ LST/H, trạng thái mọc – lặn) thì hình tương ứng sáng lên ở c�
 
 **Trình chiếu** (phím `F`): toàn màn hình cho buổi sinh hoạt — đường nét dày ×2, nhãn lớn ×1,8, ẩn bảng điều khiển, dòng φ = độ cao thiên cực cỡ lớn.
 
-**Hiệu năng**: three.js tải song song sau phần khung giao diện (JS ban đầu ≈ 82 kB gzip; USACodex, Usui-chan và mô hình 3D của Usui-chan chỉ tải khi cần); không vẽ khung bị ẩn hay khi thẻ trình duyệt ở nền; tự hạ chất lượng khi máy yếu (`?quality=fixed` để tắt). Số đo: `docs/redesign/perf.md`.
+**Hiệu năng**: three.js tải song song sau phần khung giao diện (JS ban đầu ≈ 84 kB gzip; USACodex, Usui-chan và mô hình 3D của Usui-chan chỉ tải khi cần); không vẽ khung bị ẩn hay khi thẻ trình duyệt ở nền; tự hạ chất lượng khi máy yếu (`?quality=fixed` để tắt). Số đo: `docs/redesign/perf.md`.
 
 **Mở rộng**: hoàng đạo (điểm xuân phân, hạ chí, thu phân, đông chí), Mặt Trời theo ngày (độ dài ban ngày, nền trời đổi màu theo ngày/đêm), xích đạo thiên hà và tâm Ngân Hà.
 

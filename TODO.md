@@ -81,6 +81,19 @@ Problem 1 ("thiên đế" in USACodex) did not reproduce: the source is "thiên 
 - [x] **Cardinal "B" collides with the altitude tick** (review-3 #12). (e0d4c6d: the vertical-circle foot is an obstacle for the cardinal letters)
 - [ ] **The status key tip needs hover or focus.** On touch, the "?" still opens the USACodex entry, so phone users do not see the key (found while fixing #8).
 
+## Sau review-4 (fix round 4) / From `docs/redesign-2/review-4.md`
+
+Medium #1 (status dot colour) was a false positive caused by the reviewer brief; #3 (labels "below the horizon") did not reproduce. See the coordinator note in the review. Each fix below is checked by `docs/redesign-2/uat/fix-4.mjs`.
+
+- [ ] **Full mode hides the controls by default** (review-4 #2). This follows the owner's focus-layout decision (both drawers start closed). Owner to decide whether to open "Bảng điều khiển" on the first entry to Full, or to mark the toggle once.
+- [x] **Crowding at 1280 with both toggles open** (review-4 #4). (8760840: the "Còn nữa" band fades the cut row out fully; 63aca0c, 959a93a: below 235 px the sphere view keeps only orienting labels — that is the expanded state with a selection, 222–238 px; closed layouts are ≥ 241 px and keep every name)
+- [x] **Icon-only phone header** (review-4 #5). (70be379: a 12 px caption under each icon, 11 px below 360 px; buttons ≥ 44 px; header 103 px in both modes)
+- [x] **Map equator drawn yellow at some widths** (review-4 #10). (2f3278e: grey dashed `--map-equator` at every width)
+- [x] **Magnitude uses a hyphen** (review-4 #11). (9104b4a: `fmtMag` with U+2212)
+- [x] **Hello toast mixes "chạm" and "bấm"** (review-4 #14). (ff65786)
+- [x] **Phone "?" hit area** (review-4 #15). (f90ed27: it was 42 px; now 44 px)
+- [ ] **Still open from review-4 (low):** #6 the reset dialog's confirm button is heavier than "Hủy"; #7 the unlock chip in a still frame; #8 the selected star's name is hidden in the mid-pulse frame; #9 the azimuth arc is not in the legend; #12 USACodex diagram labels touch their strokes; #13 caption wraps in the Simple selection panel.
+
 ## Kho mã / Repository
 
 - [x] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped). (c18ce19)
