@@ -56,6 +56,10 @@ const PULSE = async (page, hip, ms = 600) =>
     async ({ hip, ms }) => {
       const { store, actions, loop } = window.__app;
       actions.pause();
+      // Khởi động: chờ vòng lặp chạy đều (vài khung hình liên tiếp) trước khi đo.
+      const f0 = loop.stats.frames;
+      const tWarm = performance.now() + 8000;
+      while (loop.stats.frames < f0 + 5 && performance.now() < tWarm) await new Promise((r) => setTimeout(r, 50));
       await new Promise((r) => setTimeout(r, 300));
       const { selectCatalogHip } = await import('/src/scenario.ts');
       const { SEL_RING_SCALE } = await import('/src/scene/skyLayer.ts');
@@ -85,7 +89,11 @@ const PULSE = async (page, hip, ms = 600) =>
           o.peakOp = sky.selRing.material.opacity;
         }
       }
+      // Chờ tới khi nhịp kết thúc ở cả hai khung (tối thiểu `ms`, tối đa 8 s: swiftshader đang bận có thể mất hơn một
+      // giây cho một khung hình khi biên dịch shader của lớp vừa tải).
+      const tEnd = performance.now() + 8000;
       await new Promise((r) => setTimeout(r, ms));
+      while ((views.horizon.sky.pulsing || views.sphere.sky.pulsing) && performance.now() < tEnd) await new Promise((r) => setTimeout(r, 50));
       const r1 = loop.stats.renders;
       await new Promise((r) => setTimeout(r, 500));
       const r2 = loop.stats.renders;
