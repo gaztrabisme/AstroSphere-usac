@@ -117,7 +117,7 @@ export class SkyLayer {
     eqLine.userData.tip = 'equator';
     this.equatorLine = eqLine;
     this.equator.add(eqLine);
-    const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator, anchor: [0.5, 1.2] });
+    const eqLabel = makeLabel(t('scene.equator'), 'circles', { color: COLORS.equator, anchor: [0.5, 1.2], compactKeep: true });
     // Đặt nhãn ở phía Đông của kinh tuyến (H = −25°) để luôn nhìn thấy.
     eqLabel.position.set(Math.cos(0.436) * R * 1.02, Math.sin(0.436) * R * 1.02, 0);
     this.equator.add(eqLabel);
@@ -138,7 +138,7 @@ export class SkyLayer {
       dot.position.set(0, 0, sign * R);
       dot.userData.tip = sign > 0 ? 'ncp' : 'scp';
       this.axis.add(dot);
-      const lbl = makeLabel(t(sign > 0 ? 'scene.ncp' : 'scene.scp'), 'poles', { color: '#93c5fd' });
+      const lbl = makeLabel(t(sign > 0 ? 'scene.ncp' : 'scene.scp'), 'poles', { color: '#93c5fd', compactKeep: true });
       lbl.position.set(0, 0, sign * axisLen * 1.04);
       // Vị trí thay thế xa hơn dọc trục (fix-2 #3): ở khung thiên cầu chữ hướng "B" nay đứng xa vành hơn và có thể
       // chiếm chỗ ngay trên thiên cực — tên thiên cực lùi ra ngoài thay vì bị ẩn.

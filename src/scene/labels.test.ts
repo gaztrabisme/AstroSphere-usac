@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { declutter, GAP, LabelBoxes } from './declutter';
-import { ALLSKY_NAME_RANK, labelRank } from './labels';
+import { ALLSKY_NAME_RANK, compactKeeps, labelRank } from './labels';
 
 describe('label ranks (review-4 D2)', () => {
   it('all-sky constellation names rank after every star name, pole and circle label', () => {
@@ -24,5 +24,20 @@ describe('label ranks (review-4 D2)', () => {
     b.push(100 + 60 + GAP + 2, 100, 80, 16, false);
     declutter(b, 800, 600);
     expect([...b.keep.slice(0, 2)]).toEqual([1, 1]);
+  });
+});
+
+describe('small sphere view keeps only orientation labels (review-4 #4)', () => {
+  it('keeps cardinal letters, measurement labels and flagged labels (poles, celestial equator)', () => {
+    expect(compactKeeps({ group: 'directions', compactKeep: false })).toBe(true);
+    expect(compactKeeps({ group: 'angles', compactKeep: false })).toBe(true);
+    expect(compactKeeps({ group: 'poles', compactKeep: true })).toBe(true);
+    expect(compactKeeps({ group: 'circles', compactKeep: true })).toBe(true);
+  });
+
+  it('drops star and constellation names, zenith/observer and secondary circle labels', () => {
+    expect(compactKeeps({ group: 'stars', compactKeep: false })).toBe(false);
+    expect(compactKeeps({ group: 'poles', compactKeep: false })).toBe(false);
+    expect(compactKeeps({ group: 'circles', compactKeep: false })).toBe(false);
   });
 });

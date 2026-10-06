@@ -53,6 +53,11 @@ export interface LabelData {
    * chữ — rơi vào đĩa Trái Đất trên màn hình thì ẩn.
    */
   avoidDisc: boolean;
+  /**
+   * Vẫn hiện khi khung thiên cầu nhỏ (compactKeeps, review-4 #4): tên thiên cực và xích đạo trời. Chữ hướng, nhãn số
+   * đo và tên đối tượng đang chọn luôn được giữ, không cần cờ này.
+   */
+  compactKeep: boolean;
 }
 
 export interface Label extends CSS2DObject {
@@ -81,6 +86,8 @@ export interface LabelOpts {
   must?: boolean;
   /** Tránh đĩa quả địa cầu (xem LabelData.avoidDisc). */
   avoidDisc?: boolean;
+  /** Giữ khi khung thiên cầu nhỏ (xem LabelData.compactKeep). */
+  compactKeep?: boolean;
   /** Màu viền trái của nhãn dạng chip (lbl--key): giữ màu ngữ nghĩa, còn chữ là chữ sáng trên nền tối. */
   edge?: string;
 }
@@ -94,6 +101,19 @@ export function labelRank(group: LabelGroup, opts: Pick<LabelOpts, 'rank' | 'mag
   if (group === 'stars' && opts.mag !== undefined) return GROUP_RANK.stars + Math.min(9, Math.max(-2, opts.mag));
   if (group === 'circles' && opts.cls?.includes('lbl--small')) return 25;
   return GROUP_RANK[group];
+}
+
+/**
+ * Khung thiên cầu nhỏ (cạnh ngắn < COMPACT_SPHERE_PX px CSS, vd. bố cục tập trung 1280 × 800 mở cả hai nút, quả cầu
+ * ~200 px): nhãn chen nhau và đè lên quả địa cầu (review-4 #4). Khi đó chỉ giữ những nhãn định hướng: chữ hướng
+ * B/N/Đ/T, nhãn số đo đang bật, thiên cực, xích đạo trời và tên đối tượng đang chọn. Tên chòm sao, tên các sao khác,
+ * thiên đỉnh, người quan sát, γ và các vòng phụ ẩn đi. Khung giản đồ chân trời không đổi.
+ */
+export const COMPACT_SPHERE_PX = 300;
+
+/** Nhãn có được giữ ở khung thiên cầu nhỏ không (chưa xét đối tượng đang chọn: view.ts luôn giữ nhãn đó). */
+export function compactKeeps(ud: Pick<LabelData, 'group' | 'compactKeep'>): boolean {
+  return ud.compactKeep || ud.group === 'directions' || ud.group === 'angles';
 }
 
 export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {}): Label {
@@ -124,6 +144,7 @@ export function makeLabel(text: string, group: LabelGroup, opts: LabelOpts = {})
     clear: opts.clear ?? 0,
     must: opts.must ?? false,
     avoidDisc: opts.avoidDisc ?? false,
+    compactKeep: opts.compactKeep ?? false,
   };
   return obj;
 }

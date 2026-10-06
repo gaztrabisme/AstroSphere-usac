@@ -12,8 +12,8 @@ import { EmphasisFx } from './emphasis';
 import type { ViewKind } from './frames';
 import { setFatLineStyle } from './geom';
 import { GHOST_ARROW_K, HorizonLayer } from './horizonLayer';
-import { declutter, LabelBoxes } from './declutter';
-import type { Label, LabelData } from './labels';
+import { declutter, EDGE, LabelBoxes } from './declutter';
+import { COMPACT_SPHERE_PX, compactKeeps, type Label, type LabelData } from './labels';
 import { SEL_RING_OUTER, SEL_RING_SCALE, SkyLayer } from './skyLayer';
 import { TrailLayer } from './trails';
 
@@ -67,6 +67,8 @@ export abstract class View implements QualityTarget {
   /** Hộp px của vật cản ở chân đường thẳng đứng ở lần gỡ chồng chéo gần nhất; w = 0: không có. */
   private readonly footPx = new Float32Array(4);
   private needMeasure = true;
+  /** Khung thiên cầu nhỏ: chỉ giữ nhãn định hướng (labels.ts › compactKeeps, review-4 #4). Tính lại khi đổi cỡ. */
+  private compactLabels = false;
   /**
    * Lớp giao diện nổi trên khung nhìn (nút "Nhìn từ người quan sát", "Góc nhìn mặc định" — fix-2 #1): hộp px tương
    * đối với canvas (x, y, w, h liên tiếp), đo khi khung hoặc nút đổi kích thước, KHÔNG đo mỗi khung hình. Nhãn né
@@ -216,6 +218,7 @@ export abstract class View implements QualityTarget {
     this.applyViewOffset();
     this.camera.updateProjectionMatrix();
     this.measureOverlays();
+    this.compactLabels = this.kind === 'sphere' && Math.min(w, h) < COMPACT_SPHERE_PX;
     this.dirty = true;
   }
 
@@ -432,6 +435,8 @@ export abstract class View implements QualityTarget {
       // Nhóm cha bị ẩn: CSS2DRenderer tự ẩn cả nhánh, không cần tính vị trí/che khuất.
       if (!ancestorsVisible(lbl)) continue;
       let vis = lt.all && lt[ud.group];
+      // Khung thiên cầu nhỏ: bỏ các nhãn không định hướng, trừ tên đối tượng đang chọn (review-4 #4).
+      if (vis && this.compactLabels && !compactKeeps(ud) && !isSelectedLabel(ud, s.selected)) vis = false;
       if (vis) {
         // matrixWorld đã cập nhật trong frame() (scene.updateMatrixWorld) — không gọi getWorldPosition.
         _v.setFromMatrixPosition(lbl.matrixWorld);
@@ -608,6 +613,14 @@ export abstract class View implements QualityTarget {
       // ngay trên vòng và chữ B ngay dưới có thể chiếm cả bốn chỗ trên; tên đối tượng chọn vẫn phải hiện.
       boxes.addAlt(k, sx + gapPx * 0.7, sy + gapPx * 0.7);
       boxes.addAlt(k, sx + gapPx * 0.7, sy - gapPx * 0.7 - h);
+    }
+    if (this.compactLabels && ud.group === 'poles') {
+      // Khung thiên cầu nhỏ (review-4 #4): trục chạm mép khung nên các vị trí thay thế xa hơn dọc trục rơi ra ngoài,
+      // và chữ hướng B ngồi ngay trên thiên cực. Thử thêm bên phải rồi bên trái điểm neo, ngang tầm nó (kẹp vào trong
+      // khung theo chiều dọc: điểm neo ở đầu trục có thể nằm ngay trên mép trên).
+      const y = Math.min(Math.max(sy - ud.cy0 * h, COMPACT_EDGE), H - COMPACT_EDGE - h);
+      boxes.addAlt(k, sx + COMPACT_POLE_DX, y);
+      boxes.addAlt(k, sx - COMPACT_POLE_DX - w, y);
     }
     const alts = ud.alts;
     if (alts !== null && lbl.parent) {
@@ -894,6 +907,10 @@ const DIR_PAD_K = 0.4;
 
 /** Vùng đệm (px) quanh nhãn số đo đang tô sáng và nhãn đối tượng đang chọn: tên hạng thấp không chen sát. */
 const FOCUS_PAD = 8;
+/** Khoảng ngang (px) từ điểm neo thiên cực tới vị trí thay thế bên cạnh ở khung thiên cầu nhỏ (review-4 #4). */
+const COMPACT_POLE_DX = 20;
+/** Lề trong (px) khi kẹp vị trí thay thế đó vào khung: đúng lề của declutter.ts. */
+const COMPACT_EDGE = EDGE;
 
 /** Chiều cao ước lượng của nhãn chưa đo (px). */
 const EST_H = 16;
