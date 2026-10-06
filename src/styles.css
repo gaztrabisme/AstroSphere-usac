@@ -4362,6 +4362,35 @@ body.present .guide-tip {
   }
 }
 
+/* Lời chào lần đầu của Usui-chan trong bố cục tập trung: một dải ngang nằm đúng trên vùng chú giải + dải số liệu (như
+   trước đây nó nằm trên dải số liệu), không che bầu trời của hai khung nhìn hay thẻ Polaris. Đầu lời chào bên trái,
+   lời nhắn và gợi ý ở giữa, hai nút bên phải; đuôi vẫn chỉ sang chân dung. */
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .guide-hello--wide {
+    left: var(--space-4);
+    right: calc(var(--space-4) + 56px + var(--space-3));
+    bottom: var(--space-3);
+    width: auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'head body actions' 'head star actions';
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide .guide-hello__head {
+    margin: 0;
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide .guide-hello__body {
+    line-height: 1.4;
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide::after {
+    bottom: 50%;
+    margin-bottom: -6px;
+  }
+}
+
 @media (min-width: 1101px) and (prefers-reduced-motion: reduce) {
   .focus-toggle .chevron {
     transition: none;
