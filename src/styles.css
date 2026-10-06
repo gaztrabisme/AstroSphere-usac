@@ -5244,3 +5244,17 @@ body.present .guide-tip {
     font-size: 11px;
   }
 }
+
+/* review-4 #4a. Dải "↓ Còn nữa": trước đây chỉ mờ tới 30 % rồi đặc ngay, nên dòng bị cắt ngang (vd. "Xích kinh α …" ở
+   1280 × 800) hiện nửa trên nét chữ với gần đủ độ tương phản rồi đứt hẳn. Nay dải mờ tuyến tính tới 100 % nền thẻ trên
+   --more-fade px, rồi mới đặc: dòng nằm ở chỗ cắt nhạt dần về không, không còn mép chữ sắc. Dòng nằm trọn phía trên
+   dải không đổi. Hai biến để UAT (fix-4.mjs) đọc lại hình dạng dải. */
+.infocard__more {
+  --more-band: 60px;
+  --more-fade: 30px;
+}
+
+.infocard__more::before {
+  height: var(--more-band);
+  background: linear-gradient(to bottom, transparent 0, var(--infocard-bg) var(--more-fade));
+}
