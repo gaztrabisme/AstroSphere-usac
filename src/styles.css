@@ -4951,3 +4951,16 @@ body.present .guide-tip {
   position: absolute;
   inset: -8px -4px;
 }
+
+/* #4. Lời chào trên điện thoại mở đầu bằng việc đầu tiên nên làm ("Thử chạm vào một ngôi sao nhé…", như lời chào trên
+   máy tính); câu dài hơn nên xuống ba dòng. Dòng sát hơn một chút và bỏ đệm dọc của nút để dải vẫn chỉ che ≤ 15 %
+   bầu trời, vẫn nằm trên thẻ đang chọn và dòng φ (vị trí neo theo --card-h, --foot-h không đổi). */
+@media (max-width: 900px) {
+  .guide-hello--toast .guide-hello__title {
+    line-height: 1.25;
+  }
+
+  .guide-hello--toast .guide-hello__go {
+    padding-block: 0;
+  }
+}
