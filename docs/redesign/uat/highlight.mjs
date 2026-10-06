@@ -139,7 +139,9 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   const click = await probe(page);
   check('mouse click then leave: no sticky emphasis', click.emphasis === null, `emphasis=${click.emphasis}`);
 
-  // Chiều ngược: rê chuột lên trục thiên cực trong khung thiên cầu → ô sáng lên.
+  // Chiều ngược: rê chuột lên trục thiên cực trong khung thiên cầu → ô sáng lên. Trục cắt qua nền sao: tùy giờ sao
+  // (đồng hồ lúc chạy), một ngôi sao hay hình chòm sao nằm đúng trên trục sẽ được ưu tiên khi rê chuột — thử nhiều
+  // điểm dọc trục (fix-3: kiểm tra từng hỏng theo giờ chạy với 6 điểm).
   const target = await page.evaluate(() => {
     const view = window.__perf.views.sphere;
     let axis = null;
@@ -148,7 +150,7 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
     });
     const r = view.renderer.domElement.getBoundingClientRect();
     const pts = [];
-    for (const f of [-0.75, -0.6, 0.6, 0.75, -0.9, 0.9]) {
+    for (const f of [-0.75, -0.6, 0.6, 0.75, -0.9, 0.9, -0.95, -0.85, -0.8, -0.7, -0.65, -0.55, -0.5, 0.5, 0.55, 0.65, 0.7, 0.8, 0.85, 0.95]) {
       const v = axis.position.clone();
       v.set(0, 0, f * view.R * 1.15);
       axis.localToWorld(v);
