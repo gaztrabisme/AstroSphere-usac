@@ -5164,3 +5164,83 @@ body.present .guide-tip {
     line-height: 1.25;
   }
 }
+
+/* ==== fix-4 ui ==== */
+/* review-4 #5. Thanh trên ở điện thoại (≤ 640 px), cả hai chế độ: mỗi nút có chữ chú thích nhỏ dưới biểu tượng (bút
+   chì, sách, "?" và "i" không tự giải thích được). Chữ là chính tên của nút (.btn__text: "Ôn tập", "Đặt lại",
+   "USACodex", "Trợ giúp", "Giới thiệu"), cỡ 12 px cho nhãn điều khiển (13 px không đủ chỗ cho "USACodex" khi năm nút
+   chia 375 px). Hàng 1: thương hiệu + công tắc chế độ; hàng 2: dải nút chia đều bề ngang. Cơ bản cũng xuống hai hàng
+   (bốn nút có chữ không vừa cạnh công tắc), nên tên ngắn của ứng dụng hiện lại ở hàng 1. */
+@media (max-width: 640px) {
+  body.mode-full .topbar,
+  body.mode-simple .topbar {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+    padding-block: var(--space-1);
+  }
+
+  body.mode-full .brand,
+  body.mode-simple .brand {
+    flex: 1 1 auto;
+  }
+
+  /* Công tắc ở hàng 1, bên phải, không đệm (như Đầy đủ ở fix-3 #6): hàng chỉ cao 46 px. */
+  body.mode-simple .modeswitch {
+    margin-left: auto;
+    padding: 0;
+  }
+
+  body.mode-full .topbar__actions,
+  body.mode-simple .topbar__actions {
+    order: 1;
+    flex: 1 0 100%;
+    gap: var(--space-1);
+  }
+
+  body.mode-full .topbar__actions .btn--top,
+  body.mode-simple .topbar__actions .btn--top {
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 2px;
+    min-width: var(--tap);
+    min-height: var(--tap);
+    padding: 3px 2px;
+  }
+
+  body.mode-full .topbar__actions .btn--top .btn__icon,
+  body.mode-simple .topbar__actions .btn--top .btn__icon {
+    display: inline-grid;
+  }
+
+  body.mode-full .topbar__actions .btn--top .btn__text,
+  body.mode-simple .topbar__actions .btn--top .btn__text {
+    display: block;
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 1.15;
+    color: var(--muted);
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+/* ≤ 480 px: tên ngắn của ứng dụng hiện lại trong Cơ bản (hàng 1 nay chỉ có logo và công tắc). */
+@media (max-width: 480px) {
+  body.mode-simple .brand__short {
+    display: block;
+  }
+}
+
+/* Rất hẹp (< 360 px, năm nút ở Đầy đủ): "USACodex" 12 px rộng hơn ô ~52 px, nên chú thích xuống 11 px và bỏ đệm ngang
+   thay vì tràn khỏi viền nút. Từ 360 px trở lên vẫn 12 px. */
+@media (max-width: 359px) {
+  body.mode-full .topbar__actions .btn--top,
+  body.mode-simple .topbar__actions .btn--top {
+    padding-inline: 0;
+  }
+
+  body.mode-full .topbar__actions .btn--top .btn__text,
+  body.mode-simple .topbar__actions .btn--top .btn__text {
+    font-size: 11px;
+  }
+}

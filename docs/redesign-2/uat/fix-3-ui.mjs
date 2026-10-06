@@ -2,7 +2,7 @@
 //   #2  bố cục tập trung mở cả hai nút + đang chọn Sirius: thiên cầu ≥ 220 px (1440 × 900, 1280 × 800)
 //   #4  lời chào trên điện thoại mở đầu bằng "chạm vào một ngôi sao" (hồ sơ trống: KHÔNG đặt sẵn lời chào)
 //   #5  hộp "Đặt lại mô phỏng?": mở bằng chuột, tiêu điểm ở "Hủy" và có vòng tiêu điểm
-//   #6  thanh trên của Đầy đủ ở 375 px: ≤ 104 px, nút ≥ 44 px, không cuộn ngang, "Ôn tập" chỉ biểu tượng
+//   #6  thanh trên của Đầy đủ ở 375 px: ≤ 104 px, nút ≥ 44 px, không cuộn ngang, "Ôn tập" có biểu tượng + chữ (fix-4 #5)
 //   #7  thẻ đã đọc có dấu không dựa vào màu; giảm chuyển động: viên "Đã mở khóa" không có hoạt ảnh
 //   #8  chú thích "?" của "Trạng thái": ba chấm màu vùng + ba chữ
 //   #9  chấm địa điểm trên bản đồ không mang màu vòng thẳng đứng (hồng)
@@ -143,7 +143,8 @@ for (const [w, h] of [
   });
   check('#6 375 Full: header ≤ 104 px tall, no horizontal scroll', top.h <= 104 && top.sw <= 375, `h=${top.h} sw=${top.sw}`);
   check('#6 375 Full: every header button ≥ 44 × 44 px', top.btns.length >= 7 && top.btns.every((b) => b.w >= 44 && b.h >= 44), JSON.stringify(top.btns));
-  check('#6 375 Full: "Ôn tập" is icon-only (name kept), same border as its neighbours', top.learnName === 'Ôn tập' && top.learnText === 'none' && top.learnIcon && top.learnBorder === top.resetBorder, JSON.stringify({ name: top.learnName, text: top.learnText, icon: top.learnIcon, b: top.learnBorder, rb: top.resetBorder }));
+  // fix-4 #5 (review-4): mọi nút trên thanh có chữ chú thích dưới biểu tượng, nên "Ôn tập" không còn chỉ là biểu tượng.
+  check('#6 375 Full: "Ôn tập" has its pencil icon plus a visible caption (fix-4 #5), same border as its neighbours', top.learnName === 'Ôn tập' && top.learnText !== 'none' && top.learnIcon && top.learnBorder === top.resetBorder, JSON.stringify({ name: top.learnName, text: top.learnText, icon: top.learnIcon, b: top.learnBorder, rb: top.resetBorder }));
   await ctx.close();
 }
 
