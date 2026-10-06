@@ -5023,3 +5023,50 @@ body.present .guide-tip {
     display: none;
   }
 }
+
+/* #7. Khoảnh khắc mở khóa của USACodex (review-4 ảnh 09: viên "✓ Đã mở khóa" nặng ngang phụ đề, không thấy là phần
+   thưởng). Giữ giọng điềm tĩnh, chỉ cho nó "đáp" một lần:
+   - viên "Đã mở khóa" sáng mềm (bóng trắng trung tính, không cam: không phải nút bấm) đúng lúc nó hiện ra, 520–900 ms,
+     nên cả nhịp vẫn kết thúc trong 900 ms;
+   - thanh tiến độ (chung và từng danh mục) trượt tới giá trị mới trong ~400 ms, cùng đường cong ease-out
+     (codex/ui.ts chỉ ghi giá trị khi hộp đang mở, nên lần mở sau thanh trượt từ giá trị lần xem trước).
+   Giảm chuyển động: không khai báo gì → viên và thanh hiện ngay ở trạng thái cuối.
+   Thẻ đã đọc: dấu tích ✓ (glyphs.ts) cộng chữ "đã đọc" nay hiện ra (trước chỉ dành cho trình đọc màn hình): một dấu
+   tích 12 px đứng một mình quá mờ để thấy là một trạng thái. Cả ba trạng thái giờ cùng dạng "dấu + chữ", không dựa
+   vào màu: ổ khóa + "chưa khám phá" (viền đứt), chấm + "MỚI" (viền sáng), ✓ + "đã đọc". */
+@media (prefers-reduced-motion: no-preference) {
+  .cdx-page.is-unlocking .cdx-unlocked {
+    animation:
+      cdx-line 340ms var(--cdx-ease) 520ms both,
+      cdx-pill-glow 380ms var(--cdx-ease) 520ms both;
+  }
+
+  .cdx-progress__bar::before,
+  .cdx-tile__bar::before {
+    transition: width 400ms var(--cdx-ease);
+  }
+}
+
+@keyframes cdx-pill-glow {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  40% {
+    box-shadow:
+      0 0 0 1px var(--text),
+      0 0 16px 2px color-mix(in srgb, var(--text) 35%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.cdx-card[data-state='read'] .cdx-card__state {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+}

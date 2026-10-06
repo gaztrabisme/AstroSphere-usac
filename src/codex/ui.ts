@@ -104,7 +104,13 @@ const setText = (el: HTMLElement, s: string) => {
   if (el.textContent !== s) el.textContent = s;
 };
 
+/**
+ * Thanh tiến độ chỉ được ghi khi hộp đang mở (fix-3 #7): khám phá xảy ra trong mô phỏng lúc hộp đóng, nên thanh vẫn
+ * giữ giá trị lần xem trước; lần mở sau thanh trượt từ đó tới giá trị mới (chuyển tiếp ~400 ms trong styles.css,
+ * không có khi giảm chuyển động) — người dùng thấy bộ sưu tập vừa đầy thêm.
+ */
 function syncMarkers(u: Ui): void {
+  const bars = u.dlg.open;
   for (const [id, c] of u.cards) {
     const state = entryState(id);
     if (c.btn.dataset.state === state) continue;
@@ -123,14 +129,14 @@ function syncMarkers(u: Ui): void {
     const tile = u.tiles.get(c.id)!;
     setText(tile.count, `${n}/${c.entries.length}`);
     setText(tile.sr, `, ${t('codexUi.catCountSr', { n, total: c.entries.length })}${fresh ? `, ${t('codexUi.tileNew')}` : ''}`);
-    tile.btn.style.setProperty('--p', String(n / c.entries.length));
+    if (bars) tile.btn.style.setProperty('--p', String(n / c.entries.length));
     tile.btn.toggleAttribute('data-new', fresh);
     if (c.id === u.cat) setText(u.catCount, t('codexUi.progress', { n, total: c.entries.length }));
   }
   const n = ORDER.filter(isDiscovered).length;
   setText(u.title, t('codexUi.title', { n, total: ORDER.length }));
   setText(u.progress, t('codexUi.progress', { n, total: ORDER.length }));
-  u.bar.style.setProperty('--p', String(n / ORDER.length));
+  if (bars) u.bar.style.setProperty('--p', String(n / ORDER.length));
 }
 
 const NAV_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
@@ -474,7 +480,11 @@ function build(ctx: CodexContext): Ui {
 
 export function openCodexUi(ctx: CodexContext, id?: string): void {
   const u = (ui ??= build(ctx));
-  if (!u.dlg.open) u.dlg.showModal();
+  if (!u.dlg.open) {
+    u.dlg.showModal();
+    // Tính kiểu một lần với giá trị cũ của thanh tiến độ (hộp vừa hiện), để giá trị mới ghi sau đó chạy chuyển tiếp.
+    void u.bar.offsetWidth;
+  }
   syncMarkers(u);
   if (id && ENTRIES[id]) {
     u.showEntry(id);
