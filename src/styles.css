@@ -4547,3 +4547,314 @@ body.present .guide-tip {
 .guide-tip__use {
   font-size: 13px;
 }
+
+
+/* ===== Full-mode focus layout (owner decision 2026-10-05) ===== */
+/* Chế độ Đầy đủ trên màn hình rộng (≥ 1101 px, ngoài trình chiếu): giản đồ chân trời là "số một" rõ rệt và lấp phần
+   lớn màn hình; thiên cầu thành cột phụ hẹp bên phải (thẻ thông tin mở ra nằm ngay dưới nó). Dải số liệu thu gọn
+   thành một dải mảnh vẫn giữ φ và độ cao thiên cực; bảng điều khiển nằm sau nút "Bảng điều khiển" và mở thành cột
+   bên phải, đẩy khung nhìn hẹp lại (không che cảnh). Xem docs/redesign-2/focus-layout.md và src/ui/focusLayout.ts.
+   Điện thoại, 901–1100 px, chế độ Cơ bản và trình chiếu: hai nút ẩn, mọi thứ như trước. */
+.focusbar {
+  display: contents;
+}
+
+.focus-toggle {
+  display: none;
+}
+
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) {
+    /* Cột thiên cầu ≈ 30 % bề ngang khung nhìn; cột bảng điều khiển khi mở. */
+    --focus-side-w: clamp(260px, 30%, 460px);
+    --focus-panel-w: clamp(330px, 25vw, 400px);
+  }
+
+  /* Cả ứng dụng nằm trong màn hình đầu: khung nhìn co giãn, chú giải và dải số liệu theo chiều cao tự nhiên. */
+  body.mode-full:not(.present) .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'views' 'legend' 'bar';
+    gap: var(--space-2) var(--space-3);
+    height: calc(100svh - var(--focus-top, 61px));
+    min-height: 560px;
+    padding-bottom: var(--space-3);
+  }
+
+  body.mode-full.focus-panels-open:not(.present) .layout {
+    grid-template-columns: minmax(0, 1fr) var(--focus-panel-w);
+    grid-template-areas: 'views panels' 'legend panels' 'bar panels';
+  }
+
+  /* Giản đồ chân trời chiếm hết chiều cao cột trái; thiên cầu ở cột phải. Thẻ thông tin mở ra: dưới thiên cầu. */
+  body.mode-full:not(.present) .views,
+  body.mode-full:not(.present) .views:has(> .infocard:not(.is-collapsed)) {
+    grid-area: views;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) var(--focus-side-w);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  body.mode-full:not(.present) #view-horizon {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  body.mode-full:not(.present) #view-sphere {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  body.mode-full:not(.present) .views:has(> .infocard:not(.is-collapsed)) #view-sphere {
+    grid-row: 1;
+  }
+
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) {
+    position: static;
+    grid-column: 2;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    max-height: 44svh;
+    background: var(--surface-quiet);
+    border: 0;
+    box-shadow: none;
+  }
+
+  body.mode-full:not(.present) .infocard:not(.is-collapsed) .infocard__head {
+    cursor: default;
+  }
+
+  /* Thẻ thu gọn nổi ở góc dưới của cột thiên cầu, không rộng hơn cột. */
+  body.mode-full:not(.present) .infocard.is-collapsed {
+    max-width: calc(var(--focus-side-w) - 20px);
+  }
+
+  body.mode-full:not(.present) .legend {
+    grid-area: legend;
+    padding-inline: var(--space-1);
+  }
+
+  /* ---- Dải dưới khung nhìn: [Số liệu] φ · độ cao thiên cực · LST … [Bảng điều khiển] -------------------------- */
+  /* Mép phải chừa chỗ cho chân dung Usui-chan (cố định ở góc dưới phải màn hình) khi bảng điều khiển đóng. */
+  body.mode-full:not(.present) .focusbar {
+    grid-area: bar;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    min-width: 0;
+    margin-right: calc(56px + var(--space-3));
+    padding: var(--space-1);
+    background: var(--surface-quiet);
+    border-radius: var(--radius);
+  }
+
+  body.mode-full.focus-panels-open:not(.present) .focusbar {
+    margin-right: 0;
+  }
+
+  body.mode-full.focus-data-open:not(.present) .focusbar {
+    align-items: flex-start;
+  }
+
+  body.mode-full:not(.present) .focus-toggle {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    padding: 0 var(--space-3) 0 var(--space-4);
+    border: 1px solid var(--border-control);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  body.mode-full:not(.present) .focus-toggle:hover {
+    background: var(--surface-3);
+  }
+
+  /* Đang mở: viền cam như nút bật/tắt của khung nhìn (cam = trạng thái của một nút bấm). */
+  body.mode-full:not(.present) .focus-toggle[aria-expanded='true'] {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
+  body.mode-full:not(.present) .focus-toggle--panels {
+    margin-left: auto;
+  }
+
+  /* Chevron: dải số liệu mở LÊN (▴ khi đóng, ▾ khi mở); bảng điều khiển mở SANG TRÁI từ mép phải (◂ / ▸). */
+  .focus-toggle .chevron {
+    transition: transform 0.15s ease-out;
+  }
+
+  .focus-toggle--data[aria-expanded='false'] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .focus-toggle--panels[aria-expanded='false'] .chevron {
+    transform: rotate(90deg);
+  }
+
+  .focus-toggle--panels[aria-expanded='true'] .chevron {
+    transform: rotate(-90deg);
+  }
+
+  body.mode-full:not(.present) .focusbar .databar {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    background: transparent;
+  }
+
+  /* Thu gọn: một dòng, khóa và giá trị cạnh nhau, không có câu nghĩa. φ và độ cao thiên cực đứng cạnh nhau nên
+     đẳng thức vẫn thấy được; rê chuột vẫn tô sáng liên kết (cùng ô, cùng data-emphasis).
+     Quyết định của chủ dự án 2026-10-05: φ và độ cao thiên cực đã có ở dòng chú thích ngay dưới giản đồ chân trời, nên
+     dải thu gọn không lặp lại chúng mà cho LST và đối tượng đang chọn (một dòng). */
+  body.mode-full:not(.focus-data-open):not(.present) .focusbar .databar {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-5);
+    overflow: hidden;
+  }
+
+  body.mode-full:not(.focus-data-open):not(.present) .databar .data__item:not([data-emphasis='lst'], [data-emphasis='selected']) {
+    display: none;
+  }
+
+  body.mode-full:not(.focus-data-open):not(.present) .databar .data__item {
+    flex: none;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-2);
+    max-width: none;
+    margin-right: 0;
+  }
+
+  body.mode-full:not(.focus-data-open):not(.present) .databar .data__n {
+    display: none;
+  }
+
+  body.mode-full:not(.focus-data-open):not(.present) .databar .data__k {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ---- Bảng điều khiển: cột phải, thẻ chọn ở đầu, mỗi lần một bảng (như điện thoại), cuộn trong cột -------- */
+  body.mode-full:not(.present) .panels {
+    display: none;
+  }
+
+  body.mode-full.focus-panels-open:not(.present) .panels {
+    grid-area: panels;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 0;
+    columns: auto;
+  }
+
+  body.mode-full:not(.present) .paneltabs {
+    display: flex;
+    flex: none;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  body.mode-full:not(.present) .paneltabs .tab {
+    flex: 1;
+    min-height: var(--tap);
+    padding: 0 var(--space-1);
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  body.mode-full:not(.present) .paneltabs .tab:hover {
+    color: var(--text);
+  }
+
+  body.mode-full:not(.present) .paneltabs .tab[aria-selected='true'] {
+    background: var(--surface-3);
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  /* Đáy bảng chừa chỗ cho chân dung Usui-chan: dòng cuối cuộn được lên trên nó. */
+  body.mode-full:not(.present) .panels > .panel {
+    display: none;
+    flex: 0 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding-bottom: calc(56px + var(--space-5));
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-control) transparent;
+  }
+
+  body.mode-full:not(.present) .panels[data-active='location'] > .panel[data-panel='location'],
+  body.mode-full:not(.present) .panels[data-active='animation'] > .panel[data-panel='animation'],
+  body.mode-full:not(.present) .panels[data-active='display'] > .panel[data-panel='display'],
+  body.mode-full:not(.present) .panels[data-active='stars'] > .panel[data-panel='stars'] {
+    display: block;
+  }
+}
+
+/* Lời chào lần đầu của Usui-chan trong bố cục tập trung: một dải ngang nằm đúng trên vùng chú giải + dải số liệu (như
+   trước đây nó nằm trên dải số liệu), không che bầu trời của hai khung nhìn hay thẻ Polaris. Đầu lời chào bên trái,
+   lời nhắn và gợi ý ở giữa, hai nút bên phải; đuôi vẫn chỉ sang chân dung. */
+@media (min-width: 1101px) {
+  body.mode-full:not(.present) .guide-hello--wide {
+    left: var(--space-4);
+    right: calc(var(--space-4) + 56px + var(--space-3));
+    bottom: var(--space-3);
+    width: auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'head body actions' 'head star actions';
+    align-items: center;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide .guide-hello__head {
+    margin: 0;
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide .guide-hello__body {
+    line-height: 1.4;
+  }
+
+  body.mode-full:not(.present) .guide-hello--wide::after {
+    bottom: 50%;
+    margin-bottom: -6px;
+  }
+}
+
+@media (min-width: 1101px) and (prefers-reduced-motion: reduce) {
+  .focus-toggle .chevron {
+    transition: none;
+  }
+}
+
+/* Dải thu gọn: ô "Đối tượng đang chọn" viết trên một dòng (bình thường là hai dòng, white-space: pre-line). */
+@media (min-width: 1101px) {
+  body.mode-full:not(.focus-data-open):not(.present) .databar [data-emphasis='selected'] .data__v {
+    white-space: normal;
+  }
+}

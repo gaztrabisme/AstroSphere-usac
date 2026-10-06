@@ -4,6 +4,7 @@
 //   npx vite --port 5195 --strictPort   (nền), rồi node docs/redesign/uat/highlight.mjs
 // Đổi địa chỉ bằng HL_URL (mặc định http://localhost:5195/?quality=fixed).
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import { expandFocus, showPanel } from '../../redesign-2/uat/focus-helpers.mjs';
 
 const URL = process.env.HL_URL ?? 'http://localhost:5195/?quality=fixed';
 // redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
@@ -33,6 +34,8 @@ async function open(opts = {}) {
   await ctx.addInitScript(() => {
     try {
       localStorage.setItem('astrosphere.hint.v1', 'true');
+      // Bố cục tập trung (2026-10-05): mọi kiểm tra ở đây dùng dải số liệu đầy đủ, nên mở sẵn "Số liệu".
+      sessionStorage.setItem('astrosphere.focus.v1', JSON.stringify({ data: true, panels: false }));
     } catch {
       /* bỏ qua */
     }
@@ -78,7 +81,9 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   const before = await probe(page);
   check('precondition: pole-altitude toggle off, geometry hidden, no emphasis', !before.poleToggle && !before.poleAltVisible && before.emphasis === null, JSON.stringify(before));
 
-  // (1) Rê chuột lên ô "Độ cao thiên cực"
+  // (1) Rê chuột lên ô "Độ cao thiên cực". Bố cục tập trung (2026-10-05): dải thu gọn không còn ô này, mở dải đầy đủ.
+  await expandFocus(page, { data: true });
+  await page.waitForTimeout(400);
   await page.locator(POLE_CELL).hover();
   await page.waitForFunction(() => window.__perf.views.horizon.emphasis.value === 1, null, { timeout: 10000 }).catch(() => {});
   const hov = await probe(page);
@@ -95,6 +100,8 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   // review-3 F2: gạch chân mang màu của hình đang tô sáng (trục xanh #4f9dff cho độ cao thiên cực), không phải cam.
   check('(4) linked value is bold with an axis-blue (#4f9dff, emphasised geometry) underline', Number(style.weight) >= 700 && style.line.includes('underline') && style.color === 'rgb(79, 157, 255)', JSON.stringify(style));
   await page.mouse.move(720, 20);
+  // Bố cục tập trung: ô φ và độ cao thiên cực nằm trong dải thu gọn (đã kiểm ở trên); ô góc xích đạo cần mở dải.
+  await expandFocus(page, { data: true });
   await page.locator('.databar [data-emphasis=incl]').hover();
   await page.waitForFunction(() => window.__app.store.state.emphasis === 'incl', null, { timeout: 5000 }).catch(() => {});
   const inclStyle = await page.locator('.databar [data-emphasis=incl] .data__v').evaluate((el) => getComputedStyle(el).textDecorationColor);
@@ -177,7 +184,8 @@ const POLE_CELL = '.databar [data-emphasis=pole]';
   check('(5) kind line keeps the designation; details give the IAU constellation name', /α UMi/.test(names.kind ?? '') && /Ursa Minor — Tiểu Hùng/.test(names.details ?? ''), `${names.kind} || ${names.details}`);
 
   // (6) Bảng Sao: ô chọn mẫu hiện "Ursa Major"
-  // Máy tính: bốn bảng nằm cạnh nhau (thanh thẻ chỉ có trên điện thoại) — cuộn tới bảng Sao.
+  // Bố cục tập trung (≥ 1101 px): bảng điều khiển là cột phải có thanh thẻ — mở cột và chọn thẻ Sao.
+  await showPanel(page, 'stars');
   await page.locator('#tpl-select').scrollIntoViewIfNeeded();
   await page.waitForTimeout(150);
   const tpl = await page.evaluate(() => {

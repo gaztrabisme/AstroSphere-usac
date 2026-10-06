@@ -564,6 +564,10 @@ export abstract class View implements QualityTarget {
       boxes.addAlt(k, sx - gapPx - w, sy - h / 2);
       boxes.addAlt(k, sx - w / 2, sy - gapPx - h);
       boxes.addAlt(k, sx - w / 2, sy + gapPx);
+      // Chéo dưới phải / chéo trên phải (bố cục tập trung, 2026-10-05): khung nhìn thấp lại thì nhãn "Thiên cực Bắc"
+      // ngay trên vòng và chữ B ngay dưới có thể chiếm cả bốn chỗ trên; tên đối tượng chọn vẫn phải hiện.
+      boxes.addAlt(k, sx + gapPx * 0.7, sy + gapPx * 0.7);
+      boxes.addAlt(k, sx + gapPx * 0.7, sy - gapPx * 0.7 - h);
     }
     const alts = ud.alts;
     if (alts !== null && lbl.parent) {

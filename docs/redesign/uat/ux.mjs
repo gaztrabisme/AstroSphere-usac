@@ -3,6 +3,7 @@
 // Ảnh chụp lưu vào docs/redesign/shots/ux-after-*.png.
 import { mkdirSync } from 'node:fs';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import { expandFocus, showPanel } from '../../redesign-2/uat/focus-helpers.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:4186/?quality=fixed';
 // redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
@@ -105,6 +106,8 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   const playPrimary = await page.locator('.btn--play').evaluate((el) => el.classList.contains('btn--primary') && /Bắt đầu/.test(el.textContent));
   check('(b) while paused, "Bắt đầu" is the orange primary action', playPrimary);
   // "Đặt lại" hỏi lại trước (quyết định 2026-10-05). Bấm Chạy, rồi Đặt lại → Hủy: mọi thứ giữ nguyên (vẫn chạy).
+  // Bố cục tập trung (2026-10-05): nút Chạy nằm trong bảng Hoạt ảnh, mở ra trước.
+  await showPanel(page, 'animation');
   await page.locator('.btn--play').click();
   await page.locator('.btn--top-reset').click();
   const dlg = page.locator('#dlg-reset');
@@ -125,7 +128,8 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 {
   const { ctx, page } = await open();
 
-  // Bố cục: giản đồ chân trời bên trái và lớn hơn thiên cầu (~3fr/2fr); DOM cùng thứ tự.
+  // Bố cục tập trung (owner decision 2026-10-05, ≥ 1101 px): giản đồ chân trời bên trái, rộng ít nhất gấp đôi cột thiên
+  // cầu (trước đây ~3fr/2fr); DOM cùng thứ tự.
   const lay = await page.evaluate(() => {
     const r = (id) => document.getElementById(id).getBoundingClientRect();
     const hz = r('view-horizon');
@@ -133,13 +137,16 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     const views = [...document.querySelectorAll('.views > .view')].map((v) => v.id);
     return { hzLeft: hz.left, spLeft: sp.left, ratio: +(hz.width / sp.width).toFixed(2), views };
   });
-  check('layout: horizon view left and dominant (about 3:2), first in DOM', lay.hzLeft < lay.spLeft && lay.ratio > 1.3 && lay.ratio < 1.7 && lay.views[0] === 'view-horizon', JSON.stringify(lay));
+  check('layout: horizon view left and dominant (focus layout: at least 2× the sphere width), first in DOM', lay.hzLeft < lay.spLeft && lay.ratio >= 2 && lay.views[0] === 'view-horizon', JSON.stringify(lay));
+  // Các bước sau dùng câu nghĩa của dải số liệu và bảng điều khiển: mở cả hai.
+  await expandFocus(page, { data: true, panels: true });
   const cells = await page.locator('.databar .data__item').evaluateAll((els) => els.map((e) => e.dataset.emphasis));
   check('numbers bar order: φ, pole, incl, λ, LST, GST, solar, selected', cells.join() === 'lat,pole,incl,lon,lst,gst,solar,selected', cells.join());
   const notes = await page.locator('.databar .data__item:not([hidden]) .data__n').evaluateAll((els) => els.map((e) => e.textContent));
   check('every visible numbers cell has a sub-caption', notes.length >= 7 && notes.every((n) => n && n.length > 0), notes.join(' | '));
 
   await page.locator('#lat-input').evaluate((el) => el.blur());
+  await showPanel(page, 'location');
   await page.locator('#panel-location input[type=range]').fill('45');
   // Bảng số liệu cập nhật ở nhịp khung hình kế tiếp (chậm khi vẽ bằng phần mềm): chờ điều kiện thay vì chờ cố định.
   await page.waitForFunction(() => /45/.test(document.querySelector('[data-emphasis=pole] .data__v')?.textContent ?? ''), null, { timeout: 10000 }).catch(() => {});
@@ -165,6 +172,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
     JSON.stringify(empty),
   );
 
+  await showPanel(page, 'display');
   const groups = await page.locator('#panel-display > details').evaluateAll((ds) =>
     ds.map((d) => ({ title: d.querySelector('.sub__title')?.textContent, teaser: d.querySelector('.sub__teaser')?.textContent ?? '', open: d.open })),
   );
@@ -196,18 +204,23 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
 }
 
 // ------------------------------------------------------------------ (i) thẻ thông tin trên máy tính (fix round 2, review-2 B2/B3)
-// Thẻ bắt đầu thu gọn (một dòng tên), cột thứ ba trả chỗ cho hai khung nhìn; chọn một đối tượng khác → thẻ mở thành
-// cột thứ ba; bấm thanh tiêu đề → thu gọn; bỏ chọn (Esc) → thu gọn.
+// Thẻ bắt đầu thu gọn (một dòng tên); chọn một đối tượng khác → thẻ mở ra; bấm thanh tiêu đề → thu gọn; bỏ chọn (Esc)
+// → thu gọn. Bố cục tập trung (≥ 1101 px): khung nhìn luôn hai cột, thẻ mở ra nằm DƯỚI thiên cầu trong cột phải
+// (trước đây: cột thứ ba).
 {
   const { ctx, page } = await open();
+  await expandFocus(page, { data: true, panels: true });
   const state = () =>
     page.evaluate(() => {
       const c = document.querySelector('.infocard');
+      const cr = c.getBoundingClientRect();
+      const sr = document.getElementById('view-sphere').getBoundingClientRect();
       return {
         collapsed: c.classList.contains('is-collapsed'),
         title: c.querySelector('.infocard__title').textContent,
         cols: getComputedStyle(document.querySelector('.views')).gridTemplateColumns.split(' ').length,
-        h: Math.round(c.getBoundingClientRect().height),
+        h: Math.round(cr.height),
+        underSphere: cr.top >= sr.bottom - 0.5 && cr.left >= sr.left - 0.5 && cr.right <= sr.right + 0.5,
       };
     });
   const selLines = await page.evaluate(() => {
@@ -232,6 +245,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   check('1440: "Thiên cầu" title has the same colour and weight as the horizon title, one step smaller', titles.sphere.color === titles.horizon.color && titles.sphere.weight === titles.horizon.weight && titles.sphere.size < titles.horizon.size, JSON.stringify(titles));
   const first = await state();
   check('(i) 1440: info card starts collapsed to one line, two view columns', first.collapsed && first.cols === 2 && first.h < 60 && first.title === 'Polaris', JSON.stringify(first));
+  await showPanel(page, 'stars');
   await page.locator('#panel-stars input[placeholder="6h45m"]').fill('6h45m');
   await page.locator('#panel-stars input[placeholder="−16,7"]').fill('-16,7');
   await page.getByRole('button', { name: 'Thêm sao (α, δ)' }).click();
@@ -239,7 +253,7 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   await page.waitForFunction(() => document.querySelector('.infocard__title')?.textContent !== 'Polaris', null, { timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(200);
   const opened = await state();
-  check('(i) selecting another object opens the card as a third column', !opened.collapsed && opened.cols === 3 && opened.title !== 'Polaris', JSON.stringify(opened));
+  check('(i) selecting another object opens the card under the sphere view (focus layout: still two columns)', !opened.collapsed && opened.cols === 2 && opened.underSphere && opened.title !== 'Polaris', JSON.stringify(opened));
   await page.locator('.infocard__title').click();
   await page.waitForTimeout(200);
   const folded = await state();
@@ -247,7 +261,9 @@ async function open({ width = 1440, height = 900, reducedMotion = 'no-preference
   await page.locator('.infocard__title').click();
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(400);
+  // Thẻ cập nhật ở nhịp giao diện kế tiếp: chờ theo điều kiện (thẻ thu lại), không theo thời gian cố định.
+  await page.waitForFunction(() => document.querySelector('.infocard')?.classList.contains('is-collapsed'), null, { timeout: 5000 }).catch(() => {});
+  await page.waitForTimeout(200);
   const cleared = await state();
   check('(i) Esc (clear selection) folds the card back', cleared.collapsed && cleared.cols === 2, JSON.stringify(cleared));
   await ctx.close();

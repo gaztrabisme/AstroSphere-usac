@@ -275,7 +275,7 @@ export class HorizonLayer {
     // ngoài trung điểm của cung, chữ chạy ra xa trục.
     this.poleLabel = makeLabel('', 'angles', { cls: 'lbl--angle lbl--key', edge: COLORS.axis, anchor: [-0.04, 0.5], emph: 'pole' });
     // Vị trí thay thế dọc theo cung (ghi lại khi vĩ độ đổi): nhãn nhường chỗ cho chữ hướng B/N thay vì che nó.
-    this.poleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    this.poleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.angleLabel.userData.alts = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     this.poleAlt.add(this.poleSector, this.poleArc, this.poleLabel);
     this.group.add(this.poleAlt);
@@ -319,6 +319,10 @@ export class HorizonLayer {
     horVec(1, pAz, rp * 1.06, pAlts[2]);
     horVec(Math.min(pAlt + 8, 89), pAz, rp * 1.06, pAlts[3]);
     horVec(Math.min(pAlt + 16, 89), pAz, rp * 1.06, pAlts[4]);
+    // Lệch sang hai bên đường kinh tuyến (quyết định 2026-10-05, bố cục tập trung): khi khung nhìn thấp lại, mọi vị trí
+    // dọc kinh tuyến có thể trùng chữ B và vòng chọn quanh Polaris; nhãn dời ngang ra cạnh cung, vẫn gần cung.
+    horVec(Math.max(pAlt / 2, 4), pAz + 45, rp * 1.06, pAlts[5]);
+    horVec(Math.max(pAlt / 2, 4), pAz - 45, rp * 1.06, pAlts[6]);
     setLabelText(this.poleLabel, `${t(north ? 'scene.ncpAltitude' : 'scene.scpAltitude')} = |φ| = ${fmtDeg(pAlt)}`);
   }
 

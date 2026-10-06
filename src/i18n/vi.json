@@ -121,6 +121,12 @@
     "solarNote": "≈ góc giờ Mặt Trời + 12h",
     "selectedNote": "α, δ đứng yên · A, h đổi theo giờ"
   },
+  "focus": {
+    "data": "Số liệu",
+    "dataTip": "Mở hoặc thu gọn dải số liệu đầy đủ: kinh độ, giờ sao, giờ Mặt Trời và đối tượng đang chọn",
+    "panels": "Bảng điều khiển",
+    "panelsTip": "Mở hoặc thu gọn bảng điều khiển bên phải: vị trí, hoạt ảnh, hiển thị và sao"
+  },
   "info": {
     "aria": "Thông tin đối tượng đang chọn",
     "close": "Đóng thẻ thông tin",
@@ -526,6 +532,7 @@
       "- **Di chuột lên các đường biểu diễn:** hiển thị chú giải tương ứng.",
       "- **Nhìn từ người quan sát:** chuyển góc nhìn vào vị trí của người quan sát, cho phép quan sát thiên cầu tương tự như khi đứng ngoài thực địa.",
       "## Các bảng điều khiển",
+      "Trên màn hình rộng ở chế độ Đầy đủ, bảng điều khiển và dải số liệu thu gọn để giản đồ chân trời rộng hơn: bấm **Bảng điều khiển** hoặc **Số liệu** ở dải dưới khung nhìn để mở ra.",
       "### 01 · Vị trí quan sát",
       "Thiết lập vị trí địa lý của người quan sát bằng một trong các phương thức:",
       "- Nhập trực tiếp vĩ độ và kinh độ.",
@@ -710,7 +717,7 @@
       "simpleAxis": "Hiện trục mà cả bầu trời quay quanh. Đầu trục phía trên chân trời chính là thiên cực.",
       "simpleEquator": "Hiện xích đạo trời, vòng tròn chia bầu trời thành nửa Bắc và nửa Nam.",
       "simpleZones": "Tô ba màu: tím là sao không bao giờ lặn, xanh ngọc là sao mọc rồi lặn, đỏ là sao không bao giờ mọc ở nơi bạn đứng.",
-      "panelTabs": "Bốn bảng điều khiển: vị trí, chuyển động, hiển thị và sao. Bấm lại thẻ đang mở để thu gọn bảng.",
+      "panelTabs": "Bốn bảng điều khiển: vị trí, chuyển động, hiển thị và sao. Trên điện thoại, bấm lại thẻ đang mở để thu gọn bảng.",
       "latLonInput": "Gõ vĩ độ, kinh độ chính xác rồi nhấn Enter. Hợp khi bạn muốn đứng đúng tọa độ nhà mình.",
       "latSlider": "Kéo để đổi vĩ độ thật nhanh và xem thiên cực nâng lên, hạ xuống theo.",
       "worldMap": "Bấm vào bản đồ để đứng ở bất kỳ đâu trên Trái Đất.",
@@ -731,7 +738,9 @@
       "email": "Gửi góp ý hoặc câu hỏi cho CLB qua thư điện tử.",
       "quality": "Trang vừa tự giảm chi tiết để chạy mượt hơn. Bấm khôi phục nếu máy bạn đủ khỏe.",
       "resetCancel": "Đóng hộp này và giữ nguyên mọi thứ như hiện tại.",
-      "resetConfirm": "Đặt lại vị trí, thời gian, hiển thị, góc nhìn và xóa các sao đã thêm. Chế độ và tiến độ học vẫn được giữ."
+      "resetConfirm": "Đặt lại vị trí, thời gian, hiển thị, góc nhìn và xóa các sao đã thêm. Chế độ và tiến độ học vẫn được giữ.",
+      "focusData": "Mở dải số liệu đầy đủ: kinh độ, giờ sao, giờ Mặt Trời và đối tượng đang chọn. Khi thu gọn, dải vẫn giữ φ và độ cao thiên cực để bạn thấy hai số này luôn bằng nhau.",
+      "focusPanels": "Mở bảng điều khiển bên phải để đổi vị trí, thời gian, lớp hiển thị và thêm sao. Thu gọn lại thì giản đồ chân trời rộng hơn."
     }
   }
 }

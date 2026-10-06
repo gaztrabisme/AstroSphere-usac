@@ -5,6 +5,7 @@
 //   UAT_URL='http://localhost:5194/?quality=fixed' node docs/redesign-2/uat/guide.mjs
 import { mkdirSync, readFileSync } from 'node:fs';
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import { showPanel } from './focus-helpers.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:5194/?quality=fixed';
 const SHOTS = new globalThis.URL('../shots/', import.meta.url).pathname;
@@ -284,21 +285,28 @@ const SEEN = () => localStorage.setItem('astrosphere.guide.v1', JSON.stringify({
   await page.waitForTimeout(500);
   check('(full) the avatar is present in Full', await page.locator('.guide-avatar').isVisible());
   check('(full) the avatar does not cover view tools or the Polaris chip', (await avatarClear(page)).length === 0, (await avatarClear(page)).join(', '));
+  // Bố cục tập trung (≥ 1101 px): bảng điều khiển thu gọn mặc định — mở bảng Hiển thị trước khi rê chuột lên nó.
+  await showPanel(page, 'display');
   await page.locator('.guide-avatar').click();
   await waitExplain(page, true);
   await page.locator('.btn--top-present').hover();
   await page.waitForTimeout(200);
   check('(full) hovering Trình chiếu explains it', (await tipText(page)) === TIP.present, await tipText(page));
-  await page.locator('.data__item[data-guide="dataPole"]').hover();
+  // Dải số liệu thu gọn chỉ còn LST và đối tượng đang chọn (quyết định 2026-10-05).
+  await page.locator('.data__item[data-guide="dataLst"] .data__v').hover();
   await page.waitForTimeout(200);
-  check('(full) hovering a data-bar cell explains it', (await tipText(page)) === TIP.dataPole, await tipText(page));
+  check('(full) hovering a data-bar cell explains it', (await tipText(page)) === TIP.dataLst, await tipText(page));
+  await page.locator('.focus-toggle--panels').hover();
+  await page.waitForTimeout(200);
+  check('(full) hovering the "Bảng điều khiển" toggle explains it', (await tipText(page)) === TIP.focusPanels, await tipText(page));
   await page.locator('#panel-display summary').first().hover();
   await page.waitForTimeout(200);
   check('(full) hovering a display group explains it', (await tipText(page)) === TIP.displayGroup, await tipText(page));
   await page.locator('#panel-display .term').first().hover();
   await page.waitForTimeout(200);
   check('(full) hovering a codex "?" term link explains it', (await tipText(page)) === TIP.term, await tipText(page));
-  // Esc khi đang gõ trong ô nhập: không làm gì.
+  // Esc khi đang gõ trong ô nhập: không làm gì. (Bố cục tập trung: chuyển sang thẻ Vị trí; chuột vẫn bấm được khi giải thích.)
+  await showPanel(page, 'location');
   await page.locator('#lat-input').click();
   await page.keyboard.press('Escape');
   check('(esc) Esc while typing in an input does not exit explain mode', await explaining(page));

@@ -80,3 +80,33 @@ All of these are listed in `TODO.md`.
 - Random and manual stars use colours that look like semantic colours.
 - The T1 layout fail.
 - Deferred from redesign-1: offline service worker, Earth-occlusion hover, selection ring, horizon ring.
+
+## Addendum: owner decisions, 2026-10-05/06
+
+The owner reviewed the small open decisions one by one, and all were built on this branch:
+
+| # | Decision | Built in | Evidence |
+|---|---|---|---|
+| — | Rename Codex to **USACodex**. Only user-facing text changes; code and storage keys stay `codex`. | `22ee749` | Codex 68/68 and ui 25/25 assert the new name. |
+| 1 | Quiet reward for selecting a star: the selection ring pulses once, about 300 ms, with no pulse under reduced motion. | `0eaba1c` | `uat/decisions.mjs` passes 60/60. |
+| 2 | USACodex "full game feel": category tiles, a card grid of locked/new/read cards, a one-time unlock reveal, "x/44" in the title, and a glow on the badge. | `26ed361`, `4e246f1` | `uat/codex.mjs` passes 68/68. |
+| 3 | Ask for confirmation before "Đặt lại". | `ad5a0ff` | decisions, ux |
+| 4 | Neutral status pill with a zone-colour dot. | `fc88ae5` | decisions |
+| 5 | Explanatory text no smaller than 13 px. | `d244f8b` | decisions, at 1440 and 375 px |
+| 6 | User stars drawn in the neutral figure tone. | `4380492` | `userStarColor.test.ts`: ΔE ≥ 0,098 from every semantic colour |
+| 7 | Try a focus layout, keep it, and drop the 2× T1 target. | `445f645` and the merge | `uat/focus.mjs` passes 35/35. T1 measured 0,87× against a 1,82× ceiling, recorded as not applicable (see `focus-layout.md`). |
+| 8 | Test with beginners: not now. | — | Kept open in `TODO.md`. |
+
+**Coordinator fixes made while merging.**
+- **Collapsed data strip:** it no longer repeats φ and pole altitude, which already appear in the horizon caption. It now shows LST and the selected object.
+- **Declutter in the shorter focus view with "Số liệu" open:**
+  - The pole-altitude label gains two fallback positions, ±45° along the horizon (`MAX_ALTS` raised from 6 to 8).
+  - The selected object's name gains two diagonal fallback positions, so it stays visible.
+  - These fix a real label collision found by `declutter.mjs`.
+
+**Final suite.** All checks pass on the merge:
+- unit tests: `npm test`, 178;
+- browser checks: focus 35, decisions 60, codex 68, guide 86, modes 37, below-horizon 30, smoke, ui 25, declutter 21, ux 38, highlight 25, perf (a–c);
+- bundle: entry JS 83.22 kB gzip, within the 90 kB budget.
+
+**Not reviewed by a fresh reviewer:** the USACodex grid and unlock, the selection pulse, and the focus layout. They have been checked only by their builders and the coordinator.

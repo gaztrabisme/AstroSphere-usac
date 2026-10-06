@@ -13,6 +13,7 @@
 // - Kiểm tra tương phản của mục chưa khám phá đo trên thẻ (nền thẻ) thay vì trên cột danh sách cũ.
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
 import { mkdirSync } from 'node:fs';
+import { expandFocus } from './focus-helpers.mjs';
 
 const URL = process.env.UAT_URL ?? 'http://localhost:5192/?quality=fixed';
 const SHOTS = new globalThis.URL('../shots/', import.meta.url).pathname;
@@ -371,6 +372,8 @@ const ctx = await newContext(1440, 900);
   check('(6) "Xem trong mô phỏng" turns on the ecliptic and closes the codex', !eclBefore && eclAfter.on && !eclAfter.open, JSON.stringify({ eclBefore, ...eclAfter }));
 
   // Liên kết "?" ở dải số liệu và bảng Hiển thị.
+  // Bố cục tập trung (2026-10-05): ô độ cao thiên cực nằm trong dải số liệu đầy đủ, mở ra trước.
+  await expandFocus(page, { data: true });
   await page.locator('.databar [data-emphasis=pole] .term').click();
   await page.waitForSelector('#dlg-codex[open]');
   await page.waitForSelector('.cdx-page__title');

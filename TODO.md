@@ -45,14 +45,14 @@ Code review of 2026-10-04. Each item lists location, defect and how to reproduce
 - [x] **Phone first view** (review-4 B4). (02c52b6: 44 px icon buttons inside the canvas, view header hidden on phones, dome framed 6 % higher) The "Nhìn từ người quan sát / Góc nhìn" strip pushes the dome down. Move these as icons inside the canvas.
 - [x] **Projector legibility** (review-4 H1). (b664219: star labels 28 px and white, titles 30/26 px, denser dashes at ×2 width) Enlarge the header in presentation mode, make star labels at least 28 px and white, and thicken or drop the dashed lines.
 - [x] **Label/line crossings near the pole** (review-4 D2). (fbe876f: background names rank last with clearance, 85 % pill, selection ring as an obstacle, the selected star always named) Constellation lines cross their own names. Consider leader lines or hiding constellation names that collide.
-- [ ] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision. Measured after the review-4 polish: 0,98× (a box of 43,5 % of the frame can reach at most 2,30×, so the 2× default is out of reach without removing the data bar). See `docs/redesign-2/polish.md`.
+- [x] **colour-theory T1 focal value** is 0.93× against the 2× default. It needs fewer competing edges outside the horizon view (fainter background stars, quieter sphere lines). This is a scope decision. Measured after the review-4 polish: 0,98× (a box of 43,5 % of the frame can reach at most 2,30×, so the 2× default is out of reach without removing the data bar). See `docs/redesign-2/polish.md`. **Closed by owner decision 2026-10-05:** the Full-mode focus layout (445f645) was kept and the 2× target dropped as not applicable to a large focal element (the skill's own override; dominance is judged by eye). With the horizon card at 54,8 % of the frame the ceiling is 1,82×; measured 0,87×. See `docs/redesign-2/focus-layout.md`.
 - [x] **Random and manual star colours reuse semantic colours.** (4380492: every user star takes `COLORS.figure`; nearest semantic colour ΔE 0 → 0,098; see `docs/redesign-2/decisions-2026-10-05.md`) `STAR_COLORS` in `src/state.ts` includes `#f472b6` (exactly the vertical-circle pink), `#60a5fa` (near the axis blue) and `#facc15` (near the equator yellow). Pick them from hues the scene does not use, or use the neutral figure tone.
 
 ## Sau thiết kế lại lần 2 (redesign-2 review-2) / Open after redesign-2
 
 The medium items and three of the low items from `docs/redesign-2/review-2.md` are fixed in fix round 2. These are left open:
 
-- [ ] **The codex does not feel collectible yet** (review-2 #4). It needs:
+- [x] **The codex does not feel collectible yet** (review-2 #4). It needs: (26ed361: owner decision 2026-10-05 "full game feel": category tiles, card grid with locked/new/read cards, one-time unlock reveal, "USACodex · x/44", 6 px progress bar, badge glow.)
   - category icon tiles;
   - locked entries shown as dimmed tiles instead of text rows;
   - a thicker neutral progress bar;

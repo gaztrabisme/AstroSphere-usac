@@ -11,7 +11,7 @@ export const EDGE = 6;
 export const GAP = 4;
 
 /** Số vị trí thay thế tối đa cho mỗi nhãn (vd. các điểm dọc theo cung của nhãn số đo). */
-export const MAX_ALTS = 6;
+export const MAX_ALTS = 8;
 
 export class LabelBoxes {
   n = 0;

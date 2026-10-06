@@ -7,6 +7,7 @@
 // (1) không hai nhãn nào chồng nhau quá 2 px, (2) không nhãn nào tràn ra ngoài khung canvas của nó. Khi tô sáng độ
 // cao thiên cực: (3) bốn chữ hướng vẫn hiện, nhãn số đo và tên Polaris cũng hiện (review-3 D2).
 import { chromium } from '/opt/node-tools/node_modules/playwright/index.mjs';
+import { expandFocus } from '../../redesign-2/uat/focus-helpers.mjs';
 
 // redesign-2 R2: a first visit now lands in Simple mode. These checks exercise the Full interface, so every page
 // starts with the stored choice "full" (same key the mode switch writes).
@@ -84,6 +85,10 @@ function judge(tag, views) {
 {
   const { ctx, page } = await open(1440, 900);
   judge('1440', await measure(page));
+  // Bố cục tập trung (2026-10-05): ô độ cao thiên cực nằm trong dải số liệu đầy đủ. Mở ra rồi chờ khung nhìn đổi cỡ
+  // và nhãn được đo lại trước khi rê chuột (mở dải làm khung nhìn thấp lại).
+  await expandFocus(page, { data: true });
+  await page.waitForTimeout(1500);
   await page.locator('.databar [data-emphasis=pole]').hover();
   await page.waitForTimeout(800);
   const hv = await measure(page);

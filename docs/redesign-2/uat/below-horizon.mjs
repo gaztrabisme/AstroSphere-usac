@@ -216,7 +216,10 @@ async function at(page, lst) {
   });
   const hitTool = z.zen ? z.tools.filter((t) => z.zen.x < t.r && t.x < z.zen.r && z.zen.y < t.b && t.y < z.zen.b) : [];
   check('fix-2 #1, Full 1440: "Thiên đỉnh" hiện và không chồng lên nút .view-tool nào', !!z.zen && hitTool.length === 0, JSON.stringify({ zen: z.zen, hit: hitTool.map((t) => t.name) }));
-  check('fix-2 #1, Full 1440: nút công cụ chỉ còn biểu tượng, vẫn có tên truy cập và tooltip', z.tools.length === 3 && z.tools.every((t) => t.text === 'none' && t.name && t.title), JSON.stringify(z.tools.map((t) => [t.name, t.text])));
+  // Bố cục tập trung (owner decision 2026-10-05): giản đồ chân trời rộng hơn 860 px nên nút công cụ của nó có lại chữ
+  // (không còn che "Thiên đỉnh" — kiểm ở trên); cột thiên cầu hẹp vẫn chỉ có biểu tượng. Mọi nút giữ tên truy cập và tooltip.
+  const sphereTools = z.tools.slice(2);
+  check('fix-2 #1, Full 1440: nút công cụ có tên truy cập và tooltip; nút của cột thiên cầu hẹp chỉ còn biểu tượng', z.tools.length === 3 && z.tools.every((t) => t.name && t.title) && sphereTools.every((t) => t.text === 'none'), JSON.stringify(z.tools.map((t) => [t.name, t.text])));
   const og = await onGlobe(page);
   check('fix-2 #3, Full 1440: không tên chòm sao nào in lên quả địa cầu (khung thiên cầu)', !!og.g && og.hits.length === 0 && og.shown > 0, JSON.stringify(og));
   check('không có lỗi trang (Full 1440)', errors.length === 0, errors.join(' | '));

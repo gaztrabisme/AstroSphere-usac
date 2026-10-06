@@ -17,6 +17,7 @@ import { animationPanel } from './ui/animationPanel';
 import { displayPanel } from './ui/displayPanel';
 import { button, clear, h, setText } from './ui/dom';
 import { bindHintCaption } from './ui/firstHint';
+import { focusLayout, FOCUS_MIN_WIDTH } from './ui/focusLayout';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { bindUiMode, initialUiMode, modeSwitch } from './ui/mode';
@@ -245,13 +246,16 @@ const panelDefs = [
   { key: 'display', el: displayPanel(store, actions) },
   { key: 'stars', el: starPanel(store, actions) },
 ];
-const panels = h('section', { class: 'panels', 'data-active': 'location', 'aria-label': t('panel.aria') });
+const panels = h('section', { class: 'panels', id: 'panels', 'data-active': 'location', 'aria-label': t('panel.aria') });
 const panelTabs = h('div', { class: 'paneltabs', role: 'tablist', 'aria-label': t('panel.tabsAria'), 'data-guide': 'panelTabs' });
-/** Chọn bảng; bấm lại vào thẻ đang mở thì thu gọn (chỉ khi bấm, không khi dùng phím mũi tên). */
+/**
+ * Chọn bảng; trên điện thoại bấm lại vào thẻ đang mở thì thu gọn (chỉ khi bấm, không khi dùng phím mũi tên). Bố cục
+ * tập trung đã có nút "Bảng điều khiển" để thu gọn, nên ở đó bấm lại thẻ không làm gì.
+ */
 function selectPanel(key: string, toggleCollapse: boolean) {
   const same = panels.dataset.active === key && !panels.classList.contains('collapsed');
   panels.dataset.active = key;
-  panels.classList.toggle('collapsed', toggleCollapse && same);
+  panels.classList.toggle('collapsed', toggleCollapse && same && !focusActive());
   panelTabs.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.panel === key)));
   panelRoving.sync();
   loop.markUiDirty(); // bảng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
@@ -273,6 +277,20 @@ for (const p of panelDefs) {
 }
 const panelRoving = rovingTabs(panelTabs, (tab) => selectPanel(tab.dataset.panel!, false));
 panels.append(panelTabs, ...panelDefs.map((p) => p.el));
+
+// ---------------------------------------------------------------- Bố cục tập trung (Đầy đủ, màn hình ≥ 1101 px)
+// Giản đồ chân trời chiếm phần lớn màn hình; dải số liệu thu gọn (vẫn có φ và độ cao thiên cực) và bảng điều khiển
+// nằm sau hai nút bật/tắt (quyết định của chủ dự án 2026-10-05, docs/redesign-2/focus-layout.md).
+const focusQuery = window.matchMedia?.(`(min-width: ${FOCUS_MIN_WIDTH}px)`);
+/** Bố cục tập trung đang dùng: Đầy đủ, màn hình rộng, không trình chiếu. */
+function focusActive(): boolean {
+  return (focusQuery?.matches ?? false) && store.state.uiMode === 'full' && !presenting;
+}
+const focus = focusLayout({
+  data: data.el,
+  panels,
+  onChange: () => loop.markUiDirty(), // vùng vừa hiện: ghi bù số liệu đã bỏ qua khi ẩn
+});
 
 window.addEventListener('open-catalog', () => dialogs.catalog());
 // Chữ ký CLB và liên kết DUY NHẤT về trang CLB (AGENTS.md › Brand).
@@ -318,7 +336,10 @@ document.addEventListener('fullscreenchange', () => {
 window.addEventListener('resize', () => loop.markUiDirty());
 // Dải điều khiển gọn của chế độ Cơ bản: CSS chỉ hiện nó khi body.mode-simple (redesign-2 R2).
 const simple = simpleControls(store, actions);
-app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, simple.el, legend, data.el, panels), footer);
+app.append(topbar, h('main', { class: 'layout' }, viewTabs, views, simple.el, legend, focus.bar, panels), footer);
+// Bố cục tập trung cao đúng phần màn hình dưới thanh trên cùng (thanh này dính ở đỉnh, cao khác nhau theo bề ngang).
+if (typeof ResizeObserver !== 'undefined')
+  new ResizeObserver(() => document.documentElement.style.setProperty('--focus-top', `${topbar.offsetHeight}px`)).observe(topbar);
 
 // ---------------------------------------------------------------- Chú giải màu
 const LEGEND: { key: keyof Toggles | 'horizon'; color: string; zone?: boolean }[] = [
