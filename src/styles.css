@@ -3815,8 +3815,13 @@ body.mode-simple .lbl--allsky {
   }
 
   .cdx-tile {
-    width: 172px;
+    width: auto;
+    min-width: 150px;
     min-height: 54px;
+  }
+
+  .cdx-tile__name {
+    white-space: nowrap;
   }
 
   .cdx-catview {

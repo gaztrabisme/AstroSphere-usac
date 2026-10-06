@@ -166,7 +166,8 @@ export function skyGroup(box: Box, opts: SkyOptions): string {
       const x0 = right ? sx + gap : sx - gap - w;
       const y0 = sy + dy - 6;
       const hit = placed.some(([a, b, c, d]) => x0 < c && x0 + w > a && y0 < d && y0 + 12 > b);
-      const outside = x0 < box.x || x0 + w > box.x + box.w;
+      // Cả trên/dưới: nhãn 13 px (sàn cỡ chữ của USACodex) sát mép trên không bị cắt (vd. Shedar trong khung M31).
+      const outside = x0 < box.x || x0 + w > box.x + box.w || y0 < box.y + 1 || y0 + 13 > box.y + box.h - titleH;
       if (hit || outside) continue;
       placed.push([x0, y0, x0 + w, y0 + 12]);
       return `<text x="${r1(right ? sx + gap : sx - gap)}" y="${r1(sy + dy + 4)}" class="cdx-svg__t cdx-svg__t--muted" text-anchor="${right ? 'start' : 'end'}">${esc(name)}</text>`;
