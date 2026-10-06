@@ -63,6 +63,24 @@ The medium items and three of the low items from `docs/redesign-2/review-2.md` a
 - [x] **Nothing celebrates clicking a star** (review-2 A1). (0eaba1c: owner decision 2026-10-05, the selection ring pulses once; no pulse under reduced motion) This is a product idea, not a defect; it needs an owner decision because of the "not pushy" constraint.
 - [ ] **Beginners have not been tested.** "Beginners are overwhelmed" and the value of Simple mode and the guide are untested assumptions (ux skill). Run a quick 5-person hallway test at a club session.
 
+## Sau review-3 (fix round 3) / From `docs/redesign-2/review-3.md`
+
+Problem 1 ("thiên đế" in USACodex) did not reproduce: the source is "thiên để" (U+1EC3), and the screenshot font draws the hook like an acute. Each fix below is checked by `docs/redesign-2/uat/fix-3-ui.mjs` or `fix-3-scene.mjs`.
+
+- [ ] **Check the ể accent on a real device** (review-3 #1) before the club demo: USACodex › Nền tảng › "Thiên đỉnh và thiên để".
+- [x] **The sphere view is crushed when both focus toggles are open** (review-3 #2). (a43a5e3: the sphere row keeps ≥ 220 px of canvas; the info card shrinks and scrolls below it)
+- [x] **The below-horizon label covers its own marker** (review-3 #3). (e1e1219: the drawn ghost ring and edge arrow are hard obstacles; the label keeps an 8 px gap and wraps to two lines on phones)
+- [x] **The phone hello does not lead with "tap a star"** (review-3 #4). (8224a5d)
+- [x] **Reset dialog: no visible default, over-promising title** (review-3 #5). (12a60ba: "Đặt lại mô phỏng?"; "Hủy" always ringed when focused)
+- [x] **The phone Full header takes three rows** (review-3 #6). (62a5334: two rows, icon-only "Ôn tập" with the neighbours' border)
+- [x] **The unlock reward is faint; the read state is not visible** (review-3 #7). (a534469: one-time glow on "Đã mở khóa", eased progress bars, visible "đã đọc"; nothing animates under reduced motion)
+- [x] **The status dot's colour key is hidden** (review-3 #8). (71e2c34: the "Trạng thái" tip lists the three statuses with their dots)
+- [x] **Pink map dots clash with the vertical-circle pink** (review-3 #9). (e45216b: white place dots)
+- [x] **Explanatory text sits on the 13 px floor** (review-3 #10). (b680a41: info-card notes 14 px; hint, codex counters and caption 13.5–14 px)
+- [x] **The details panel has no scroll cue** (review-3 #11). (1c86fe0: "↓ Còn nữa" when the card overflows)
+- [x] **Cardinal "B" collides with the altitude tick** (review-3 #12). (e0d4c6d: the vertical-circle foot is an obstacle for the cardinal letters)
+- [ ] **The status key tip needs hover or focus.** On touch, the "?" still opens the USACodex entry, so phone users do not see the key (found while fixing #8).
+
 ## Kho mã / Repository
 
 - [x] Delete unused 624 KB `src/whiteUSAC (1).png` (not referenced, not shipped). (c18ce19)
