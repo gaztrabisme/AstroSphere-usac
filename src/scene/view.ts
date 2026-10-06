@@ -64,6 +64,8 @@ export abstract class View implements QualityTarget {
   private boxLabel: (Label | null)[] = [];
   /** Hộp px của vòng "bóng" đã vẽ (0–3) và mũi tên mép khung (4–7) ở lần gỡ chồng chéo gần nhất; w = 0: không có. */
   private readonly ghostPx = new Float32Array(8);
+  /** Hộp px của vật cản ở chân đường thẳng đứng ở lần gỡ chồng chéo gần nhất; w = 0: không có. */
+  private readonly footPx = new Float32Array(4);
   private needMeasure = true;
   /**
    * Lớp giao diện nổi trên khung nhìn (nút "Nhìn từ người quan sát", "Góc nhìn mặc định" — fix-2 #1): hộp px tương
@@ -407,7 +409,8 @@ export abstract class View implements QualityTarget {
         if (o instanceof CSS2DObject) list.push(o as Label);
       });
       list.sort((a, b) => a.userData.rank - b.userData.rank);
-      // + chỗ cho các vật cản (vòng chọn, vùng giữ trống keepOut, vòng và mũi tên "bóng") và lớp giao diện nổi.
+      // + chỗ cho các vật cản (vòng chọn, vùng giữ trống keepOut, chân đường thẳng đứng, vòng và mũi tên "bóng") và
+      // lớp giao diện nổi.
       this.boxLabel.length = list.length + MAX_OBSTACLES + MAX_OVERLAYS;
       this.boxes.ensure(list.length + MAX_OBSTACLES + MAX_OVERLAYS);
     }
@@ -485,6 +488,10 @@ export abstract class View implements QualityTarget {
         }
       }
     }
+    // Chân đường thẳng đứng và đoạn cung h sát chân (fix-3 #12): vật cản nhỏ, đặt trước chữ hướng — "B" dời sang vị trí
+    // thay thế dọc chân trời thay vì nằm ngay dưới vạch hồng ở chân đường thẳng đứng qua Polaris.
+    this.footPx[2] = 0;
+    if (this.horizon.verticalFoot(_v, _q)) this.pushSegment(_v, _q, FOOT_PAD, W, H);
     if (this.keepOut(_ko, W, H)) {
       const k = boxes.n;
       this.boxLabel[k] = null;
@@ -632,6 +639,31 @@ export abstract class View implements QualityTarget {
     return k;
   }
 
+  /** Vật cản bao đoạn thẳng giữa hai điểm thế giới `a`, `b` trên màn hình, nới thêm `pad` px. Không cấp phát. */
+  private pushSegment(a: THREE.Vector3, b: THREE.Vector3, pad: number, W: number, H: number): void {
+    _p.copy(a).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const ax = ((_p.x + 1) / 2) * W;
+    const ay = ((1 - _p.y) / 2) * H;
+    _p.copy(b).project(this.camera);
+    if (_p.z < -1 || _p.z > 1) return;
+    const bx = ((_p.x + 1) / 2) * W;
+    const by = ((1 - _p.y) / 2) * H;
+    const x0 = Math.min(ax, bx) - pad;
+    const y0 = Math.min(ay, by) - pad;
+    const boxes = this.boxes;
+    const k = boxes.n;
+    this.boxLabel[k] = null;
+    boxes.push(x0, y0, Math.max(ax, bx) + pad - x0, Math.max(ay, by) + pad - y0, false);
+    boxes.must[k] = 1;
+    boxes.solid[k] = 1;
+    const fp = this.footPx;
+    fp[0] = boxes.x[k];
+    fp[1] = boxes.y[k];
+    fp[2] = boxes.w[k];
+    fp[3] = boxes.h[k];
+  }
+
   /**
    * Chỉ để kiểm thử chấp nhận (đọc qua window.__app ở chế độ phát triển, fix-3): hộp px (tương đối với canvas, góc
    * trên trái) của vòng "bóng" ĐÃ VẼ và của mũi tên mép khung — đúng các vật cản mà nhãn phải né; null khi không có.
@@ -642,6 +674,12 @@ export abstract class View implements QualityTarget {
       ring: g[2] > 0 ? { x: g[0], y: g[1], w: g[2], h: g[3] } : null,
       arrow: g[6] > 0 ? { x: g[4], y: g[5], w: g[6], h: g[7] } : null,
     };
+  }
+
+  /** Chỉ để kiểm thử chấp nhận (fix-3 #12): hộp px của vật cản ở chân đường thẳng đứng; null khi không có. */
+  get footRect(): Rect | null {
+    const f = this.footPx;
+    return f[2] > 0 ? { x: f[0], y: f[1], w: f[2], h: f[3] } : null;
   }
 
   /** Đo hộp của nhãn vừa hiện mà chưa có kích thước (một lần mỗi khi chữ đổi độ dài hoặc cỡ chữ đổi). */
@@ -832,11 +870,13 @@ const _kd: KeepOutDisc = { x: 0, y: 0, r: 0 };
 
 /** Số phần tử giao diện nổi tối đa trên một khung nhìn (nhóm nút công cụ). */
 const MAX_OVERLAYS = 4;
-/** Số vật cản tối đa: vòng chọn, vùng giữ trống (keepOut), vòng và mũi tên "bóng". */
-const MAX_OBSTACLES = 4;
+/** Số vật cản tối đa: vòng chọn, vùng giữ trống (keepOut), chân đường thẳng đứng, vòng và mũi tên "bóng". */
+const MAX_OBSTACLES = 5;
 
 /** Khoảng hở (px) giữa vòng "bóng" và nhãn "… dưới chân trời" (fix-3 #3, review-3 #3). */
 const UNDER_GAP = 8;
+/** Phần nới (px) quanh vật cản ở chân đường thẳng đứng (fix-3 #12). */
+const FOOT_PAD = 3;
 
 /** Hộp px (góc trên trái) — chỉ cho các getter kiểm thử. */
 export interface Rect {
