@@ -153,3 +153,130 @@ Opening an entry marks it **read**. The badge counts discovered-but-unread entri
   - a "?" orphaned on its own line;
   - the phone top bar.
 - **Not judged:** no fresh-context reviewer has looked at the codex yet. That belongs to the coordinator's R8 review loop.
+
+## Game feel (owner decision 2026-10-05)
+
+**Branch:** `redesign/gamecodex`. **Review input:** [review-2.md](review-2.md) D1 ("not yet collectible") and ranked item #4. The owner chose "Full game feel". **UAT:** `docs/redesign-2/uat/codex.mjs`, 68 checks. **Renders:** `shots/codex-grid-1440.png`, `shots/codex-unlock-1440.png`, `shots/codex-grid-375.png`.
+
+The earlier rules still hold:
+- every entry stays readable;
+- nothing is pushy;
+- there are no popups outside USACodex, so the reward happens only when the user opens USACodex.
+
+### What changed
+
+| Part | Before | Now |
+|---|---|---|
+| Left column | Category labels over text rows | Seven **category tiles**. Each tile has a glyph in a 40 px square, the name, an "x/y" count and a 3 px mini bar. A white dot on the glyph means the category has new entries, and screen readers hear "2 trên 7 mục đã khám phá, có mục mới". On phones the tiles form a horizontal strip that scrolls inside itself |
+| Right pane | Always the reading page | Either the **card grid** of the selected category or the reading page |
+| Entries | Text rows with a state glyph | **Cards**, 150–180 px wide (2 columns on phones). Each card has a 3:2 thumbnail, the title and a state row |
+| Opening USACodex | Opened the first new entry and marked it read | Opens on the grid of the first category with a new entry, with focus on that card. Nothing is marked read until the user clicks a card |
+| Entry page | A kicker line gave the category | A back control, "← {category}", returns to the grid and focuses the card just read |
+| Progress | 3 px bar; title "USACodex" | **6 px** neutral bar; the title is "USACodex · x/44" (`codexUi.title` with placeholders) |
+| First open of a new entry | "Mới khám phá" | The **unlock reveal**, then the line "Đã mở khóa" |
+| Top-bar badge | Count only | One soft **glow pulse** (600 ms) when the unread count rises while the user is in the sim |
+| Text size | 10.5–12 px labels and diagram text at about 11 px | **13 px floor** inside USACodex. The header visual renders at 300 px, 1:1 with its viewBox, so a 13-unit diagram label is 13 CSS px |
+
+### Card states
+
+States do not depend on colour. Each state shows a glyph and text, and each card carries `data-state`.
+
+| State | Card | Thumbnail | State row |
+|---|---|---|---|
+| Locked | Dashed `--border-control` border, `--surface-quiet` background; title in `--muted` (9.1:1) | Grayscale, 40 % opacity | Padlock + "chưa khám phá" (`--subtle`, 5.7:1) |
+| New | Bright `--text` border plus a soft neutral halo | Full colour | Filled dot + "MỚI" pill (white on grey outline, 16:1). Neutral, not orange |
+| Read | Normal | Full colour | Check; "đã đọc" only for screen readers |
+
+**Thumbnails:**
+- They reuse `entryVisual()` from `visual.ts` and `sky.ts`.
+- They are built lazily, when a category is first shown. They are rebuilt only when the latitude or the date changes, because some diagrams use the live values.
+- They drop their labels and compass instead of shrinking the text below the floor.
+- SVG ids are suffixed so that the B − V gradient never collides with the large figure.
+
+### Unlock reveal (one time per entry)
+
+The reveal is driven by the existing new → read transition: `wasNew` is read before `markRead()`. The page gets `data-unlocked="{id}"` for that view and `.is-unlocking` while the animation runs. Opening the entry again shows "Đã khám phá" and plays nothing.
+
+| Time (ms) | Element | Role | Movement |
+|---|---|---|---|
+| 0 | Title, lede, body | Content | None: visible at once (the UAT checks opacity 1 on the first frame) |
+| 0–220 | Header visual | Waiting | At scale 0.96, desaturated, with a closed padlock over it |
+| 60–340 | Padlock shackle | **Trigger** | Rotates open 32° around its left leg |
+| 220–840 | Header visual | **Follower** | Scale 0.96 → 1; colour returns; a neutral glow rises and fades |
+| 300–640 | Padlock | Follower | Fades out with a 1.08 scale |
+| 520–860 | "Đã mở khóa" line | Last follower | Fades in from 4 px below |
+
+- Every curve is `cubic-bezier(0.22, 1, 0.36, 1)`: ease-out, with no overshoot and no bounce.
+- Under `prefers-reduced-motion`, the global rule removes every animation. The resting styles are the end state: no padlock, and the line shown at full opacity.
+- The badge pulse uses only `box-shadow`, not `transform`, and is absent under reduced motion.
+- In `triggers.ts` the pulse costs one counter, one prebuilt remover and one timer. It runs only when the unread count changes, never per frame.
+
+### Lessons applied
+
+**UX (`anthropic-skills:ux`)**
+- **Write for the whole task: where you are, what you can do, what comes next.**
+  - The grid header names the category, its blurb and "x/y đã khám phá".
+  - The back control carries the category name, so it both locates the reader and returns them.
+  - The locked state still says "chưa khám phá", and the page keeps the sentence that nothing is blocked.
+  - *ux principle 5 (798 · U3 · L09 · 02:40–08:48); status states (798 · U4 · L11).*
+- **Access is part of the content.**
+  - Every state has a glyph and words, not only a colour or border.
+  - Tiles speak their full count and whether they hold new entries.
+  - Thumbnails are `aria-hidden` because the card title names them; the large figure keeps its sentence-long name.
+  - Cards and tiles are native buttons. Arrow keys and Home/End move between them, and plain Tab order still works.
+  - *ux principle 6 (798 · U4 · L13 · 04:28–16:09).*
+- **The reward is the user's own act.**
+  - Opening USACodex no longer reads an entry for the user. The new card gets focus and the user opens it.
+  - This keeps the owner's "not pushy" rule and makes the unlock a response to the user's click.
+  - *ux, Stage 5: cover the entry point, the route and the next step (798 · U2 · L05).*
+
+**Visual design (`anthropic-skills:visual-design`)**
+- **A grid holds unlike things as one unity.** Concept diagrams, sky thumbnails and scale strips have very different content. A fixed 3:2 frame, the same card chrome and the same state row make them read as one collection. *5642 · U5 · L73 · 07:23–08:26; unity through similarity, 5642 · U5 · L73 · 03:02–04:10.*
+- **One dominant element per screen.**
+  - In the grid, the category title leads, then the new cards (the brightest borders), then the read cards, then the dimmed locked cards.
+  - On the page, the title stays number one. The reveal's glow lives on the visual, which is number two, and lasts under a second.
+  - *5642 · U4 · L55 · 00:08–01:27.*
+- **Figure and ground.** Locked cards recede: darker ground, dashed edge and desaturated image. New cards come forward. The empty space below a short grid is left as space, not filled. *5642 · U4 · L49 · 02:06–06:43.*
+- **Build for the hardest application.**
+  - At 375 px the tiles become a scroll strip and the cards a 2-column grid.
+  - At card size the thumbnails drop labels instead of shrinking them.
+  - The figure column was widened to 326 px so that the 13 px floor holds for diagram labels at 1440.
+  - *5642 · U7 · L103 · 02:24–04:24.*
+
+**Motion (`anthropic-skills:motion`)**
+- **Movement serves the message.** The reveal says exactly one thing: "this entry is now unlocked". Nothing else on the page moves. *503 · U3 · L10 · 01:21–02:42.*
+- **Trigger and follower, in sequence.** The shackle opens first (trigger). The visual answers (follower). The words arrive last. No more than two elements change at once. *503 · U5 · L20 · 04:33–06:31; 503 · U4 · L17 · 04:15–04:55; motion language and order, 503 · U3 · L10 · 02:42–04:08.*
+- **Ease-out, no bounce.** One deceleration curve for every movement. Stretch and bounce were rejected because they would make a science reference read as cartoonish. *Curves: 503 · U2 · L08 · 06:22–09:12; principles that change tone: 561 · U4 · L13 · 02:47–05:54.*
+- **Reading time wins.** The text is never part of the animation. Only the status line fades in, and it stays. *561 · U4 · L11 · 00:02–01:56.*
+
+### Verification (2026-10-06)
+
+**Measured:**
+
+| Check | Result |
+|---|---|
+| `npm test` | 165 / 165 |
+| `npm run build` | Passes |
+| Entry JS | 82.01 kB gzip (budget 90). All the new UI is in the lazy codex chunk |
+| `docs/redesign-2/uat/codex.mjs` | 68/68 |
+| `docs/redesign-2/uat/modes.mjs` | 37/37 |
+| `docs/redesign-2/uat/guide.mjs` | 85/85 |
+| `docs/redesign/uat/smoke.mjs`, `ui.mjs` (25), `bundle-size.mjs` | Pass |
+
+**Changed UAT checks.** The reasons are also in the file header:
+- "desktop opens on the first new entry" is now "opens on the grid of that entry's category, with focus on the new card, and nothing read".
+- Badge 3 → 2 is now measured after the first card click.
+- `.cdx-item` rows are now `.cdx-card` cards, so entries are opened through the tile and then the card.
+- The phone opens on the grid, not a list.
+- The locked contrast is now measured on the card background.
+
+**13 px floor:**
+- The UAT measures every visible text node, multiplying SVG text by its rendered scale. It runs on 13 desktop views and two phone views.
+- KaTeX superscript glyphs (for example the degree sign in an exponent) are excluded, because script size is a typesetting convention.
+- Sky labels now stay inside the frame vertically. "Shedar" was clipped at the top of the M31 thumbnail at 13 px.
+
+**Judged by the author:**
+- The author read the three renders, a contact sheet of all 44 header visuals at 13 px, and six paused frames of the reveal (0, 150, 300, 450, 600 and 860 ms).
+- The frames read in the intended order: padlock closed, then open, then fading over a glowing visual, then the line.
+
+**Not judged:** no fresh-context reviewer has seen the grid or the reveal yet. Screen-reader output was not tested with a real screen reader.
