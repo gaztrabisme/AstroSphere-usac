@@ -110,3 +110,34 @@ The owner reviewed the small open decisions one by one, and all were built on th
 - bundle: entry JS 83.22 kB gzip, within the 90 kB budget.
 
 **Not reviewed by a fresh reviewer:** the USACodex grid and unlock, the selection pulse, and the focus layout. They have been checked only by their builders and the coordinator.
+
+## Addendum: fix rounds 3 and 4, 2026-10-06
+
+The owner asked for a fresh review after the decisions round. That review, `review-3.md` (renders in `review-4/`), said "ready to show the club" and ranked 12 problems. Two fix rounds followed, with a fresh-context review between them.
+
+| Step | What | Evidence |
+|---|---|---|
+| Review 3 | A1 yes. Problem 1 ("thiên đế") did not reproduce: the source is "thiên để" (U+1EC3) and the screenshot font draws the hook like an acute. Problems 2–12 stood. | Coordinator note in `review-3.md` |
+| Fix round 3 | Two parallel streams fixed problems 2–12. **Scene** (#3, #12): the below-horizon label avoids its own ghost marker; cardinal "B" avoids the vertical-circle foot. **UI** (#2, #4–#11): the sphere view stays ≥ 220 px when both toggles are open; the phone hello leads with "tap a star"; the reset dialog reads "Đặt lại mô phỏng?" and always rings "Hủy"; two-row phone header; unlock glow and a visible read state; a status colour key; neutral map dots; 14 px notes; a "Còn nữa" scroll cue. | Merges `64cdae2` and `b2afcc4`; `uat/fix-3-scene.mjs` 23/23, `uat/fix-3-ui.mjs` 20/20 |
+| Review 4 | Fresh reviewer, 15 screens (`review-5/`). It said "ready to show the club now, close to ready for a wider public launch", with 0 High, 5 Medium and 10 Low problems. Medium #1 was a false positive caused by the brief (teal is the rise-set zone). #2 is the owner's focus-layout decision. #3 did not reproduce: those objects are above the horizon. | `review-4.md` with the coordinator triage |
+| Fix round 4 | #4 crowding at 1280 with both toggles open: the cut row fades out, and the small sphere view (< 235 px, only the expanded state with a selection) keeps only orienting labels. #5 captions under the phone header icons. #10 grey dashed map equator. #11 true minus in magnitudes. #14 "chạm" in the phone hello. #15 44 px "?" touch areas. | `uat/fix-4.mjs` 15/15; renders in `review-6/` |
+
+**Test fix.** The highlight check "hovering the pole axis in the 3D view sets 'pole'" failed depending on the time of day, on the base commit too. A star under one of its 6 hover points won the hover. It now samples 20 points (`11b5534`).
+
+**Final suite.** All checks pass on `27101d0`:
+- unit tests: `npm test`, 184;
+- browser checks: smoke, ui 25, ux 38, declutter 21, highlight 25, perf (a–c), modes 37, codex 68, guide 86, below-horizon 30, decisions 64, focus 35, fix-3-scene 23, fix-3-ui 20, fix-4 15;
+- bundle: entry JS **83.80 kB** gzip, within the 90 kB budget.
+
+**Measured** on `review-5/`:
+- Balance: 0.045 (Simple 1440), 0.003 (Full 1440) and 0.014 (expanded), so centred.
+- T5 chroma: PASS on the horizon card in Simple and in Full.
+
+**Still open** (see `TODO.md`):
+- the ể accent on a real device;
+- the owner's call on hidden controls in Full (review-4 #2);
+- the status-key tip on touch screens;
+- six low polish items from review-4;
+- the beginner test (owner: "Not now").
+
+**Not reviewed by a fresh reviewer:** the fix-round-4 changes. They have been checked only by their UATs and the coordinator's look at the `review-6/` renders.
