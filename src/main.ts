@@ -18,6 +18,7 @@ import { displayPanel } from './ui/displayPanel';
 import { button, clear, h, setText } from './ui/dom';
 import { bindHintCaption } from './ui/firstHint';
 import { focusLayout, FOCUS_MIN_WIDTH } from './ui/focusLayout';
+import { pencilIcon } from './ui/icons';
 import { dataBar, infoCard } from './ui/infoCard';
 import { locationPanel } from './ui/locationPanel';
 import { bindUiMode, initialUiMode, modeSwitch } from './ui/mode';
@@ -100,6 +101,8 @@ let horizon: HorizonDiagramView | null = null;
 const learnBtn = button(t('top.learn'), () => learn.toggle(), { cls: 'btn--top btn--top-main', icon: '✎', title: t('top.learnTip'), guide: 'learn' });
 const presentBtn = button(t('top.present'), () => setPresent(!presenting), { cls: 'btn--top btn--top-present', icon: '⛶', title: t('top.presentTip'), guide: 'present' });
 presentBtn.setAttribute('aria-pressed', 'false');
+// Bút chì SVG thay cho ký tự ✎ (không có trong Arial): trên điện thoại nút chỉ còn biểu tượng (fix-3 #6).
+learnBtn.querySelector('.btn__icon')?.replaceChildren(pencilIcon());
 const topbar = h(
   'header',
   { class: 'topbar' },

@@ -4974,3 +4974,52 @@ body.present .guide-tip {
   outline-offset: 2px;
   box-shadow: none;
 }
+
+/* #6. Thanh trên của chế độ Đầy đủ trên điện thoại: từng cao ba hàng (~150 px) với "Cơ bản / Đầy đủ" đứng một mình ở
+   hàng ba, còn "Ôn tập" có viền sáng hơn trông như đang được chọn (review-4 ảnh 12). Nay hai hàng gọn (≤ 104 px ở
+   375 px): hàng 1 là thương hiệu và công tắc chế độ (như Cơ bản), hàng 2 là dải nút biểu tượng 44 px chia đều bề
+   ngang. "Ôn tập" chỉ còn biểu tượng bút chì (tên vẫn là aria-label, chú thích ở title), viền như các nút cạnh nó. */
+@media (max-width: 640px) {
+  body.mode-full .topbar {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+    padding-block: var(--space-1);
+  }
+
+  body.mode-full .brand {
+    flex: 1 1 auto;
+  }
+
+  /* Công tắc ở hàng 1, bên phải: giữ viền của công tắc phân đoạn, bỏ đệm để hàng chỉ cao 46 px. */
+  body.mode-full .modeswitch {
+    order: 0;
+    flex: none;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  body.mode-full .topbar__actions {
+    order: 1;
+    flex: 1 0 100%;
+    gap: var(--space-1);
+  }
+
+  body.mode-full .topbar__actions .btn--top {
+    flex: 1 1 0;
+  }
+
+  body.mode-full .btn--top.btn--top-main {
+    padding: 4px;
+    border-color: var(--border);
+  }
+
+  body.mode-full .btn--top-main .btn__icon {
+    display: inline-grid;
+  }
+
+  body.mode-full .btn--top-main .btn__text {
+    display: none;
+  }
+}
